@@ -1,63 +1,96 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ArrowLeft, ArrowRight, Car, Bike, Truck, Check, Upload, User, MapPin, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Bike, Truck, Check, Upload, User, MapPin, Shield, Loader2 } from "lucide-react";
+import { useCreateLead } from "@/hooks/useLeads";
+import { useCreateContact } from "@/hooks/useContacts";
+import { getNextProducerForAssignment } from "@/hooks/useProducers";
+import { vehicleBrands, getBrandsByType, getModelsByBrand, generateYears, COVERAGE_TYPES, VEHICLE_USES } from "@/data/vehicleBrands";
+import { toast } from "sonner";
 
 const VEHICLE_TYPES = [
   { id: "auto", label: "Auto", icon: Car },
   { id: "moto", label: "Moto", icon: Bike },
   { id: "camioneta", label: "Camioneta", icon: Truck },
-];
-
-const COVERAGE_TYPES = [
-  { id: "terceros", label: "Responsabilidad Civil", description: "Cobertura básica obligatoria" },
-  { id: "terceros_completo", label: "Terceros Completo", description: "RC + Robo + Incendio" },
-  { id: "todo_riesgo", label: "Todo Riesgo", description: "Cobertura integral" },
-];
-
-const BRANDS = ["Chevrolet", "Fiat", "Ford", "Honda", "Peugeot", "Renault", "Toyota", "Volkswagen"];
-const YEARS = Array.from({ length: 25 }, (_, i) => (2025 - i).toString());
+] as const;
 
 interface FormData {
-  vehicleType: string;
+  vehicleType: "auto" | "moto" | "camioneta" | "";
   brand: string;
+  brandName: string;
   model: string;
   year: string;
   version: string;
   use: string;
   postalCode: string;
+  locality: string;
   coverage: string;
   name: string;
   dni: string;
   email: string;
   phone: string;
-  hasDocuments: boolean;
+  marketingOptIn: boolean;
 }
 
 const initialFormData: FormData = {
   vehicleType: "",
   brand: "",
+  brandName: "",
   model: "",
   year: "",
   version: "",
   use: "particular",
   postalCode: "",
+  locality: "",
   coverage: "",
   name: "",
   dni: "",
   email: "",
   phone: "",
-  hasDocuments: false,
+  marketingOptIn: true,
 };
 
 const CotizarPage = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createLead = useCreateLead();
+  const createContact = useCreateContact();
 
   const totalSteps = 5;
 
+  const availableBrands = useMemo(() => {
+    if (!formData.vehicleType) return [];
+    return getBrandsByType(formData.vehicleType as "auto" | "moto" | "camioneta");
+  }, [formData.vehicleType]);
+
+  const availableModels = useMemo(() => {
+    if (!formData.brand) return [];
+    return getModelsByBrand(formData.brand);
+  }, [formData.brand]);
+
+  const years = useMemo(() => generateYears(2000), []);
+
   const updateField = (field: keyof FormData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      
+      // Reset dependent fields
+      if (field === "vehicleType") {
+        updated.brand = "";
+        updated.brandName = "";
+        updated.model = "";
+      }
+      if (field === "brand") {
+        updated.model = "";
+        // Get brand name
+        const brand = availableBrands.find(b => b.id === value);
+        updated.brandName = brand?.name || "";
+      }
+      
+      return updated;
+    });
   };
 
   const canProceed = () => {
@@ -70,10 +103,50 @@ const CotizarPage = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Here you would send to API
-    console.log("Lead submitted:", formData);
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Get producer for assignment (round-robin)
+      const producerId = await getNextProducerForAssignment();
+
+      // Create lead
+      await createLead.mutateAsync({
+        vehicle_type: formData.vehicleType,
+        vehicle_brand: formData.brandName,
+        vehicle_model: formData.model,
+        vehicle_year: formData.year ? parseInt(formData.year) : undefined,
+        vehicle_version: formData.version || undefined,
+        vehicle_use: formData.use,
+        coverage_type: formData.coverage,
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        dni: formData.dni || undefined,
+        locality: formData.locality || undefined,
+        postal_code: formData.postalCode,
+        origin: "cotizador",
+      });
+
+      // Create/update contact
+      await createContact.mutateAsync({
+        email: formData.email,
+        phone: formData.phone || undefined,
+        full_name: formData.name,
+        origin: "cotizador",
+        opt_in: formData.marketingOptIn,
+      });
+
+      toast.success("¡Solicitud enviada!");
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Error submitting lead:", error);
+      toast.error("Error al enviar la solicitud", {
+        description: "Por favor intentá de nuevo.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -183,40 +256,44 @@ const CotizarPage = () => {
                 </h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Marca</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Marca *</label>
                   <select
                     value={formData.brand}
                     onChange={(e) => updateField("brand", e.target.value)}
                     className="input-kipper"
                   >
                     <option value="">Seleccioná una marca</option>
-                    {BRANDS.map((brand) => (
-                      <option key={brand} value={brand}>{brand}</option>
+                    {availableBrands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>{brand.name}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Modelo</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.model}
                     onChange={(e) => updateField("model", e.target.value)}
-                    placeholder="Ej: Corolla, Cronos, Gol..."
                     className="input-kipper"
-                  />
+                    disabled={!formData.brand}
+                  >
+                    <option value="">Seleccioná un modelo</option>
+                    {availableModels.map((model) => (
+                      <option key={model.name} value={model.name}>{model.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Año</label>
+                    <label className="block text-sm font-medium text-foreground mb-2">Año *</label>
                     <select
                       value={formData.year}
                       onChange={(e) => updateField("year", e.target.value)}
                       className="input-kipper"
                     >
                       <option value="">Año</option>
-                      {YEARS.map((year) => (
+                      {years.map((year) => (
                         <option key={year} value={year}>{year}</option>
                       ))}
                     </select>
@@ -227,22 +304,19 @@ const CotizarPage = () => {
                       type="text"
                       value={formData.version}
                       onChange={(e) => updateField("version", e.target.value)}
-                      placeholder="Ej: XEI 1.8"
+                      placeholder="Ej: XEI 1.8 AT"
                       className="input-kipper"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Uso</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Uso del vehículo</label>
                   <div className="flex gap-4">
-                    {[
-                      { id: "particular", label: "Particular" },
-                      { id: "comercial", label: "Comercial" },
-                      { id: "uber", label: "Uber/Remis" },
-                    ].map((use) => (
+                    {VEHICLE_USES.map((use) => (
                       <button
                         key={use.id}
+                        type="button"
                         onClick={() => updateField("use", use.id)}
                         className={`flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
                           formData.use === use.id
@@ -266,27 +340,40 @@ const CotizarPage = () => {
                   Ubicación y cobertura
                 </h2>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Código Postal</label>
-                  <input
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) => updateField("postalCode", e.target.value)}
-                    placeholder="Ej: 1425"
-                    className="input-kipper"
-                    maxLength={4}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Código Postal *</label>
+                    <input
+                      type="text"
+                      value={formData.postalCode}
+                      onChange={(e) => updateField("postalCode", e.target.value)}
+                      placeholder="Ej: 1425"
+                      className="input-kipper"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Localidad</label>
+                    <input
+                      type="text"
+                      value={formData.locality}
+                      onChange={(e) => updateField("locality", e.target.value)}
+                      placeholder="Ej: CABA, Tigre..."
+                      className="input-kipper"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-4 flex items-center gap-2">
                     <Shield size={18} className="text-primary" />
-                    Cobertura deseada
+                    Cobertura deseada *
                   </label>
                   <div className="space-y-3">
                     {COVERAGE_TYPES.map((coverage) => (
                       <button
                         key={coverage.id}
+                        type="button"
                         onClick={() => updateField("coverage", coverage.id)}
                         className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                           formData.coverage === coverage.id
@@ -316,7 +403,7 @@ const CotizarPage = () => {
                 </h2>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Nombre completo</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Nombre completo *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -327,7 +414,7 @@ const CotizarPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">DNI</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">DNI (opcional)</label>
                   <input
                     type="text"
                     value={formData.dni}
@@ -339,7 +426,7 @@ const CotizarPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Email *</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -350,15 +437,27 @@ const CotizarPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Teléfono *</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => updateField("phone", e.target.value)}
-                    placeholder="1155551234"
+                    placeholder="11 5555 1234"
                     className="input-kipper"
                   />
                 </div>
+
+                <label className="flex items-center gap-3 cursor-pointer mt-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.marketingOptIn}
+                    onChange={(e) => updateField("marketingOptIn", e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Quiero recibir novedades y promociones de Kipper Seguros
+                  </span>
+                </label>
               </div>
             )}
 
@@ -385,7 +484,7 @@ const CotizarPage = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Vehículo:</span>
-                      <span className="font-medium">{formData.brand} {formData.model} {formData.year}</span>
+                      <span className="font-medium">{formData.brandName} {formData.model} {formData.year}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Cobertura:</span>
@@ -393,11 +492,19 @@ const CotizarPage = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ubicación:</span>
-                      <span className="font-medium">CP {formData.postalCode}</span>
+                      <span className="font-medium">CP {formData.postalCode} {formData.locality && `- ${formData.locality}`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Contacto:</span>
+                      <span className="font-medium">{formData.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
                       <span className="font-medium">{formData.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Teléfono:</span>
+                      <span className="font-medium">{formData.phone}</span>
                     </div>
                   </div>
                 </div>
@@ -410,6 +517,7 @@ const CotizarPage = () => {
                 <button
                   onClick={() => setStep(step - 1)}
                   className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isSubmitting}
                 >
                   <ArrowLeft size={18} />
                   Anterior
@@ -430,10 +538,20 @@ const CotizarPage = () => {
               ) : (
                 <button
                   onClick={handleSubmit}
-                  className="btn-hero inline-flex items-center gap-2"
+                  disabled={isSubmitting}
+                  className="btn-hero inline-flex items-center gap-2 disabled:opacity-50"
                 >
-                  Enviar solicitud
-                  <Check size={18} />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Enviar solicitud
+                      <Check size={18} />
+                    </>
+                  )}
                 </button>
               )}
             </div>
