@@ -30,6 +30,15 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLeads from "./pages/admin/AdminLeads";
 
+// Productor
+import ProductorLayout from "./pages/productor/ProductorLayout";
+import ProductorDashboard from "./pages/productor/ProductorDashboard";
+import ProductorLeads from "./pages/productor/ProductorLeads";
+import ProductorClientes from "./pages/productor/ProductorClientes";
+import ProductorPolizas from "./pages/productor/ProductorPolizas";
+import ProductorSiniestros from "./pages/productor/ProductorSiniestros";
+import ProductorPerfil from "./pages/productor/ProductorPerfil";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -63,9 +72,23 @@ const App = () => (
               <Route path="perfil" element={<PortalPerfil />} />
             </Route>
 
-            {/* Admin - Protected for admin/productor */}
+            {/* Productor Portal - Protected */}
+            <Route path="/productor" element={
+              <ProtectedRoute requireAnyRole={['productor', 'admin']}>
+                <ProductorLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<ProductorDashboard />} />
+              <Route path="leads" element={<ProductorLeads />} />
+              <Route path="clientes" element={<ProductorClientes />} />
+              <Route path="polizas" element={<ProductorPolizas />} />
+              <Route path="siniestros" element={<ProductorSiniestros />} />
+              <Route path="perfil" element={<ProductorPerfil />} />
+            </Route>
+
+            {/* Admin - Protected for admin only */}
             <Route path="/admin" element={
-              <ProtectedRoute requireAnyRole={['admin', 'productor']}>
+              <ProtectedRoute requiredRole="admin">
                 <AdminLayout />
               </ProtectedRoute>
             }>

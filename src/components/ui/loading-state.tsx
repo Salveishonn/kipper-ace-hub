@@ -1,18 +1,19 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 
 interface LoadingStateProps {
   message?: string;
+  text?: string;
 }
 
-export const LoadingState = ({ message = "Cargando..." }: LoadingStateProps) => (
+export const LoadingState = ({ message, text }: LoadingStateProps) => (
   <div className="flex flex-col items-center justify-center py-16">
     <Loader2 size={40} className="animate-spin text-primary mb-4" />
-    <p className="text-muted-foreground">{message}</p>
+    <p className="text-muted-foreground">{message || text || "Cargando..."}</p>
   </div>
 );
 
 interface EmptyStateProps {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -20,7 +21,9 @@ interface EmptyStateProps {
 
 export const EmptyState = ({ icon, title, description, action }: EmptyStateProps) => (
   <div className="flex flex-col items-center justify-center py-16 text-center">
-    <div className="text-muted-foreground mb-4">{icon}</div>
+    <div className="text-muted-foreground mb-4">
+      {icon || <FileText size={48} />}
+    </div>
     <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
     {description && <p className="text-muted-foreground mb-4 max-w-md">{description}</p>}
     {action}
