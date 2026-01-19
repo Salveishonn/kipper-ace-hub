@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,9 +12,24 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, isAdmin, isProductor } = useAuth();
+  const { signIn, user, roles, loading, isAdmin, isProductor } = useAuth();
 
   const from = location.state?.from?.pathname || null;
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user && roles.length > 0) {
+      const targetPath = getRedirectPath();
+      navigate(targetPath, { replace: true });
+    }
+  }, [loading, user, roles]);
+
+  const getRedirectPath = () => {
+    if (from) return from;
+    if (isAdmin) return "/admin";
+    if (isProductor) return "/productor";
+    return "/portal";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,18 +48,16 @@ const LoginPage = () => {
     }
 
     toast.success("¡Bienvenido!");
-    
-    // Wait a bit for roles to load
-    setTimeout(() => {
-      if (from) {
-        navigate(from);
-      } else {
-        // Will be redirected by the layout based on role
-        navigate("/portal");
-      }
-      setIsLoading(false);
-    }, 500);
+    // The useEffect will handle the redirect once roles are loaded
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 size={48} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

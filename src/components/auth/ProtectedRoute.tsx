@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,8 +16,22 @@ export const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, roles, loading, isAdmin, isProductor, isCliente } = useAuth();
   const location = useLocation();
+  const [isReady, setIsReady] = useState(false);
 
-  if (loading) {
+  // Wait for roles to be loaded after user is set
+  useEffect(() => {
+    if (!loading && user) {
+      // Give a small delay for roles to be fetched
+      const timer = setTimeout(() => {
+        setIsReady(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!loading && !user) {
+      setIsReady(true);
+    }
+  }, [loading, user, roles]);
+
+  if (loading || (!isReady && user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
@@ -31,15 +46,22 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Determine the correct dashboard based on role
+  const getCorrectDashboard = () => {
+    if (isAdmin) return "/admin";
+    if (isProductor) return "/productor";
+    return "/portal";
+  };
+
   // Check for specific role requirement
   if (requiredRole) {
     const hasRole = roles.includes(requiredRole);
     if (!hasRole) {
-      // Redirect based on what role they have
-      if (isAdmin || isProductor) {
-        return <Navigate to="/admin" replace />;
+      // Admin can access productor routes
+      if (requiredRole === 'productor' && isAdmin) {
+        return <>{children}</>;
       }
-      return <Navigate to="/portal" replace />;
+      return <Navigate to={getCorrectDashboard()} replace />;
     }
   }
 
@@ -47,10 +69,7 @@ export const ProtectedRoute = ({
   if (requireAnyRole) {
     const hasAnyRole = requireAnyRole.some(role => roles.includes(role));
     if (!hasAnyRole) {
-      if (isAdmin || isProductor) {
-        return <Navigate to="/admin" replace />;
-      }
-      return <Navigate to="/portal" replace />;
+      return <Navigate to={getCorrectDashboard()} replace />;
     }
   }
 
