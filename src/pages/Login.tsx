@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import logoKipper from "@/assets/logo-kipper.png";
 
 const LoginPage = () => {
@@ -9,16 +11,39 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, isAdmin, isProductor } = useAuth();
+
+  const from = location.state?.from?.pathname || null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate login - replace with real auth
-    setTimeout(() => {
+
+    const { error } = await signIn(email, password);
+
+    if (error) {
+      toast.error("Error al iniciar sesión", {
+        description: error.message === "Invalid login credentials" 
+          ? "Email o contraseña incorrectos" 
+          : error.message,
+      });
       setIsLoading(false);
-      navigate("/portal");
-    }, 1000);
+      return;
+    }
+
+    toast.success("¡Bienvenido!");
+    
+    // Wait a bit for roles to load
+    setTimeout(() => {
+      if (from) {
+        navigate(from);
+      } else {
+        // Will be redirected by the layout based on role
+        navigate("/portal");
+      }
+      setIsLoading(false);
+    }, 500);
   };
 
   return (
@@ -54,6 +79,7 @@ const LoginPage = () => {
                 placeholder="tu@email.com"
                 className="input-kipper"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -69,6 +95,7 @@ const LoginPage = () => {
                   placeholder="••••••••"
                   className="input-kipper pr-12"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -82,7 +109,10 @@ const LoginPage = () => {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary" 
+                />
                 <span className="text-sm text-muted-foreground">Recordarme</span>
               </label>
               <Link to="/recuperar" className="text-sm text-primary hover:underline">
@@ -96,7 +126,10 @@ const LoginPage = () => {
               className="btn-hero w-full flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <span className="animate-spin">⏳</span>
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Ingresando...
+                </>
               ) : (
                 <>
                   Ingresar
@@ -108,8 +141,8 @@ const LoginPage = () => {
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             ¿No tenés cuenta?{" "}
-            <Link to="/contacto" className="text-primary font-medium hover:underline">
-              Contactanos
+            <Link to="/registro" className="text-primary font-medium hover:underline">
+              Registrate
             </Link>
           </p>
         </div>

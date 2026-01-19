@@ -4,16 +4,20 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
+// Public pages
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CotizarPage from "./pages/Cotizar";
 import LoginPage from "./pages/Login";
+import RegistroPage from "./pages/Registro";
 import ServiciosPage from "./pages/Servicios";
 import NosotrosPage from "./pages/Nosotros";
 import ContactoPage from "./pages/Contacto";
 import ComunidadPage from "./pages/Comunidad";
 
-// Portal
+// Portal (Client)
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalDashboard from "./pages/portal/PortalDashboard";
 import PortalPolizas from "./pages/portal/PortalPolizas";
@@ -44,9 +48,14 @@ const App = () => (
             <Route path="/contacto" element={<ContactoPage />} />
             <Route path="/cotizar" element={<CotizarPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/registro" element={<RegistroPage />} />
 
-            {/* Portal Cliente */}
-            <Route path="/portal" element={<PortalLayout />}>
+            {/* Portal Cliente - Protected */}
+            <Route path="/portal" element={
+              <ProtectedRoute>
+                <PortalLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<PortalDashboard />} />
               <Route path="polizas" element={<PortalPolizas />} />
               <Route path="pagos" element={<PortalPagos />} />
@@ -54,10 +63,15 @@ const App = () => (
               <Route path="perfil" element={<PortalPerfil />} />
             </Route>
 
-            {/* Admin */}
-            <Route path="/admin" element={<AdminLayout />}>
+            {/* Admin - Protected for admin/productor */}
+            <Route path="/admin" element={
+              <ProtectedRoute requireAnyRole={['admin', 'productor']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<AdminDashboard />} />
               <Route path="leads" element={<AdminLeads />} />
+              <Route path="*" element={<AdminDashboard />} />
             </Route>
 
             {/* Catch-all */}
