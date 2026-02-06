@@ -12,24 +12,17 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, roles, loading, isAdmin, isProductor } = useAuth();
+  const { signIn, user, loading, rolesLoaded, getDefaultDashboard } = useAuth();
 
   const from = location.state?.from?.pathname || null;
 
-  // Redirect if already logged in
+  // Redirect if already logged in and roles are loaded
   useEffect(() => {
-    if (!loading && user && roles.length > 0) {
-      const targetPath = getRedirectPath();
+    if (!loading && rolesLoaded && user) {
+      const targetPath = from || getDefaultDashboard();
       navigate(targetPath, { replace: true });
     }
-  }, [loading, user, roles]);
-
-  const getRedirectPath = () => {
-    if (from) return from;
-    if (isAdmin) return "/admin";
-    if (isProductor) return "/productor";
-    return "/portal";
-  };
+  }, [loading, rolesLoaded, user, from, navigate, getDefaultDashboard]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +44,7 @@ const LoginPage = () => {
     // The useEffect will handle the redirect once roles are loaded
   };
 
+  // Show loading while checking auth state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">

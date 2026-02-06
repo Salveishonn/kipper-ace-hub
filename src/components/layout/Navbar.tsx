@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
 
 const navLinks = [
@@ -14,6 +15,29 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin, isProductor, loading, rolesLoaded } = useAuth();
+
+  // Determine the correct CTA based on auth state and role
+  const getAuthCTA = () => {
+    if (loading || !rolesLoaded) {
+      return { href: "/login", label: "Ingresar", variant: "primary" };
+    }
+    
+    if (!user) {
+      return { href: "/login", label: "Ingresar", variant: "primary" };
+    }
+
+    // User is logged in - show role-appropriate dashboard link
+    if (isAdmin) {
+      return { href: "/admin", label: "Admin", variant: "primary" };
+    }
+    if (isProductor) {
+      return { href: "/productor", label: "Panel Productor", variant: "primary" };
+    }
+    return { href: "/portal", label: "Mi Portal", variant: "primary" };
+  };
+
+  const authCTA = getAuthCTA();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
@@ -56,10 +80,10 @@ export function Navbar() {
               Cotizar
             </Link>
             <Link
-              to="/portal"
+              to={authCTA.href}
               className="btn-hero text-sm px-5 py-2.5"
             >
-              Mi Portal
+              {authCTA.label}
             </Link>
           </div>
 
@@ -100,11 +124,11 @@ export function Navbar() {
                 Cotizar mi vehículo
               </Link>
               <Link
-                to="/portal"
+                to={authCTA.href}
                 onClick={() => setIsOpen(false)}
                 className="btn-hero text-center text-sm py-3"
               >
-                Ingresar al Portal
+                {authCTA.label}
               </Link>
             </div>
           </div>
