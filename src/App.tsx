@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
@@ -49,7 +49,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public */}
+            {/* ============ PUBLIC ROUTES ============ */}
             <Route path="/" element={<Index />} />
             <Route path="/servicios" element={<ServiciosPage />} />
             <Route path="/nosotros" element={<NosotrosPage />} />
@@ -59,9 +59,9 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
 
-            {/* Portal Cliente - Protected */}
+            {/* ============ CLIENT PORTAL (/portal) ============ */}
             <Route path="/portal" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'productor', 'cliente']}>
                 <PortalLayout />
               </ProtectedRoute>
             }>
@@ -72,9 +72,9 @@ const App = () => (
               <Route path="perfil" element={<PortalPerfil />} />
             </Route>
 
-            {/* Productor Portal - Protected */}
+            {/* ============ PRODUCTOR PORTAL (/productor) ============ */}
             <Route path="/productor" element={
-              <ProtectedRoute requireAnyRole={['productor', 'admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'productor']}>
                 <ProductorLayout />
               </ProtectedRoute>
             }>
@@ -86,18 +86,29 @@ const App = () => (
               <Route path="perfil" element={<ProductorPerfil />} />
             </Route>
 
-            {/* Admin - Protected for admin only */}
+            {/* ============ ADMIN PORTAL (/admin) ============ */}
             <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminLayout />
               </ProtectedRoute>
             }>
               <Route index element={<AdminDashboard />} />
               <Route path="leads" element={<AdminLeads />} />
-              <Route path="*" element={<AdminDashboard />} />
+              {/* Placeholder routes - redirect to dashboard for now */}
+              <Route path="clientes" element={<AdminDashboard />} />
+              <Route path="productores" element={<AdminDashboard />} />
+              <Route path="polizas" element={<AdminDashboard />} />
+              <Route path="contacts" element={<AdminDashboard />} />
+              <Route path="blog" element={<AdminDashboard />} />
+              <Route path="config" element={<AdminDashboard />} />
             </Route>
 
-            {/* Catch-all */}
+            {/* ============ LEGACY REDIRECTS ============ */}
+            <Route path="/app" element={<Navigate to="/portal" replace />} />
+            <Route path="/app/*" element={<Navigate to="/portal" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/portal" replace />} />
+
+            {/* ============ 404 ============ */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

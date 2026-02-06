@@ -26,6 +26,7 @@ interface AuthContextType {
   profile: Profile | null;
   roles: AppRole[];
   loading: boolean;
+  rolesLoaded: boolean;
   isAdmin: boolean;
   isProductor: boolean;
   isCliente: boolean;
@@ -33,6 +34,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  getDefaultDashboard: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,27 +45,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (data) {
-      setProfile(data as Profile);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setProfile(data as Profile);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
     }
   };
 
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    if (data) {
-      setRoles(data.map(r => r.role as AppRole));
+  const fetchRoles = async (userId: string): Promise<AppRole[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Error fetching roles:', error);
+        return [];
+      }
+      
+      if (data && data.length > 0) {
+        const fetchedRoles = data.map(r => r.role as AppRole);
+        setRoles(fetchedRoles);
+        return fetchedRoles;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      return [];
     }
   };
 
@@ -73,43 +93,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getDefaultDashboard = (): string => {
+    if (roles.includes('admin')) return '/admin';
+    if (roles.includes('productor')) return '/productor';
+    return '/portal';
+  };
+
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          // Use setTimeout to avoid potential race conditions
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
-          }, 0);
+        if (!mounted) return;
+
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          // Fetch profile and roles in parallel
+          await Promise.all([
+            fetchProfile(initialSession.user.id),
+            fetchRoles(initialSession.user.id)
+          ]);
+        }
+        
+        if (mounted) {
+          setRolesLoaded(true);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setRolesLoaded(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!mounted) return;
+
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          // Don't set loading to true here to avoid flicker
+          await Promise.all([
+            fetchProfile(newSession.user.id),
+            fetchRoles(newSession.user.id)
+          ]);
+          setRolesLoaded(true);
         } else {
           setProfile(null);
           setRoles([]);
+          setRolesLoaded(true);
         }
-        setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    setRolesLoaded(false);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (!error) {
+      // Roles will be fetched by the auth state change listener
+      // But we need to wait for them
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        await fetchRoles(currentUser.id);
+        setRolesLoaded(true);
+      }
+    }
+    
     return { error };
   };
 
@@ -147,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
+    setRolesLoaded(true);
   };
 
   const isAdmin = roles.includes('admin');
@@ -160,13 +229,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       roles,
       loading,
+      rolesLoaded,
       isAdmin,
       isProductor,
       isCliente,
       signIn,
       signUp,
       signOut,
-      refreshProfile
+      refreshProfile,
+      getDefaultDashboard
     }}>
       {children}
     </AuthContext.Provider>

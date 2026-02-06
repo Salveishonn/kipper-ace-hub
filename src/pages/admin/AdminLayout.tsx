@@ -1,27 +1,39 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, Users, FileText, CreditCard, 
-  AlertTriangle, MessageSquare, Mail, Settings, LogOut,
-  TrendingUp, Clock, UserCheck, Menu, X, Bell, Search
+  LayoutDashboard, Users, FileText, 
+  TrendingUp, Settings, LogOut,
+  Menu, X, Bell, Search, UserCheck, MessageSquare, Mail
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
 
+// Canonical admin routes only
 const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/leads", label: "Leads", icon: TrendingUp },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
+  { href: "/admin/productores", label: "Productores", icon: UserCheck },
   { href: "/admin/polizas", label: "Pólizas", icon: FileText },
-  { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
-  { href: "/admin/siniestros", label: "Siniestros", icon: AlertTriangle },
+  { href: "/admin/contacts", label: "Contactos", icon: Mail },
   { href: "/admin/blog", label: "Blog", icon: MessageSquare },
-  { href: "/admin/marketing", label: "Email Marketing", icon: Mail },
   { href: "/admin/config", label: "Configuración", icon: Settings },
 ];
 
 const AdminLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { profile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const initials = profile?.full_name 
+    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'AD';
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -45,41 +57,46 @@ const AdminLayout = () => {
 
           {/* Nav */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {adminLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  location.pathname === link.href
-                    ? "bg-primary-foreground/20"
-                    : "hover:bg-primary-foreground/10"
-                }`}
-              >
-                <link.icon size={20} />
-                <span className="font-medium">{link.label}</span>
-              </Link>
-            ))}
+            {adminLinks.map((link) => {
+              const isActive = location.pathname === link.href || 
+                (link.href !== '/admin' && location.pathname.startsWith(link.href));
+              
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                    isActive
+                      ? "bg-primary-foreground/20"
+                      : "hover:bg-primary-foreground/10"
+                  }`}
+                >
+                  <link.icon size={20} />
+                  <span className="font-medium">{link.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User */}
           <div className="p-4 border-t border-primary-foreground/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
-                AD
+                {initials}
               </div>
               <div>
-                <p className="font-medium text-sm">Admin</p>
-                <p className="text-xs opacity-80">admin@kipper.com</p>
+                <p className="font-medium text-sm">{profile?.full_name || 'Admin'}</p>
+                <p className="text-xs opacity-80">{profile?.email || 'admin@kipper.com'}</p>
               </div>
             </div>
-            <Link
-              to="/login"
-              className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity text-sm"
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity text-sm w-full"
             >
               <LogOut size={16} />
               Cerrar sesión
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

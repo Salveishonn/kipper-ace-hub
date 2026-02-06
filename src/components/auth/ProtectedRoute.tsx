@@ -1,37 +1,22 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'productor' | 'cliente';
-  requireAnyRole?: ('admin' | 'productor' | 'cliente')[];
+  allowedRoles?: ('admin' | 'productor' | 'cliente')[];
 }
 
 export const ProtectedRoute = ({ 
   children, 
-  requiredRole,
-  requireAnyRole 
+  allowedRoles 
 }: ProtectedRouteProps) => {
-  const { user, roles, loading, isAdmin, isProductor, isCliente } = useAuth();
+  const { user, roles, loading, rolesLoaded, isAdmin, isProductor } = useAuth();
   const location = useLocation();
-  const [isReady, setIsReady] = useState(false);
 
-  // Wait for roles to be loaded after user is set
-  useEffect(() => {
-    if (!loading && user) {
-      // Give a small delay for roles to be fetched
-      const timer = setTimeout(() => {
-        setIsReady(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (!loading && !user) {
-      setIsReady(true);
-    }
-  }, [loading, user, roles]);
-
-  if (loading || (!isReady && user)) {
+  // CRITICAL: While loading or roles not yet fetched, show loading state
+  // DO NOT redirect during this phase
+  if (loading || !rolesLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
@@ -42,34 +27,28 @@ export const ProtectedRoute = ({
     );
   }
 
+  // User not authenticated -> redirect to login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Determine the correct dashboard based on role
-  const getCorrectDashboard = () => {
+  // Determine the correct dashboard based on role (priority: admin > productor > cliente)
+  const getCorrectDashboard = (): string => {
     if (isAdmin) return "/admin";
     if (isProductor) return "/productor";
     return "/portal";
   };
 
-  // Check for specific role requirement
-  if (requiredRole) {
-    const hasRole = roles.includes(requiredRole);
-    if (!hasRole) {
-      // Admin can access productor routes
-      if (requiredRole === 'productor' && isAdmin) {
-        return <>{children}</>;
+  // If allowedRoles is specified, check access
+  if (allowedRoles && allowedRoles.length > 0) {
+    const hasAccess = allowedRoles.some(role => roles.includes(role));
+    
+    if (!hasAccess) {
+      const correctDashboard = getCorrectDashboard();
+      // Prevent redirect loop: only redirect if we're not already at the correct path
+      if (location.pathname !== correctDashboard) {
+        return <Navigate to={correctDashboard} replace />;
       }
-      return <Navigate to={getCorrectDashboard()} replace />;
-    }
-  }
-
-  // Check for any of the required roles
-  if (requireAnyRole) {
-    const hasAnyRole = requireAnyRole.some(role => roles.includes(role));
-    if (!hasAnyRole) {
-      return <Navigate to={getCorrectDashboard()} replace />;
     }
   }
 
