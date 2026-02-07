@@ -1,7 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, FileText, TrendingUp,
-  AlertTriangle, User, LogOut, Menu, X, Bell
+  AlertTriangle, User, LogOut, Menu, X, Bell,
+  Video, FolderOpen, BookOpen, FileCheck, FileX
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +13,12 @@ const productorLinks = [
   { href: "/productor/leads", label: "Mis Leads", icon: TrendingUp },
   { href: "/productor/clientes", label: "Mis Clientes", icon: Users },
   { href: "/productor/polizas", label: "Pólizas", icon: FileText },
+  { href: "/productor/emisiones", label: "Emisiones", icon: FileCheck },
+  { href: "/productor/anulaciones", label: "Anulaciones", icon: FileX },
   { href: "/productor/siniestros", label: "Siniestros", icon: AlertTriangle },
+  { href: "/productor/notas", label: "Notas de Gestión", icon: FileText },
+  { href: "/productor/tutoriales", label: "Videos Instructivos", icon: Video },
+  { href: "/productor/materiales", label: "Material de Producción", icon: FolderOpen },
   { href: "/productor/perfil", label: "Mi Perfil", icon: User },
 ];
 
@@ -61,16 +67,25 @@ const ProductorLayout = () => {
                 key={link.href}
                 to={link.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors text-sm ${
                   location.pathname === link.href
                     ? "bg-white/20"
                     : "hover:bg-white/10"
                 }`}
               >
-                <link.icon size={20} />
+                <link.icon size={18} />
                 <span className="font-medium">{link.label}</span>
               </Link>
             ))}
+            
+            {/* Kipper Academy Link */}
+            <a
+              href="/academy"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors text-sm hover:bg-white/10 mt-4 border border-white/20"
+            >
+              <BookOpen size={18} />
+              <span className="font-medium">Kipper Academy</span>
+            </a>
           </nav>
 
           {/* User */}
