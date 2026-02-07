@@ -16,6 +16,8 @@ import ServiciosPage from "./pages/Servicios";
 import NosotrosPage from "./pages/Nosotros";
 import ContactoPage from "./pages/Contacto";
 import ComunidadPage from "./pages/Comunidad";
+import AcademyPage from "./pages/Academy";
+import SumatePage from "./pages/Sumate";
 
 // Portal (Client)
 import PortalLayout from "./pages/portal/PortalLayout";
@@ -24,11 +26,21 @@ import PortalPolizas from "./pages/portal/PortalPolizas";
 import PortalPagos from "./pages/portal/PortalPagos";
 import PortalSiniestros from "./pages/portal/PortalSiniestros";
 import PortalPerfil from "./pages/portal/PortalPerfil";
+import PortalSolicitudes from "./pages/portal/PortalSolicitudes";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLeads from "./pages/admin/AdminLeads";
+import AdminClientes from "./pages/admin/AdminClientes";
+import AdminProductores from "./pages/admin/AdminProductores";
+import AdminPolizas from "./pages/admin/AdminPolizas";
+import AdminContacts from "./pages/admin/AdminContacts";
+import AdminSiniestros from "./pages/admin/AdminSiniestros";
+import AdminPagos from "./pages/admin/AdminPagos";
+import AdminSolicitudes from "./pages/admin/AdminSolicitudes";
+import AdminBlog from "./pages/admin/AdminBlog";
+import AdminConfig from "./pages/admin/AdminConfig";
 
 // Productor
 import ProductorLayout from "./pages/productor/ProductorLayout";
@@ -36,7 +48,12 @@ import ProductorDashboard from "./pages/productor/ProductorDashboard";
 import ProductorLeads from "./pages/productor/ProductorLeads";
 import ProductorClientes from "./pages/productor/ProductorClientes";
 import ProductorPolizas from "./pages/productor/ProductorPolizas";
+import ProductorEmisiones from "./pages/productor/ProductorEmisiones";
+import ProductorAnulaciones from "./pages/productor/ProductorAnulaciones";
 import ProductorSiniestros from "./pages/productor/ProductorSiniestros";
+import ProductorNotas from "./pages/productor/ProductorNotas";
+import ProductorTutoriales from "./pages/productor/ProductorTutoriales";
+import ProductorMateriales from "./pages/productor/ProductorMateriales";
 import ProductorPerfil from "./pages/productor/ProductorPerfil";
 
 const queryClient = new QueryClient();
@@ -58,6 +75,8 @@ const App = () => (
             <Route path="/cotizar" element={<CotizarPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
+            <Route path="/academy" element={<AcademyPage />} />
+            <Route path="/sumate" element={<SumatePage />} />
 
             {/* ============ CLIENT PORTAL (/portal) ============ */}
             <Route path="/portal" element={
@@ -69,6 +88,7 @@ const App = () => (
               <Route path="polizas" element={<PortalPolizas />} />
               <Route path="pagos" element={<PortalPagos />} />
               <Route path="siniestros" element={<PortalSiniestros />} />
+              <Route path="solicitudes" element={<PortalSolicitudes />} />
               <Route path="perfil" element={<PortalPerfil />} />
             </Route>
 
@@ -82,7 +102,12 @@ const App = () => (
               <Route path="leads" element={<ProductorLeads />} />
               <Route path="clientes" element={<ProductorClientes />} />
               <Route path="polizas" element={<ProductorPolizas />} />
+              <Route path="emisiones" element={<ProductorEmisiones />} />
+              <Route path="anulaciones" element={<ProductorAnulaciones />} />
               <Route path="siniestros" element={<ProductorSiniestros />} />
+              <Route path="notas" element={<ProductorNotas />} />
+              <Route path="tutoriales" element={<ProductorTutoriales />} />
+              <Route path="materiales" element={<ProductorMateriales />} />
               <Route path="perfil" element={<ProductorPerfil />} />
             </Route>
 
@@ -94,13 +119,15 @@ const App = () => (
             }>
               <Route index element={<AdminDashboard />} />
               <Route path="leads" element={<AdminLeads />} />
-              {/* Placeholder routes - redirect to dashboard for now */}
-              <Route path="clientes" element={<AdminDashboard />} />
-              <Route path="productores" element={<AdminDashboard />} />
-              <Route path="polizas" element={<AdminDashboard />} />
-              <Route path="contacts" element={<AdminDashboard />} />
-              <Route path="blog" element={<AdminDashboard />} />
-              <Route path="config" element={<AdminDashboard />} />
+              <Route path="clientes" element={<AdminClientes />} />
+              <Route path="productores" element={<AdminProductores />} />
+              <Route path="polizas" element={<AdminPolizas />} />
+              <Route path="siniestros" element={<AdminSiniestros />} />
+              <Route path="solicitudes" element={<AdminSolicitudes />} />
+              <Route path="pagos" element={<AdminPagos />} />
+              <Route path="contacts" element={<AdminContacts />} />
+              <Route path="blog" element={<AdminBlog />} />
+              <Route path="config" element={<AdminConfig />} />
             </Route>
 
             {/* ============ LEGACY REDIRECTS ============ */}

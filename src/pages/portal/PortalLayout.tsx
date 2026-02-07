@@ -12,6 +12,7 @@ const sidebarLinks = [
   { href: "/portal/polizas", label: "Mis Pólizas", icon: FileText },
   { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
   { href: "/portal/siniestros", label: "Siniestros", icon: AlertTriangle },
+  { href: "/portal/solicitudes", label: "Nueva Solicitud", icon: FileText },
   { href: "/portal/perfil", label: "Mi Perfil", icon: User },
 ];
 
