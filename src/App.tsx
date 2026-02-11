@@ -17,6 +17,8 @@ import NosotrosPage from "./pages/Nosotros";
 import ContactoPage from "./pages/Contacto";
 import ComunidadPage from "./pages/Comunidad";
 import AcademyPage from "./pages/Academy";
+import AcademyContenido from "./pages/academy/AcademyContenido";
+import AcademyLesson from "./pages/academy/AcademyLesson";
 import SumatePage from "./pages/Sumate";
 
 // Portal (Client)
@@ -41,6 +43,7 @@ import AdminPagos from "./pages/admin/AdminPagos";
 import AdminSolicitudes from "./pages/admin/AdminSolicitudes";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminConfig from "./pages/admin/AdminConfig";
+import AdminAcademy from "./pages/admin/AdminAcademy";
 
 // Productor
 import ProductorLayout from "./pages/productor/ProductorLayout";
@@ -71,11 +74,14 @@ const App = () => (
             <Route path="/servicios" element={<ServiciosPage />} />
             <Route path="/nosotros" element={<NosotrosPage />} />
             <Route path="/comunidad" element={<ComunidadPage />} />
+            <Route path="/comunidad/:slug" element={<ComunidadPage />} />
             <Route path="/contacto" element={<ContactoPage />} />
             <Route path="/cotizar" element={<CotizarPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
             <Route path="/academy" element={<AcademyPage />} />
+            <Route path="/academy/contenido" element={<AcademyContenido />} />
+            <Route path="/academy/:moduleSlug/:lessonSlug" element={<AcademyLesson />} />
             <Route path="/sumate" element={<SumatePage />} />
 
             {/* ============ CLIENT PORTAL (/portal) ============ */}
@@ -127,6 +133,7 @@ const App = () => (
               <Route path="pagos" element={<AdminPagos />} />
               <Route path="contacts" element={<AdminContacts />} />
               <Route path="blog" element={<AdminBlog />} />
+              <Route path="academy" element={<AdminAcademy />} />
               <Route path="config" element={<AdminConfig />} />
             </Route>
 

@@ -17,6 +17,7 @@ const adminLinks = [
   { href: "/admin/polizas", label: "Pólizas", icon: FileText },
   { href: "/admin/contacts", label: "Contactos", icon: Mail },
   { href: "/admin/blog", label: "Blog", icon: MessageSquare },
+  { href: "/admin/academy", label: "Academy", icon: FileText },
   { href: "/admin/config", label: "Configuración", icon: Settings },
 ];
 
