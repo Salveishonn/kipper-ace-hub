@@ -2,7 +2,8 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, FileText, 
   TrendingUp, Settings, LogOut,
-  Menu, X, Bell, Search, UserCheck, MessageSquare, Mail
+  Menu, X, Bell, Search, UserCheck, MessageSquare, Mail,
+  CreditCard, AlertTriangle, Clock, ListChecks, RefreshCw
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +16,12 @@ const adminLinks = [
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/productores", label: "Productores", icon: UserCheck },
   { href: "/admin/polizas", label: "Pólizas", icon: FileText },
+  { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
+  { href: "/admin/siniestros", label: "Siniestros", icon: AlertTriangle },
+  { href: "/admin/vencimientos", label: "Vencimientos", icon: Clock },
+  { href: "/admin/tareas", label: "Tareas", icon: ListChecks },
+  { href: "/admin/renovaciones", label: "Renovaciones", icon: RefreshCw },
+  { href: "/admin/solicitudes", label: "Solicitudes", icon: Mail },
   { href: "/admin/contacts", label: "Contactos", icon: Mail },
   { href: "/admin/blog", label: "Blog", icon: MessageSquare },
   { href: "/admin/academy", label: "Academy", icon: FileText },
