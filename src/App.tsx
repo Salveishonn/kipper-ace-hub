@@ -44,6 +44,9 @@ import AdminSolicitudes from "./pages/admin/AdminSolicitudes";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminConfig from "./pages/admin/AdminConfig";
 import AdminAcademy from "./pages/admin/AdminAcademy";
+import AdminTareas from "./pages/admin/AdminTareas";
+import AdminVencimientos from "./pages/admin/AdminVencimientos";
+import AdminRenovaciones from "./pages/admin/AdminRenovaciones";
 
 // Productor
 import ProductorLayout from "./pages/productor/ProductorLayout";
@@ -58,6 +61,7 @@ import ProductorNotas from "./pages/productor/ProductorNotas";
 import ProductorTutoriales from "./pages/productor/ProductorTutoriales";
 import ProductorMateriales from "./pages/productor/ProductorMateriales";
 import ProductorPerfil from "./pages/productor/ProductorPerfil";
+import ProductorTareas from "./pages/productor/ProductorTareas";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +116,7 @@ const App = () => (
               <Route path="anulaciones" element={<ProductorAnulaciones />} />
               <Route path="siniestros" element={<ProductorSiniestros />} />
               <Route path="notas" element={<ProductorNotas />} />
+              <Route path="tareas" element={<ProductorTareas />} />
               <Route path="tutoriales" element={<ProductorTutoriales />} />
               <Route path="materiales" element={<ProductorMateriales />} />
               <Route path="perfil" element={<ProductorPerfil />} />
@@ -131,6 +136,9 @@ const App = () => (
               <Route path="siniestros" element={<AdminSiniestros />} />
               <Route path="solicitudes" element={<AdminSolicitudes />} />
               <Route path="pagos" element={<AdminPagos />} />
+              <Route path="vencimientos" element={<AdminVencimientos />} />
+              <Route path="tareas" element={<AdminTareas />} />
+              <Route path="renovaciones" element={<AdminRenovaciones />} />
               <Route path="contacts" element={<AdminContacts />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="academy" element={<AdminAcademy />} />

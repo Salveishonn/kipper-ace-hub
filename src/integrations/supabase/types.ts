@@ -103,6 +103,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_role: string | null
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -551,6 +584,48 @@ export type Database = {
           province?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_producer_id: string | null
+          assigned_role: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          related_id: string | null
+          related_type: string | null
+          status: string
+          title: string
+          type: string
+        }
+        Insert: {
+          assigned_producer_id?: string | null
+          assigned_role?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          related_id?: string | null
+          related_type?: string | null
+          status?: string
+          title: string
+          type: string
+        }
+        Update: {
+          assigned_producer_id?: string | null
+          assigned_role?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          related_id?: string | null
+          related_type?: string | null
+          status?: string
+          title?: string
+          type?: string
         }
         Relationships: []
       }
