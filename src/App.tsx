@@ -44,6 +44,7 @@ import AdminSolicitudes from "./pages/admin/AdminSolicitudes";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminConfig from "./pages/admin/AdminConfig";
 import AdminAcademy from "./pages/admin/AdminAcademy";
+import AdminIntegraciones from "./pages/admin/AdminIntegraciones";
 import AdminTareas from "./pages/admin/AdminTareas";
 import AdminVencimientos from "./pages/admin/AdminVencimientos";
 import AdminRenovaciones from "./pages/admin/AdminRenovaciones";
@@ -142,6 +143,7 @@ const App = () => (
               <Route path="contacts" element={<AdminContacts />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="academy" element={<AdminAcademy />} />
+              <Route path="integraciones" element={<AdminIntegraciones />} />
               <Route path="config" element={<AdminConfig />} />
             </Route>
 
