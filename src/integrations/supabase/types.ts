@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      academy_lessons: {
+        Row: {
+          content_text: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          module_id: string
+          published: boolean
+          slug: string
+          sort_order: number
+          title: string
+          type: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          module_id: string
+          published?: boolean
+          slug: string
+          sort_order?: number
+          title: string
+          type?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          module_id?: string
+          published?: boolean
+          slug?: string
+          sort_order?: number
+          title?: string
+          type?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academy_lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "academy_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      academy_modules: {
+        Row: {
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          id: string
+          published: boolean
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -319,8 +408,11 @@ export type Database = {
           created_at: string
           documents: Json | null
           end_date: string
+          external_policy_id: string | null
+          external_source: string | null
           id: string
           insurance_company_id: string | null
+          last_synced_at: string | null
           lead_id: string | null
           notes: string | null
           payment_frequency: string | null
@@ -329,6 +421,7 @@ export type Database = {
           premium_amount: number | null
           start_date: string
           status: string
+          sync_status: string | null
           updated_at: string
           user_id: string | null
           vehicle_brand: string | null
@@ -342,8 +435,11 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date: string
+          external_policy_id?: string | null
+          external_source?: string | null
           id?: string
           insurance_company_id?: string | null
+          last_synced_at?: string | null
           lead_id?: string | null
           notes?: string | null
           payment_frequency?: string | null
@@ -352,6 +448,7 @@ export type Database = {
           premium_amount?: number | null
           start_date: string
           status?: string
+          sync_status?: string | null
           updated_at?: string
           user_id?: string | null
           vehicle_brand?: string | null
@@ -365,8 +462,11 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date?: string
+          external_policy_id?: string | null
+          external_source?: string | null
           id?: string
           insurance_company_id?: string | null
+          last_synced_at?: string | null
           lead_id?: string | null
           notes?: string | null
           payment_frequency?: string | null
@@ -375,6 +475,7 @@ export type Database = {
           premium_amount?: number | null
           start_date?: string
           status?: string
+          sync_status?: string | null
           updated_at?: string
           user_id?: string | null
           vehicle_brand?: string | null

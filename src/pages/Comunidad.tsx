@@ -1,71 +1,81 @@
+import { Link, useLocation } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Link } from "react-router-dom";
 import { Calendar, ArrowRight, Tag, Search } from "lucide-react";
+import { useBlogPosts, useBlogPost } from "@/hooks/useBlogPosts";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
+import { useParams } from "react-router-dom";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
-// Mock blog posts
-const posts = [
-  {
-    id: 1,
-    title: "¿Cuándo comienza la cobertura de una póliza?",
-    excerpt: "Conocé el día y el horario exacto de inicio y finalización de tu cobertura.",
-    category: "Tips",
-    date: "15 Ene 2025",
-    slug: "cuando-comienza-cobertura-poliza",
-    image: "🛡️",
-  },
-  {
-    id: 2,
-    title: "Cómo conducir con niebla: tips de seguridad",
-    excerpt: "Algunos consejos para manejar con seguridad en bancos de niebla.",
-    category: "KipperTips",
-    date: "12 Ene 2025",
-    slug: "conducir-con-niebla",
-    image: "🌫️",
-  },
-  {
-    id: 3,
-    title: "Mitos sobre el seguro de auto",
-    excerpt: "¿Los autos viejos no se pueden asegurar? Desmintiendo creencias populares.",
-    category: "Mitos",
-    date: "10 Ene 2025",
-    slug: "mitos-seguro-auto",
-    image: "🚗",
-  },
-  {
-    id: 4,
-    title: "Disfrutá tu casa: del seguro nos encargamos nosotros",
-    excerpt: "Cómo proteger tu hogar de los imprevistos más comunes.",
-    category: "Hogar",
-    date: "8 Ene 2025",
-    slug: "disfruta-tu-casa",
-    image: "🏠",
-  },
-  {
-    id: 5,
-    title: "Qué hacer si no pagaste el seguro este mes",
-    excerpt: "Opciones y consejos si te atrasaste con el pago de tu póliza.",
-    category: "Tips",
-    date: "5 Ene 2025",
-    slug: "no-pague-seguro",
-    image: "💳",
-  },
-  {
-    id: 6,
-    title: "Mantenimiento del auto: la calefacción",
-    excerpt: "Ocupate de arreglar la calefacción, del seguro nos encargamos nosotros.",
-    category: "Auto",
-    date: "3 Ene 2025",
-    slug: "calefaccion-auto",
-    image: "🔧",
-  },
-];
+// Blog post detail sub-component
+const BlogPostDetail = ({ slug }: { slug: string }) => {
+  const { data: post, isLoading, error } = useBlogPost(slug);
 
-const categories = ["Todos", "Tips", "KipperTips", "Mitos", "Hogar", "Auto"];
+  if (isLoading) return <MainLayout><LoadingState text="Cargando artículo..." /></MainLayout>;
+  if (error || !post) return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Artículo no encontrado</h1>
+        <Link to="/comunidad" className="text-primary hover:underline">Volver a Comunidad</Link>
+      </div>
+    </MainLayout>
+  );
 
-const ComunidadPage = () => {
   return (
     <MainLayout>
-      {/* Hero */}
+      <section className="bg-primary text-primary-foreground py-16">
+        <div className="max-w-3xl mx-auto px-4">
+          <Link to="/comunidad" className="text-sm opacity-80 hover:opacity-100 mb-4 inline-block">← Volver a Comunidad</Link>
+          <div className="flex gap-2 mb-4">
+            {(post.tags || []).map(tag => (
+              <span key={tag} className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">{tag}</span>
+            ))}
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+          {post.published_at && (
+            <p className="text-sm opacity-80">{format(new Date(post.published_at), "d 'de' MMMM 'de' yyyy", { locale: es })}</p>
+          )}
+        </div>
+      </section>
+      <section className="py-12">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-card rounded-2xl shadow-soft p-8">
+            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+              {post.content}
+            </div>
+          </div>
+        </div>
+      </section>
+    </MainLayout>
+  );
+};
+
+// Main listing
+const ComunidadPage = () => {
+  const { slug } = useParams();
+
+  // If we have a slug, show the detail view
+  if (slug) {
+    return <BlogPostDetail slug={slug} />;
+  }
+
+  return <ComunidadListing />;
+};
+
+const ComunidadListing = () => {
+  const { data: posts, isLoading, error } = useBlogPosts(true);
+
+  // Fallback mock data when no DB posts exist
+  const mockPosts = [
+    { id: "1", title: "¿Cuándo comienza la cobertura de una póliza?", excerpt: "Conocé el día y horario de inicio de tu cobertura.", tags: ["Tips"], slug: "cuando-comienza-cobertura", published_at: "2025-01-15", status: "published" },
+    { id: "2", title: "Cómo conducir con niebla", excerpt: "Consejos para manejar con seguridad.", tags: ["KipperTips"], slug: "conducir-con-niebla", published_at: "2025-01-12", status: "published" },
+    { id: "3", title: "Mitos sobre el seguro de auto", excerpt: "Desmintiendo creencias populares.", tags: ["Mitos"], slug: "mitos-seguro-auto", published_at: "2025-01-10", status: "published" },
+  ];
+
+  const displayPosts = posts && posts.length > 0 ? posts : mockPosts;
+
+  return (
+    <MainLayout>
       <section className="bg-primary text-primary-foreground py-20">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">Comunidad Kipper</h1>
@@ -77,98 +87,41 @@ const ComunidadPage = () => {
 
       <section className="section-padding">
         <div className="max-w-7xl mx-auto">
-          {/* Search & Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar artículos..."
-                className="input-kipper pl-12"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    cat === "Todos"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                  }`}
-                >
-                  {cat}
-                </button>
+          {isLoading ? (
+            <LoadingState text="Cargando artículos..." />
+          ) : error ? (
+            <ErrorState title="Error" message="No se pudieron cargar los artículos" />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayPosts.map((post: any) => (
+                <article key={post.id} className="bg-card rounded-2xl shadow-soft overflow-hidden group hover:shadow-card transition-shadow">
+                  <div className="h-48 bg-muted flex items-center justify-center">
+                    <span className="text-6xl">📰</span>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-4 mb-3">
+                      {(post.tags || []).map((tag: string) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                          <Tag size={12} /> {tag}
+                        </span>
+                      ))}
+                      {post.published_at && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar size={12} />
+                          {format(new Date(post.published_at), "d MMM yyyy", { locale: es })}
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">{post.title}</h2>
+                    <p className="text-sm text-muted-foreground mb-4">{post.excerpt}</p>
+                    <Link to={`/comunidad/${post.slug}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                      Leer más <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </article>
               ))}
             </div>
-          </div>
-
-          {/* Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
-              <article
-                key={post.id}
-                className="bg-card rounded-2xl shadow-soft overflow-hidden group hover:shadow-card transition-shadow"
-              >
-                <div className="h-48 bg-muted flex items-center justify-center text-6xl">
-                  {post.image}
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-4 mb-3">
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
-                      <Tag size={12} />
-                      {post.category}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar size={12} />
-                      {post.date}
-                    </span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {post.excerpt}
-                  </p>
-                  <Link
-                    to={`/comunidad/${post.slug}`}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    Leer más <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          {/* Load More */}
-          <div className="text-center mt-12">
-            <button className="btn-hero-outline">
-              Cargar más artículos
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter */}
-      <section className="bg-muted/50 section-padding">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            Suscribite a nuestras novedades
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Recibí tips, promociones y contenido exclusivo en tu email.
-          </p>
-          <form className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="email"
-              placeholder="tu@email.com"
-              className="input-kipper flex-1"
-            />
-            <button type="submit" className="btn-hero">
-              Suscribirme
-            </button>
-          </form>
+          )}
         </div>
       </section>
     </MainLayout>
