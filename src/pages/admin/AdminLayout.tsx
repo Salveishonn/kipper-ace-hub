@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, FileText, 
   TrendingUp, Settings, LogOut,
   Menu, X, Bell, Search, UserCheck, MessageSquare, Mail,
-  CreditCard, AlertTriangle, Clock, ListChecks, RefreshCw
+  CreditCard, AlertTriangle, Clock, ListChecks, RefreshCw, Link2
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ const adminLinks = [
   { href: "/admin/contacts", label: "Contactos", icon: Mail },
   { href: "/admin/blog", label: "Blog", icon: MessageSquare },
   { href: "/admin/academy", label: "Academy", icon: FileText },
+  { href: "/admin/integraciones", label: "Integraciones", icon: Link2 },
   { href: "/admin/config", label: "Configuración", icon: Settings },
 ];
 

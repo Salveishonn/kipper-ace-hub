@@ -187,10 +187,12 @@ export type Database = {
           created_at: string
           description: string
           documents: Json | null
+          external_claim_id: string | null
           id: string
           incident_date: string
           incident_location: string | null
           incident_time: string | null
+          last_synced_at: string | null
           policy_id: string
           resolution_notes: string | null
           resolved_at: string | null
@@ -203,10 +205,12 @@ export type Database = {
           created_at?: string
           description: string
           documents?: Json | null
+          external_claim_id?: string | null
           id?: string
           incident_date: string
           incident_location?: string | null
           incident_time?: string | null
+          last_synced_at?: string | null
           policy_id: string
           resolution_notes?: string | null
           resolved_at?: string | null
@@ -219,10 +223,12 @@ export type Database = {
           created_at?: string
           description?: string
           documents?: Json | null
+          external_claim_id?: string | null
           id?: string
           incident_date?: string
           incident_location?: string | null
           incident_time?: string | null
+          last_synced_at?: string | null
           policy_id?: string
           resolution_notes?: string | null
           resolved_at?: string | null
@@ -281,8 +287,10 @@ export type Database = {
           amount: number
           created_at: string
           due_date: string
+          external_installment_id: string | null
           id: string
           installment_number: number
+          last_synced_at: string | null
           mp_payment_id: string | null
           mp_preference_id: string | null
           notes: string | null
@@ -297,8 +305,10 @@ export type Database = {
           amount: number
           created_at?: string
           due_date: string
+          external_installment_id?: string | null
           id?: string
           installment_number: number
+          last_synced_at?: string | null
           mp_payment_id?: string | null
           mp_preference_id?: string | null
           notes?: string | null
@@ -313,8 +323,10 @@ export type Database = {
           amount?: number
           created_at?: string
           due_date?: string
+          external_installment_id?: string | null
           id?: string
           installment_number?: number
+          last_synced_at?: string | null
           mp_payment_id?: string | null
           mp_preference_id?: string | null
           notes?: string | null
@@ -356,6 +368,69 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      integration_runs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          metadata: Json | null
+          provider: string
+          run_type: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider: string
+          run_type: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          run_type?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      integration_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          provider: string
+          refreshed_at: string | null
+          token_type: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          provider: string
+          refreshed_at?: string | null
+          token_type?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          provider?: string
+          refreshed_at?: string | null
+          token_type?: string | null
         }
         Relationships: []
       }
@@ -454,6 +529,7 @@ export type Database = {
           premium_amount: number | null
           start_date: string
           status: string
+          sync_error: string | null
           sync_status: string | null
           updated_at: string
           user_id: string | null
@@ -481,6 +557,7 @@ export type Database = {
           premium_amount?: number | null
           start_date: string
           status?: string
+          sync_error?: string | null
           sync_status?: string | null
           updated_at?: string
           user_id?: string | null
@@ -508,6 +585,7 @@ export type Database = {
           premium_amount?: number | null
           start_date?: string
           status?: string
+          sync_error?: string | null
           sync_status?: string | null
           updated_at?: string
           user_id?: string | null
