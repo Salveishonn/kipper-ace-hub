@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Loader2, Play, Clock, FileText, Shield, Zap } from "lucide-react";
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Loader2, Shield, Zap, Clock, FileText, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface IntegrationStatus {
+  status: string;
   configured: boolean;
+  mode?: string;
   last_token_refresh: string | null;
   last_runs: Array<{
     id: string;
@@ -38,9 +40,6 @@ const AdminIntegraciones = () => {
   const [testingToken, setTestingToken] = useState(false);
 
   const callEdgeFunction = async (body: Record<string, unknown>) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No autenticado");
-
     const res = await supabase.functions.invoke("fedpat-sync", { body });
     if (res.error) throw new Error(res.error.message || "Error en la función");
     return res.data;
@@ -62,7 +61,7 @@ const AdminIntegraciones = () => {
     setTestingToken(true);
     try {
       const data = await callEdgeFunction({ action: "test-token" });
-      toast.success(data.message || "Token generado");
+      toast.success(data.message || "Token de prueba generado correctamente");
       checkStatus();
     } catch (err: any) {
       toast.error(err.message || "Error al probar token");
@@ -75,7 +74,13 @@ const AdminIntegraciones = () => {
     setSyncing(runType);
     try {
       const data = await callEdgeFunction({ action: "sync", run_type: runType });
-      toast.success(data.message || "Sincronización completada");
+      if (data.status === "not_configured") {
+        toast.warning(data.message);
+      } else if (data.status === "error") {
+        toast.error(data.message || data.error);
+      } else {
+        toast.success(data.message || "Sincronización completada");
+      }
       checkStatus();
     } catch (err: any) {
       toast.error(err.message || "Error en sincronización");
@@ -118,7 +123,25 @@ const AdminIntegraciones = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Warning banner for not configured */}
+            {!status.configured && (
+              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <Info size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Integración no configurada</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    Las credenciales de Federación Patronal no están configuradas. Podés usar el modo simulación (mock) para probar o contactar al equipo técnico para agregar:
+                  </p>
+                  <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside mt-2 space-y-0.5">
+                    <li>FEDPAT_BASE_URL</li>
+                    <li>FEDPAT_CLIENT_ID</li>
+                    <li>FEDPAT_CLIENT_SECRET</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
                 {status.configured ? (
                   <CheckCircle size={20} className="text-green-600" />
@@ -133,6 +156,13 @@ const AdminIntegraciones = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
+                <Zap size={20} className="text-primary" />
+                <div>
+                  <p className="font-medium text-foreground text-sm">Modo</p>
+                  <p className="text-xs text-muted-foreground capitalize">{status.mode || "mock"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
                 <Clock size={20} className="text-primary" />
                 <div>
                   <p className="font-medium text-foreground text-sm">Último token</p>
@@ -144,28 +174,13 @@ const AdminIntegraciones = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
-                <Zap size={20} className="text-primary" />
+                <RefreshCw size={20} className="text-primary" />
                 <div>
                   <p className="font-medium text-foreground text-sm">Sincronizaciones</p>
                   <p className="text-xs text-muted-foreground">{status.last_runs.length} registros</p>
                 </div>
               </div>
             </div>
-
-            {!status.configured && (
-              <div className="bg-accent/50 border border-accent rounded-xl p-4">
-                <p className="text-sm text-foreground font-medium mb-2">⚠️ Integración no configurada</p>
-                <p className="text-sm text-muted-foreground">
-                  Para conectar con Federación Patronal, se necesitan las siguientes variables del servidor:
-                </p>
-                <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
-                  <li>FEDPAT_BASE_URL</li>
-                  <li>FEDPAT_CLIENT_ID</li>
-                  <li>FEDPAT_CLIENT_SECRET</li>
-                </ul>
-                <p className="text-sm text-muted-foreground mt-2">Contactá al equipo técnico para configurarlas de forma segura.</p>
-              </div>
-            )}
 
             <button
               onClick={testToken}
@@ -185,7 +200,7 @@ const AdminIntegraciones = () => {
           <RefreshCw size={20} className="text-primary" /> Sincronización Manual
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Ejecutá sincronizaciones individuales por tipo de dato. Las credenciales deben estar configuradas.
+          Ejecutá sincronizaciones individuales. En modo <span className="font-medium text-primary">mock</span> se generan datos de prueba sin llamar a la API real.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {syncTypes.map(st => (
@@ -201,7 +216,7 @@ const AdminIntegraciones = () => {
                 <st.icon size={24} className="text-primary" />
               )}
               <span className="font-medium text-foreground text-sm">Sincronizar {st.label}</span>
-              <span className="text-xs text-muted-foreground">FedPat</span>
+              <span className="text-xs text-muted-foreground">{status?.mode === "real" ? "FedPat API" : "Mock"}</span>
             </button>
           ))}
         </div>
@@ -246,7 +261,7 @@ const AdminIntegraciones = () => {
         )}
       </div>
 
-      {/* Data Mapping Checklist */}
+      {/* Data Mapping */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <FileText size={20} className="text-primary" /> Mapeo de Datos (FedPat → Kipper)
