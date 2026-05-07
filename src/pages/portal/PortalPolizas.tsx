@@ -136,6 +136,9 @@ const PortalPolizas = () => {
                       </p>
                       <div className="flex flex-wrap items-center gap-3 mt-2">
                         {getStatusBadge(policy.status)}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${(policy as any).external_source === 'fedpat' ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground'}`}>
+                          {(policy as any).external_source === 'fedpat' ? 'Federación Patronal' : 'Manual'}
+                        </span>
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock size={12} />
                           Vigencia: {format(new Date(policy.start_date), 'dd/MM/yy')} - {format(new Date(policy.end_date), 'dd/MM/yy')}
