@@ -92,7 +92,7 @@ export function useUpdateBlogPost() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateBlogPostInput>) => {
-      const updateData: Record<string, unknown> = { ...updates };
+      const updateData: Partial<CreateBlogPostInput> & { published_at?: string } = { ...updates };
       if (updates.status === 'published') {
         updateData.published_at = new Date().toISOString();
       }
