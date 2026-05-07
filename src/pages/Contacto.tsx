@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Seo } from "@/components/Seo";
 import { Phone, Mail, MapPin, Clock, Send, Check } from "lucide-react";
+import { useCreateQuoteRequest } from "@/hooks/useQuoteRequests";
+import { trackEvent } from "@/lib/analytics";
+import { toast } from "sonner";
 
 const ContactoPage = () => {
   const [formData, setFormData] = useState({
@@ -11,16 +15,34 @@ const ContactoPage = () => {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const create = useCreateQuoteRequest();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
-    setSubmitted(true);
+    if (!formData.name || !formData.email) {
+      toast.error("Completá nombre y email");
+      return;
+    }
+    try {
+      await create.mutateAsync({
+        ramo: "otro",
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: `${formData.subject ? `[${formData.subject}] ` : ""}${formData.message}`.slice(0, 1000),
+        source: "contacto",
+      });
+      trackEvent("contact_form_submitted");
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("No pudimos enviar el mensaje. Probá de nuevo.");
+    }
   };
 
   return (
     <MainLayout>
+      <Seo title="Contacto | Kipper Seguros" description="Contactanos por teléfono, email o formulario. Te respondemos en menos de 24 horas." />
       {/* Hero */}
       <section className="bg-primary text-primary-foreground py-20">
         <div className="max-w-7xl mx-auto px-4 text-center">
