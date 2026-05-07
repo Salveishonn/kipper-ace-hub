@@ -71,3 +71,13 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Federación Patronal API integration
+
+This project is prepared to integrate **directly with the official Federación Patronal APIs** (server-side only).
+Default mode is `mock` — no real credentials required.
+
+- All integration runs through the `fedpat-sync` Supabase Edge Function (admin-only).
+- No FedPat secrets, tokens, or `VITE_FEDPAT_*` variables exist in the frontend.
+- The public quoter (`/cotizar`) does **not** show FedPat prices or comparisons.
+- See [`docs/FEDPAT_COMPLIANCE.md`](docs/FEDPAT_COMPLIANCE.md) for full T&C compliance, allowed usage, env vars and switch-to-sandbox steps.
