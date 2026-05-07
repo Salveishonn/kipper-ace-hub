@@ -208,6 +208,41 @@ const AdminPolizas = () => {
               {selected.notes && (
                 <div><p className="text-sm text-muted-foreground">Notas</p><p className="text-sm">{selected.notes}</p></div>
               )}
+              <div className="pt-2">
+                <p className="text-sm text-muted-foreground mb-1">Origen</p>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${(selected as any).external_source === 'fedpat' ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground'}`}>
+                  {(selected as any).external_source === 'fedpat' ? 'Federación Patronal' : 'Manual'}
+                </span>
+              </div>
+              <button
+                onClick={async () => {
+                  const nStr = window.prompt("¿Cuántas cuotas generar?", "12");
+                  if (!nStr) return;
+                  const n = Math.max(1, Math.min(36, Number(nStr) || 0));
+                  const total = Number(selected.premium_amount || 0);
+                  if (!total) { toast.error("Definí la prima primero"); return; }
+                  const amount = Math.round((total / n) * 100) / 100;
+                  const start = new Date(selected.start_date);
+                  const rows = Array.from({ length: n }).map((_, idx) => {
+                    const due = new Date(start);
+                    due.setMonth(due.getMonth() + idx);
+                    return {
+                      policy_id: selected.id,
+                      installment_number: idx + 1,
+                      amount,
+                      due_date: due.toISOString().slice(0, 10),
+                      status: 'pendiente',
+                    };
+                  });
+                  const { error } = await supabase.from('installments').insert(rows);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success(`${n} cuotas generadas`);
+                  queryClient.invalidateQueries({ queryKey: ['installments'] });
+                }}
+                className="btn-hero-outline w-full text-sm py-2"
+              >
+                Generar cuotas
+              </button>
             </div>
           </div>
         </div>

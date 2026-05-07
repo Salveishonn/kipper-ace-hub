@@ -41,19 +41,18 @@ const PortalSolicitudes = () => {
     setIsSubmitting(true);
 
     try {
-      // Create lead in database
       const { error } = await supabase
-        .from('leads')
+        .from('quote_requests')
         .insert({
           full_name: formData.full_name,
           email: formData.email,
           phone: formData.phone || null,
-          notes: formData.notes || null,
-          origin: 'portal_solicitud',
+          message: formData.notes || null,
+          source: 'portal_solicitud',
           status: 'nuevo',
           user_id: user?.id || null,
-          vehicle_type: selectedType === 'auto' || selectedType === 'moto' ? selectedType : null,
-          coverage_type: selectedType
+          ramo: selectedType!,
+          coverage_type: selectedType,
         });
 
       if (error) throw error;

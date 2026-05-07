@@ -76,7 +76,7 @@ export function useReviewPaymentProof() {
       if (status === "aprobado" && data?.installment_id) {
         await supabase
           .from("installments")
-          .update({ status: "pagada", paid_at: new Date().toISOString() })
+          .update({ status: "pagado", paid_at: new Date().toISOString() })
           .eq("id", data.installment_id);
       }
       return data;
