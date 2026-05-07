@@ -578,6 +578,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_proofs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          file_path: string
+          id: string
+          installment_id: string
+          notes: string | null
+          paid_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          file_path: string
+          id?: string
+          installment_id: string
+          notes?: string | null
+          paid_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          file_path?: string
+          id?: string
+          installment_id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       policies: {
         Row: {
           assigned_productor_id: string | null
@@ -739,6 +784,54 @@ export type Database = {
           },
         ]
       }
+      producer_applications: {
+        Row: {
+          city: string | null
+          created_at: string
+          current_companies: string | null
+          email: string
+          full_name: string
+          id: string
+          matricula_ssn: string | null
+          message: string | null
+          phone: string | null
+          province: string | null
+          status: string
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          current_companies?: string | null
+          email: string
+          full_name: string
+          id?: string
+          matricula_ssn?: string | null
+          message?: string | null
+          phone?: string | null
+          province?: string | null
+          status?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          current_companies?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          matricula_ssn?: string | null
+          message?: string | null
+          phone?: string | null
+          province?: string | null
+          status?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -790,6 +883,81 @@ export type Database = {
           province?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      quote_requests: {
+        Row: {
+          assigned_productor_id: string | null
+          city: string | null
+          coverage_type: string | null
+          created_at: string
+          dni: string | null
+          documents: Json | null
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          phone: string | null
+          province: string | null
+          ramo: string
+          source: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vehicle_brand: string | null
+          vehicle_model: string | null
+          vehicle_use: string | null
+          vehicle_version: string | null
+          vehicle_year: number | null
+        }
+        Insert: {
+          assigned_productor_id?: string | null
+          city?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          dni?: string | null
+          documents?: Json | null
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          province?: string | null
+          ramo: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vehicle_brand?: string | null
+          vehicle_model?: string | null
+          vehicle_use?: string | null
+          vehicle_version?: string | null
+          vehicle_year?: number | null
+        }
+        Update: {
+          assigned_productor_id?: string | null
+          city?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          dni?: string | null
+          documents?: Json | null
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          province?: string | null
+          ramo?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vehicle_brand?: string | null
+          vehicle_model?: string | null
+          vehicle_use?: string | null
+          vehicle_version?: string | null
+          vehicle_year?: number | null
         }
         Relationships: []
       }
