@@ -1,45 +1,66 @@
-import { useState } from "react";
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Loader2, Shield, Zap, Clock, FileText, Info } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Loader2, Shield, Zap, Clock, FileText, Info, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-interface IntegrationStatus {
+interface IntegrationRun {
+  id: string;
+  run_type: string;
   status: string;
-  configured: boolean;
-  mode?: string;
-  last_token_refresh: string | null;
-  last_runs: Array<{
-    id: string;
-    run_type: string;
-    status: string;
-    started_at: string;
-    finished_at: string | null;
-    error_message: string | null;
-  }>;
+  started_at: string;
+  finished_at: string | null;
+  error_message: string | null;
+  metadata?: Record<string, unknown>;
 }
 
-const syncTypes = [
-  { key: "policies", label: "Pólizas", icon: FileText },
-  { key: "installments", label: "Cuotas", icon: Clock },
-  { key: "documents", label: "Documentos", icon: FileText },
-  { key: "claims", label: "Siniestros", icon: AlertTriangle },
+interface IntegrationStatus {
+  status: string;
+  provider: string;
+  mode: "mock" | "sandbox" | "production";
+  configured: boolean;
+  last_token_refresh: string | null;
+  token_expires_at: string | null;
+  last_runs: IntegrationRun[];
+  pending_matches: number;
+}
+
+interface PendingMatch {
+  id: string;
+  external_policy_id: string | null;
+  external_customer_id: string | null;
+  match_method: string;
+  confidence: number;
+  status: string;
+  created_at: string;
+  notes: string | null;
+}
+
+const syncActions = [
+  { key: "sync-policies", label: "Pólizas", icon: FileText },
+  { key: "sync-installments", label: "Cuotas", icon: Clock },
+  { key: "sync-documents", label: "Documentos", icon: FileText },
+  { key: "sync-claims", label: "Siniestros", icon: AlertTriangle },
+  { key: "sync-full", label: "Completa", icon: RefreshCw },
 ];
 
-const fieldMappings = [
-  { category: "Pólizas", fields: ["policy_number → numero_poliza", "policy_type → ramo", "start_date → fecha_inicio", "end_date → fecha_fin", "premium_amount → prima", "coverage_type → tipo_cobertura", "external_policy_id → id_poliza_fedpat"] },
-  { category: "Documentos", fields: ["Póliza digital", "Certificado de cobertura", "Certificado Mercosur", "Libre deuda", "Cupones de pago"] },
-  { category: "Siniestros", fields: ["claim_number → numero_siniestro", "status → estado", "incident_date → fecha_siniestro", "description → descripcion"] },
+const compliance = [
+  "Credenciales no expuestas en frontend",
+  "Datos FedPat solo en portal privado",
+  "Sin comparativas públicas de precios",
+  "Sincronización server-side (Edge Function)",
+  "Auditoría activa de cada acción",
+  "Modo sandbox antes de producción",
 ];
 
 const AdminIntegraciones = () => {
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [pending, setPending] = useState<PendingMatch[]>([]);
   const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState<string | null>(null);
-  const [testingToken, setTestingToken] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const callEdgeFunction = async (body: Record<string, unknown>) => {
+  const call = async (body: Record<string, unknown>) => {
     const res = await supabase.functions.invoke("fedpat-sync", { body });
     if (res.error) throw new Error(res.error.message || "Error en la función");
     return res.data;
@@ -48,44 +69,55 @@ const AdminIntegraciones = () => {
   const checkStatus = async () => {
     setLoading(true);
     try {
-      const data = await callEdgeFunction({ action: "check-status" });
+      const data = await call({ action: "check-status" });
       setStatus(data);
-    } catch (err: any) {
-      toast.error(err.message || "Error al consultar estado");
+    } catch (e: any) {
+      toast.error(e.message || "Error al consultar estado");
     } finally {
       setLoading(false);
     }
   };
 
-  const testToken = async () => {
-    setTestingToken(true);
+  const loadPending = async () => {
+    const { data } = await supabase
+      .from("external_identity_matches")
+      .select("id, external_policy_id, external_customer_id, match_method, confidence, status, created_at, notes")
+      .eq("status", "needs_review")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setPending((data as PendingMatch[]) || []);
+  };
+
+  useEffect(() => {
+    checkStatus();
+    loadPending();
+  }, []);
+
+  const runAction = async (action: string, label: string) => {
+    setBusy(action);
     try {
-      const data = await callEdgeFunction({ action: "test-token" });
-      toast.success(data.message || "Token de prueba generado correctamente");
-      checkStatus();
-    } catch (err: any) {
-      toast.error(err.message || "Error al probar token");
+      const data = await call({ action });
+      if (data.status === "not_configured") toast.warning(data.message);
+      else if (data.status === "error") toast.error(data.message || data.error);
+      else toast.success(data.message || `${label} OK`);
+      await checkStatus();
+      await loadPending();
+    } catch (e: any) {
+      toast.error(e.message || "Error en acción");
     } finally {
-      setTestingToken(false);
+      setBusy(null);
     }
   };
 
-  const runSync = async (runType: string) => {
-    setSyncing(runType);
-    try {
-      const data = await callEdgeFunction({ action: "sync", run_type: runType });
-      if (data.status === "not_configured") {
-        toast.warning(data.message);
-      } else if (data.status === "error") {
-        toast.error(data.message || data.error);
-      } else {
-        toast.success(data.message || "Sincronización completada");
-      }
-      checkStatus();
-    } catch (err: any) {
-      toast.error(err.message || "Error en sincronización");
-    } finally {
-      setSyncing(null);
+  const rejectMatch = async (id: string) => {
+    const { error } = await supabase
+      .from("external_identity_matches")
+      .update({ status: "rejected" })
+      .eq("id", id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Match rechazado");
+      loadPending();
     }
   };
 
@@ -103,7 +135,7 @@ const AdminIntegraciones = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Integraciones</h1>
-          <p className="text-muted-foreground">Centro de integración con Federación Patronal</p>
+          <p className="text-muted-foreground">Centro de integración con Federación Patronal (server-side)</p>
         </div>
         <button onClick={checkStatus} disabled={loading} className="btn-hero text-sm px-4 py-2 inline-flex items-center gap-2">
           {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
@@ -111,112 +143,56 @@ const AdminIntegraciones = () => {
         </button>
       </div>
 
-      {/* Status Section */}
+      {/* Status */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Shield size={20} className="text-primary" /> Estado de la Integración
+          <Shield size={20} className="text-primary" /> Estado
         </h2>
 
-        {!status ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">Pulsá "Consultar Estado" para ver el estado de la integración.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Warning banner for not configured */}
-            {!status.configured && (
-              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-                <Info size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Integración no configurada</p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Las credenciales de Federación Patronal no están configuradas. Podés usar el modo simulación (mock) para probar o contactar al equipo técnico para agregar:
-                  </p>
-                  <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside mt-2 space-y-0.5">
-                    <li>FEDPAT_BASE_URL</li>
-                    <li>FEDPAT_CLIENT_ID</li>
-                    <li>FEDPAT_CLIENT_SECRET</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
-                {status.configured ? (
-                  <CheckCircle size={20} className="text-green-600" />
-                ) : (
-                  <XCircle size={20} className="text-amber-500" />
-                )}
-                <div>
-                  <p className="font-medium text-foreground text-sm">Credenciales</p>
-                  <p className="text-xs text-muted-foreground">
-                    {status.configured ? "Configuradas" : "No configuradas"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
-                <Zap size={20} className="text-primary" />
-                <div>
-                  <p className="font-medium text-foreground text-sm">Modo</p>
-                  <p className="text-xs text-muted-foreground capitalize">{status.mode || "mock"}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
-                <Clock size={20} className="text-primary" />
-                <div>
-                  <p className="font-medium text-foreground text-sm">Último token</p>
-                  <p className="text-xs text-muted-foreground">
-                    {status.last_token_refresh
-                      ? format(new Date(status.last_token_refresh), "dd/MM/yy HH:mm", { locale: es })
-                      : "Nunca"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
-                <RefreshCw size={20} className="text-primary" />
-                <div>
-                  <p className="font-medium text-foreground text-sm">Sincronizaciones</p>
-                  <p className="text-xs text-muted-foreground">{status.last_runs.length} registros</p>
-                </div>
-              </div>
+        {status && !status.configured && status.mode !== "mock" && (
+          <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-4">
+            <Info size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Credenciales de Federación Patronal no configuradas</p>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                Configurá los secretos server-side: <code>FEDPAT_BASE_URL</code>, <code>FEDPAT_TOKEN_URL</code>, <code>FEDPAT_CLIENT_ID</code>, <code>FEDPAT_CLIENT_SECRET</code>. O usá <code>FEDPAT_MODE=mock</code> para simular.
+              </p>
             </div>
-
-            <button
-              onClick={testToken}
-              disabled={testingToken}
-              className="btn-hero-outline text-sm px-4 py-2 inline-flex items-center gap-2"
-            >
-              {testingToken ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
-              Probar Token (Mock)
-            </button>
           </div>
         )}
+
+        {status && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Stat icon={status.configured ? <CheckCircle size={20} className="text-green-600" /> : <XCircle size={20} className="text-amber-500" />} label="Credenciales" value={status.configured ? "Configuradas" : "No configuradas"} />
+            <Stat icon={<Zap size={20} className="text-primary" />} label="Modo" value={status.mode} />
+            <Stat icon={<Clock size={20} className="text-primary" />} label="Último token" value={status.last_token_refresh ? format(new Date(status.last_token_refresh), "dd/MM/yy HH:mm", { locale: es }) : "Nunca"} />
+            <Stat icon={<RefreshCw size={20} className="text-primary" />} label="Pendientes vinculación" value={String(status.pending_matches)} />
+          </div>
+        )}
+
+        <div className="mt-4">
+          <button onClick={() => runAction("test-token", "Token")} disabled={busy === "test-token"} className="btn-hero-outline text-sm px-4 py-2 inline-flex items-center gap-2">
+            {busy === "test-token" ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+            Probar conexión FedPat
+          </button>
+        </div>
       </div>
 
-      {/* Sync Controls */}
+      {/* Sync controls */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <RefreshCw size={20} className="text-primary" /> Sincronización Manual
         </h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          Ejecutá sincronizaciones individuales. En modo <span className="font-medium text-primary">mock</span> se generan datos de prueba sin llamar a la API real.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {syncTypes.map(st => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {syncActions.map(a => (
             <button
-              key={st.key}
-              onClick={() => runSync(st.key)}
-              disabled={syncing !== null}
-              className="flex flex-col items-center gap-3 p-6 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-primary/20"
+              key={a.key}
+              onClick={() => runAction(a.key, a.label)}
+              disabled={busy !== null}
+              className="flex flex-col items-center gap-3 p-5 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-primary/20"
             >
-              {syncing === st.key ? (
-                <Loader2 size={24} className="text-primary animate-spin" />
-              ) : (
-                <st.icon size={24} className="text-primary" />
-              )}
-              <span className="font-medium text-foreground text-sm">Sincronizar {st.label}</span>
-              <span className="text-xs text-muted-foreground">{status?.mode === "real" ? "FedPat API" : "Mock"}</span>
+              {busy === a.key ? <Loader2 size={22} className="text-primary animate-spin" /> : <a.icon size={22} className="text-primary" />}
+              <span className="font-medium text-foreground text-sm text-center">Sincronizar {a.label}</span>
             </button>
           ))}
         </div>
@@ -225,34 +201,30 @@ const AdminIntegraciones = () => {
       {/* Logs */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <FileText size={20} className="text-primary" /> Historial de Sincronizaciones
+          <FileText size={20} className="text-primary" /> Historial
         </h2>
         {!status?.last_runs?.length ? (
-          <p className="text-sm text-muted-foreground py-4">No hay sincronizaciones registradas. Pulsá "Consultar Estado" para cargar.</p>
+          <p className="text-sm text-muted-foreground py-4">Sin ejecuciones aún.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Tipo</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Estado</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Inicio</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Fin</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Error</th>
+                  <th className="text-left p-3 text-sm">Tipo</th>
+                  <th className="text-left p-3 text-sm">Estado</th>
+                  <th className="text-left p-3 text-sm">Inicio</th>
+                  <th className="text-left p-3 text-sm">Fin</th>
+                  <th className="text-left p-3 text-sm">Error</th>
                 </tr>
               </thead>
               <tbody>
-                {status.last_runs.map(run => (
-                  <tr key={run.id} className="border-t border-border">
-                    <td className="p-3 text-sm font-medium capitalize">{run.run_type}</td>
-                    <td className={`p-3 text-sm font-medium ${statusColor(run.status)}`}>{run.status}</td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {format(new Date(run.started_at), "dd/MM HH:mm", { locale: es })}
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {run.finished_at ? format(new Date(run.finished_at), "dd/MM HH:mm", { locale: es }) : "—"}
-                    </td>
-                    <td className="p-3 text-sm text-destructive">{run.error_message || "—"}</td>
+                {status.last_runs.map(r => (
+                  <tr key={r.id} className="border-t border-border">
+                    <td className="p-3 text-sm font-medium capitalize">{r.run_type}</td>
+                    <td className={`p-3 text-sm font-medium ${statusColor(r.status)}`}>{r.status}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{format(new Date(r.started_at), "dd/MM HH:mm", { locale: es })}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{r.finished_at ? format(new Date(r.finished_at), "dd/MM HH:mm", { locale: es }) : "—"}</td>
+                    <td className="p-3 text-sm text-destructive max-w-xs truncate">{r.error_message || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -261,29 +233,72 @@ const AdminIntegraciones = () => {
         )}
       </div>
 
-      {/* Data Mapping */}
+      {/* Pending matches */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <FileText size={20} className="text-primary" /> Mapeo de Datos (FedPat → Kipper)
+          <Link2 size={20} className="text-primary" /> Pendientes de vinculación
         </h2>
-        <div className="space-y-6">
-          {fieldMappings.map(fm => (
-            <div key={fm.category}>
-              <h3 className="font-medium text-foreground mb-2">{fm.category}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {fm.fields.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-sm">
-                    <CheckCircle size={14} className="text-green-600 flex-shrink-0" />
-                    <span className="text-foreground font-mono text-xs">{f}</span>
-                  </div>
+        {!pending.length ? (
+          <p className="text-sm text-muted-foreground py-4">No hay registros externos pendientes de vincular.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 text-sm">Póliza ext.</th>
+                  <th className="text-left p-3 text-sm">Cliente ext.</th>
+                  <th className="text-left p-3 text-sm">Método</th>
+                  <th className="text-left p-3 text-sm">Confianza</th>
+                  <th className="text-left p-3 text-sm">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map(m => (
+                  <tr key={m.id} className="border-t border-border">
+                    <td className="p-3 text-sm font-mono">{m.external_policy_id || "—"}</td>
+                    <td className="p-3 text-sm font-mono">{m.external_customer_id || "—"}</td>
+                    <td className="p-3 text-sm">{m.match_method}</td>
+                    <td className="p-3 text-sm">{Number(m.confidence).toFixed(2)}</td>
+                    <td className="p-3 text-sm">
+                      <button onClick={() => rejectMatch(m.id)} className="text-xs text-destructive hover:underline">Rechazar</button>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
+            <p className="text-xs text-muted-foreground mt-3">
+              La vinculación manual a un cliente existente o creación de cliente nuevo se habilitará en una próxima iteración.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Compliance */}
+      <div className="bg-card rounded-2xl shadow-soft p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Shield size={20} className="text-primary" /> Cumplimiento T&amp;C Federación Patronal
+        </h2>
+        <ul className="space-y-2">
+          {compliance.map((c, i) => (
+            <li key={i} className="flex items-center gap-2 text-sm">
+              <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+              <span className="text-foreground">{c}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );
 };
+
+const Stat = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
+    {icon}
+    <div>
+      <p className="font-medium text-foreground text-sm">{label}</p>
+      <p className="text-xs text-muted-foreground capitalize">{value}</p>
+    </div>
+  </div>
+);
 
 export default AdminIntegraciones;
