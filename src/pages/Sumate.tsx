@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Users, Shield, TrendingUp, Briefcase, Check, Send } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useCreateProducerApplication } from "@/hooks/useProducerApplications";
 import {
   Select,
   SelectContent,
@@ -31,7 +32,6 @@ const provinces = [
 ];
 
 const SumatePage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -44,60 +44,43 @@ const SumatePage = () => {
     insurers: '',
     message: ''
   });
+  const createApplication = useCreateProducerApplication();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.full_name || !formData.email) {
       toast.error("Completá los campos obligatorios");
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      // Create lead with origin 'productor_recruit'
-      const { error: leadError } = await supabase
-        .from('leads')
-        .insert({
-          full_name: formData.full_name,
-          email: formData.email,
-          phone: formData.phone || null,
-          locality: formData.city || null,
-          postal_code: formData.province || null,
-          notes: `Matrícula: ${formData.ssn_license || 'No especificada'}\nExperiencia: ${formData.experience_years || 'No especificada'} años\nCompañías: ${formData.insurers || 'No especificadas'}\nMensaje: ${formData.message || 'Sin mensaje'}`,
-          origin: 'productor_recruit',
-          status: 'nuevo'
-        });
-
-      if (leadError) throw leadError;
-
-      // Also add to contacts
-      await supabase
-        .from('contacts')
-        .upsert({
-          email: formData.email,
-          full_name: formData.full_name,
-          phone: formData.phone || null,
-          origin: 'sumate',
-          tags: ['producer_candidate'],
-          opt_in: true
-        }, {
-          onConflict: 'email'
-        });
+      const yearsMap: Record<string, number> = {
+        "0-1": 0, "1-3": 2, "3-5": 4, "5-10": 7, "10+": 10,
+      };
+      await createApplication.mutateAsync({
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone || null,
+        matricula_ssn: formData.ssn_license || null,
+        city: formData.city || null,
+        province: formData.province || null,
+        years_experience: formData.experience_years ? yearsMap[formData.experience_years] ?? null : null,
+        current_companies: formData.insurers || null,
+        message: formData.message || null,
+      });
 
       setIsSubmitted(true);
-      toast.success("¡Solicitud enviada correctamente!");
+      toast.success("¡Solicitud enviada! Nos pondremos en contacto.");
     } catch (error) {
       console.error('Error submitting application:', error);
       toast.error("Error al enviar la solicitud. Intentá nuevamente.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <MainLayout>
+      <Seo title="Sumate a Kipper Seguros | Productores" description="Sumate a una organización para productores que quieren crecer con respaldo, herramientas y comunidad." />
       {/* Hero */}
       <section className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 text-white py-20">
         <div className="container mx-auto px-4">
@@ -280,9 +263,9 @@ const SumatePage = () => {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full" size="lg" disabled={createApplication.isPending}>
                     <Send size={18} className="mr-2" />
-                    {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+                    {createApplication.isPending ? 'Enviando...' : 'Enviar Solicitud'}
                   </Button>
                 </form>
               </div>
