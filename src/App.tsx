@@ -21,6 +21,14 @@ import AcademyContenido from "./pages/academy/AcademyContenido";
 import AcademyLesson from "./pages/academy/AcademyLesson";
 import SumatePage from "./pages/Sumate";
 
+// Landings por ramo
+import SeguroAuto from "./pages/landing/SeguroAuto";
+import SeguroMoto from "./pages/landing/SeguroMoto";
+import SeguroHogar from "./pages/landing/SeguroHogar";
+import SeguroComercio from "./pages/landing/SeguroComercio";
+import SeguroAccidentesPersonales from "./pages/landing/SeguroAccidentesPersonales";
+import SeguroVida from "./pages/landing/SeguroVida";
+
 // Portal (Client)
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalDashboard from "./pages/portal/PortalDashboard";
@@ -88,6 +96,14 @@ const App = () => (
             <Route path="/academy/contenido" element={<AcademyContenido />} />
             <Route path="/academy/:moduleSlug/:lessonSlug" element={<AcademyLesson />} />
             <Route path="/sumate" element={<SumatePage />} />
+
+            {/* Landings por ramo */}
+            <Route path="/seguro-auto" element={<SeguroAuto />} />
+            <Route path="/seguro-moto" element={<SeguroMoto />} />
+            <Route path="/seguro-hogar" element={<SeguroHogar />} />
+            <Route path="/seguro-comercio" element={<SeguroComercio />} />
+            <Route path="/seguro-accidentes-personales" element={<SeguroAccidentesPersonales />} />
+            <Route path="/seguro-vida" element={<SeguroVida />} />
 
             {/* ============ CLIENT PORTAL (/portal) ============ */}
             <Route path="/portal" element={

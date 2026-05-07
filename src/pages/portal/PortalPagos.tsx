@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { CreditCard, CheckCircle, Clock, AlertCircle, Download } from "lucide-react";
+import { CreditCard, CheckCircle, Clock, AlertCircle, Download, Upload } from "lucide-react";
 import { useMyInstallments, usePendingInstallments } from "@/hooks/useInstallments";
 import { format, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useUploadPaymentProof } from "@/hooks/usePaymentProofs";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,7 +24,12 @@ const PortalPagos = () => {
   const { data: pendingInstallments = [] } = usePendingInstallments();
   const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofNotes, setProofNotes] = useState("");
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
+  const { user } = useAuth();
+  const uploadProof = useUploadPaymentProof();
 
   const today = new Date();
 
@@ -251,16 +262,15 @@ const PortalPagos = () => {
                     <span className="text-2xl block mb-1">💳</span>
                     <span className="text-xs text-muted-foreground">MercadoPago</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      toast.info("Próximamente", {
-                        description: "Estamos trabajando en más opciones de pago"
-                      });
+                      setShowPaymentModal(false);
+                      setShowProofModal(true);
                     }}
                     className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors text-center"
                   >
-                    <span className="text-2xl block mb-1">🏦</span>
-                    <span className="text-xs text-muted-foreground">Transferencia</span>
+                    <span className="text-2xl block mb-1">🧾</span>
+                    <span className="text-xs text-muted-foreground">Avisar pago</span>
                   </button>
                 </div>
               </div>
@@ -275,6 +285,67 @@ const PortalPagos = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Avisar pago modal */}
+      <Dialog open={showProofModal} onOpenChange={setShowProofModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Avisar pago</DialogTitle>
+            <DialogDescription>
+              Subí el comprobante de pago. Un asesor lo revisa y marca la cuota como pagada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="proof-file">Comprobante (imagen o PDF)</Label>
+              <Input
+                id="proof-file"
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="proof-notes">Notas (opcional)</Label>
+              <Textarea
+                id="proof-notes"
+                value={proofNotes}
+                onChange={(e) => setProofNotes(e.target.value)}
+                rows={3}
+                placeholder="Ej: Transferencia desde Banco Galicia..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowProofModal(false)}>Cancelar</Button>
+            <Button
+              disabled={!proofFile || !user || uploadProof.isPending}
+              onClick={async () => {
+                if (!proofFile || !user || !selectedInstallment) return;
+                try {
+                  await uploadProof.mutateAsync({
+                    installmentId: selectedInstallment.id,
+                    userId: user.id,
+                    file: proofFile,
+                    amount: selectedInstallment.amount,
+                    notes: proofNotes || undefined,
+                  });
+                  toast.success("Comprobante enviado. Lo vamos a revisar.");
+                  setShowProofModal(false);
+                  setProofFile(null);
+                  setProofNotes("");
+                } catch (e) {
+                  console.error(e);
+                  toast.error("No pudimos subir el comprobante.");
+                }
+              }}
+            >
+              <Upload size={14} className="mr-2" />
+              {uploadProof.isPending ? "Subiendo..." : "Enviar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

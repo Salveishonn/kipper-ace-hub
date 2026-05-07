@@ -2,42 +2,12 @@ import { Link } from "react-router-dom";
 import { Car, Home, Heart, UserCheck, Building2, Truck, ArrowRight } from "lucide-react";
 
 const services = [
-  {
-    icon: Car,
-    title: "Auto & Moto",
-    description: "Protección completa para tu vehículo. Terceros, robo, incendio o todo riesgo.",
-    href: "/servicios#auto",
-  },
-  {
-    icon: Home,
-    title: "Hogar",
-    description: "Tu casa y tus cosas, protegidas. Incendio, robo, responsabilidad civil.",
-    href: "/servicios#hogar",
-  },
-  {
-    icon: Heart,
-    title: "Vida",
-    description: "Tranquilidad para vos y tu familia. Coberturas flexibles según tus necesidades.",
-    href: "/servicios#vida",
-  },
-  {
-    icon: UserCheck,
-    title: "Accidentes Personales",
-    description: "Cobertura ante imprevistos. Ideal para deportistas y trabajadores.",
-    href: "/servicios#accidentes",
-  },
-  {
-    icon: Building2,
-    title: "Comercio / PyME",
-    description: "Protegé tu negocio. Integral de comercio, responsabilidad civil, caución.",
-    href: "/servicios#comercio",
-  },
-  {
-    icon: Truck,
-    title: "Flotas",
-    description: "Soluciones para empresas con múltiples vehículos. Gestión centralizada.",
-    href: "/servicios#flotas",
-  },
+  { icon: Car, title: "Auto", description: "Terceros, terceros completo o todo riesgo. Asesoramiento real.", href: "/seguro-auto" },
+  { icon: Truck, title: "Moto", description: "Cobertura adaptada al uso particular o de trabajo.", href: "/seguro-moto" },
+  { icon: Home, title: "Hogar", description: "Incendio, robo, daños por agua y responsabilidad civil.", href: "/seguro-hogar" },
+  { icon: Building2, title: "Comercio / PyME", description: "Integral para tu local, mercadería y equipos.", href: "/seguro-comercio" },
+  { icon: UserCheck, title: "Accidentes Personales", description: "Indemnización y asistencia médica ante accidentes.", href: "/seguro-accidentes-personales" },
+  { icon: Heart, title: "Vida", description: "Resguardá a tu familia con un plan a medida.", href: "/seguro-vida" },
 ];
 
 export function ServicesSection() {

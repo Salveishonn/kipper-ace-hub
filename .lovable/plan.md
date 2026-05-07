@@ -1,66 +1,76 @@
-## Federación Patronal Direct API Readiness Sprint
+# Sprint: Public Site + Leads + Academy + Pre-FedPat UX
 
-Prepare Kipper for direct integration with the official Federación Patronal APIs. No AbsaNET wording. Server-side only credentials. Mock mode for testing today; sandbox/production placeholders for later.
+This sprint is large. To ship it without breaking the existing app or FedPat work, I'll execute it in **phased batches**, each independently shippable. I'll confirm phase 1 before going deep into phases 2–5.
 
-### 1. Database migration (single migration)
+## Guardrails (apply to all phases)
+- Do **not** modify FedPat edge functions, mappers, or sync logic.
+- No AbsaNET references; brand color `#7D0909`; copy in Spanish (Argentina).
+- Every CTA either works or opens a "Próximamente" modal with a real fallback (WhatsApp / contact / cotizar).
+- All forms use zod validation + sonner toast feedback.
+- GA4 events: thin `trackEvent(name, params)` helper that no-ops if `window.gtag` undefined.
+- SEO: per-page `<title>`, meta description, OG tags via a small `<Seo />` component (no extra deps, just `useEffect` + `document.head`).
 
-Add/ensure sync metadata columns and tables:
+## DB changes (single migration, phase 1)
+New tables:
+- `quote_requests` — unified lead/quote intake from all landings, /cotizar, portal "solicitar póliza".
+  Fields: id, ramo, full_name, email, phone, dni?, city?, province?, vehicle_{brand,model,year,version,use}?, coverage_type?, message?, documents jsonb, status (`nuevo|asignado|cotizando|cotizado|cerrado|descartado`), assigned_productor_id?, user_id?, source, created_at, updated_at.
+  RLS: anon INSERT (email + full_name not null); admin ALL; productor SELECT/UPDATE where assigned; cliente SELECT own.
+- `producer_applications` — /sumate submissions.
+  Fields: name, email, phone, matricula_ssn?, city?, province?, years_experience?, current_companies?, message, status, created_at.
+  RLS: anon INSERT; admin ALL.
+- `payment_proofs` — manual "Avisar pago".
+  Fields: installment_id, user_id, amount?, paid_at?, file_path, notes?, status (`pendiente|aprobado|rechazado`), reviewed_by?, reviewed_at?, created_at.
+  RLS: cliente INSERT/SELECT own (via installments→policies.user_id); productor SELECT for assigned; admin ALL.
+- Storage buckets: `quote-uploads` (private), `payment-proofs` (private), `academy-files` (private, signed URLs for producers/admin).
 
-- `policies`: add `external_customer_id`, ensure `sync_status` constraint (`manual|pending|synced|error`), keep existing `external_source`, `external_policy_id`, `last_synced_at`, `sync_error`.
-- `installments`: add `external_source`, `sync_status`, `sync_error` (keep existing `external_installment_id`, `last_synced_at`).
-- `claims`: add `external_source`, `sync_status`, `sync_error` (keep existing `external_claim_id`, `last_synced_at`).
-- New `policy_documents` table with all fields specified, RLS: admin manage; productores read assigned; clients read own.
-- `integration_runs`: add `created_by uuid` column if missing.
-- `integration_tokens`: ensure `updated_at` column.
-- New `external_identity_matches` table, admin-only RLS (clients table doesn't exist; reference `profiles` only — drop the `client_id` reference and store only `profile_id`).
+## Phase 1 — Foundations (this turn after approval)
+1. Migration: tables + RLS + buckets + bucket policies.
+2. Helpers: `src/lib/analytics.ts` (`trackEvent`), `src/components/Seo.tsx`, `src/components/ComingSoonModal.tsx`, `src/components/forms/QuoteLeadForm.tsx` (reusable ramo-bound form).
+3. Hooks: `useQuoteRequests`, `useProducerApplications`, `usePaymentProofs`.
+4. Wire `App.tsx` routes for the 6 ramo landings + ensure no dead nav links.
 
-Constraints implemented as triggers (not CHECK with mutable expressions) per project rules — but these are static enums so CHECK is fine.
+## Phase 2 — Public site & landings
+- Rewrite `Index.tsx` hero/sections per spec (asegurados, productores, Academy blocks, 3 CTAs).
+- Improve `Servicios`, `Nosotros`, `Comunidad`, `Contacto`.
+- New pages: `SeguroAuto`, `SeguroMoto`, `SeguroHogar`, `SeguroComercio`, `SeguroAccidentesPersonales`, `SeguroVida` — shared `<RamoLandingTemplate />` (H1, coverage, benefits, FAQ accordion, lead form, WhatsApp CTA, SEO).
+- `/cotizar`: convert to multi-step wizard (ramo → vehicle/-→ coverage → personal → uploads → confirm), saves to `quote_requests`, fires `quote_started` / `quote_request_submitted`.
+- `/sumate`: full form → `producer_applications` + `contacts` tag `producer_candidate`.
 
-### 2. Edge Function refactor — `supabase/functions/fedpat-sync/`
+## Phase 3 — Academy
+- Migration already has `academy_modules`/`academy_lessons` (verified). Add `chat` and `pdf` to `type` (currently text). Add storage policies for `academy-files`.
+- `/academy/contenido`: list modules; `/academy/:moduleSlug/:lessonSlug`: render by type (video iframe, chat transcript, PDF link). Gate: producer/admin → full; others → paywall card "Próximamente suscripción" with CTA to /sumate.
+- `/admin/academy`: CRUD modules + lessons + upload to bucket + publish toggle.
+- Link `/productor/tutoriales` to Academy.
 
-Split into modules:
+## Phase 4 — Client portal (manual data)
+- `/portal` dashboard: next payment, active policies, pending docs, open claims, "Solicitar nueva póliza" CTA.
+- `/portal/polizas/:id` detail: documents list, installments, source badge ("Manual" vs "Federación Patronal").
+- `/portal/pagos`: per-installment "Avisar pago" → upload modal → `payment_proofs` row, toast.
+- `/portal/siniestros`: existing create flow audited; ensure file upload works.
+- `/portal/solicitudes`: new policy request → `quote_requests`.
 
-- `index.ts` — request router, auth/admin guard, CORS, rate limit, dispatches to action handlers
-- `auth.ts` — `getUserAndAdmin()`, `getAdminClient()`
-- `client.ts` — `fetchOAuthToken()`, `callFedPatPoliciesEndpoint()`, `callFedPatInstallmentsEndpoint()`, `callFedPatDocumentsEndpoint()`, `callFedPatClaimsEndpoint()` — all TODO placeholders
-- `types.ts` — FedPat payload shapes + Kipper row shapes
-- `mappers.ts` — `mapFedPatPolicy`, `mapFedPatInstallment`, `mapFedPatDocument`, `mapFedPatClaim`, `matchFedPatPolicyToKipperClient`
-- `syncPolicies.ts`, `syncInstallments.ts`, `syncDocuments.ts`, `syncClaims.ts` — each handles mock + real branches, upserts via service role, writes audit + run rows
-- `utils.ts` — ok()/error() responses, configured-check, audit log helper, run helper
+## Phase 5 — Admin operational
+- `/admin` dashboard cards: pending quote requests, open claims, pending proofs, expiring policies (30d), pending tasks, contacts count.
+- `/admin/solicitudes`: list `quote_requests`, filter ramo/status, assign producer, status update, "convert to client" (creates profile shell + policy draft).
+- `/admin/polizas`: existing create form; add document upload + "generar cuotas" (N installments based on premium + frequency).
+- `/admin/pagos`: tabs Installments | Payment Proofs (approve/reject → updates installment).
+- `/admin/siniestros`, `/admin/contactos` (CSV export), `/admin/productores` audit pass.
 
-Actions: `check-status`, `test-token`, `sync-policies`, `sync-installments`, `sync-documents`, `sync-claims`, `sync-full`.
+## Out of scope (explicit)
+- Real price calculation or FedPat price comparisons.
+- Real subscription/payments for Academy.
+- FedPat real API calls (kept in mock until creds arrive).
 
-CORS: explicit allowed origins list (not `*`), echo origin if allowed.
+## Technical notes
+- All new pages wrapped in `<MainLayout>` + `<Seo />`.
+- RamoLandingTemplate accepts `{ramo, title, description, benefits[], faqs[], heroImage?}` for DRY.
+- Wizard state: local `useState`, no extra deps.
+- File uploads: `supabase.storage.from(bucket).upload(\`\${user.id}/\${uuid}-\${name}\`)`, save returned path; signed URL on read.
+- Source badge derives from `policies.external_source` ("fedpat" → "Federación Patronal", else "Manual").
 
-Modes: `mock` | `sandbox` | `production`. Sandbox/production with missing creds → `{status:"not_configured"}` 200.
+## Acceptance map
+Each spec item (1)–(11) maps to a phase above and will be re-verified at end of phase 5.
 
-Mock mode: generates fedpat-prefixed external IDs, inserts policies/installments/documents/claims, creates `external_identity_matches` rows when no profile match, writes audit_logs + integration_runs.
+---
 
-### 3. Admin Integration Center UI — `src/pages/admin/AdminIntegraciones.tsx`
-
-Rewrite with sections:
-
-- **Estado**: mode badge, configured y/n, last token refresh, last successful run, last failed run.
-- **Acciones manuales**: 6 buttons (Probar conexión, Sincronizar pólizas/cuotas/documentos/siniestros, Sincronización completa).
-- **Logs de sincronización**: filterable table from `integration_runs`.
-- **Pendientes de vinculación**: list `external_identity_matches` where `status='needs_review'`, with "Vincular a cliente existente" and "Crear cliente desde datos externos" actions.
-- **Mapeo de datos**: static checklist (FedPat pólizas → policies, etc).
-
-All wording: "Federación Patronal" / "FedPat".
-
-### 4. Acceptance check
-
-- Build passes without FedPat secrets.
-- `/admin/integraciones` loads in mock mode and runs each sync.
-- Frontend has zero references to FedPat secrets or AbsaNET.
-- Audit logs + integration_runs entries created on every action.
-
-### Technical details
-
-- Reuse `supabase.functions.invoke('fedpat-sync', { body: { action, ... } })` from frontend.
-- Service-role client used inside edge functions for upserts.
-- Upsert keys: `policies` on `external_policy_id`, `installments` on `external_installment_id`, `policy_documents` on `external_document_id`, `claims` on `external_claim_id`.
-- `policy_documents` stored under `policies.documents` jsonb is replaced with a normalized table; existing jsonb column kept untouched for backward compatibility.
-- `external_identity_matches.profile_id` only (no `clients` table exists in this DB).
-
-After plan approval I'll: (1) run migration, (2) refactor edge function into modules, (3) rewrite AdminIntegraciones page.
+**Recommendation:** Approve to start with **Phase 1 (migration + shared helpers + routing scaffolding)**. After that lands cleanly I'll proceed phase-by-phase in subsequent turns to keep diffs reviewable. If you'd rather I push all 5 phases in one mega-turn, say so and I'll do it (higher risk of partial breakage).

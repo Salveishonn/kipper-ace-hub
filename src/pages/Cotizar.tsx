@@ -1,10 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Seo } from "@/components/Seo";
 import { ArrowLeft, ArrowRight, Car, Bike, Truck, Check, Upload, User, MapPin, Shield, Loader2 } from "lucide-react";
 import { useCreateLead } from "@/hooks/useLeads";
 import { useCreateContact } from "@/hooks/useContacts";
+import { useCreateQuoteRequest, type QuoteRamo } from "@/hooks/useQuoteRequests";
 import { getNextProducerForAssignment } from "@/hooks/useProducers";
 import { vehicleBrands, getBrandsByType, getModelsByBrand, generateYears, COVERAGE_TYPES, VEHICLE_USES } from "@/data/vehicleBrands";
+import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 
 const VEHICLE_TYPES = [
@@ -57,6 +60,11 @@ const CotizarPage = () => {
 
   const createLead = useCreateLead();
   const createContact = useCreateContact();
+  const createQuoteRequest = useCreateQuoteRequest();
+
+  useEffect(() => {
+    trackEvent("quote_started", { source: "cotizador_wizard" });
+  }, []);
 
   const totalSteps = 5;
 
@@ -137,6 +145,28 @@ const CotizarPage = () => {
         opt_in: formData.marketingOptIn,
       });
 
+      // Also write unified quote_request (best-effort)
+      try {
+        const ramo: QuoteRamo = formData.vehicleType === "moto" ? "moto" : "auto";
+        await createQuoteRequest.mutateAsync({
+          ramo,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          dni: formData.dni || null,
+          city: formData.locality || null,
+          vehicle_brand: formData.brandName || null,
+          vehicle_model: formData.model || null,
+          vehicle_year: formData.year ? parseInt(formData.year) : null,
+          vehicle_version: formData.version || null,
+          vehicle_use: formData.use || null,
+          coverage_type: formData.coverage || null,
+          source: "cotizador_wizard",
+        });
+      } catch (e) {
+        console.warn("quote_request fallback failed", e);
+      }
+
       toast.success("¡Solicitud enviada!");
       setSubmitted(true);
     } catch (error) {
@@ -178,6 +208,7 @@ const CotizarPage = () => {
 
   return (
     <MainLayout>
+      <Seo title="Cotizá tu seguro | Kipper Seguros" description="Completá el cotizador y recibí una propuesta personalizada de un productor de Kipper." />
       <div className="min-h-[80vh] py-12 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
