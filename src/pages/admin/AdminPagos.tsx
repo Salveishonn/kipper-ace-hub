@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { Search, CheckCircle, Clock, AlertCircle, X } from "lucide-react";
+import { Search, CheckCircle, Clock, AlertCircle, X, FileCheck } from "lucide-react";
 import { useInstallments, useUpdateInstallment } from "@/hooks/useInstallments";
+import { usePaymentProofs, useReviewPaymentProof } from "@/hooks/usePaymentProofs";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { writeAuditLog } from "@/hooks/useAuditLogs";
 import { format, isBefore } from "date-fns";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminPagos = () => {
+  const [tab, setTab] = useState<"installments" | "proofs">("installments");
   const { data: installments = [], isLoading, error } = useInstallments();
   const updateInstallment = useUpdateInstallment();
+  const { data: proofs = [], isLoading: loadingProofs } = usePaymentProofs();
+  const reviewProof = useReviewPaymentProof();
   const [filter, setFilter] = useState<string>("");
   const [marking, setMarking] = useState<string | null>(null);
 
