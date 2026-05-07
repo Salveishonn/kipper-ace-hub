@@ -27,7 +27,7 @@ export interface QuoteRequestInput {
   vehicle_use?: string | null;
   coverage_type?: string | null;
   message?: string | null;
-  documents?: unknown[];
+  documents?: unknown;
   source?: string;
 }
 
@@ -37,7 +37,7 @@ export function useCreateQuoteRequest() {
     mutationFn: async (input: QuoteRequestInput) => {
       const payload = {
         ...input,
-        documents: input.documents ?? [],
+        documents: (input.documents ?? []) as never,
         source: input.source ?? "website",
       };
       const { data, error } = await supabase
@@ -92,7 +92,7 @@ export function useUpdateQuoteRequest() {
     mutationFn: async ({ id, ...patch }: { id: string } & Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("quote_requests")
-        .update(patch)
+        .update(patch as never)
         .eq("id", id)
         .select()
         .single();
