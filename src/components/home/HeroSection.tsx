@@ -24,25 +24,28 @@ export function HeroSection() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight animate-slide-up">
-            Tu seguro, <span className="text-gradient">simple</span>.
+            Seguros <span className="text-gradient">simples</span>,
             <br />
-            Tu info, <span className="text-gradient">ordenada</span>.
+            atención <span className="text-gradient">real</span>,
             <br />
-            Tus pagos, <span className="text-gradient">al día</span>.
+            gestión <span className="text-gradient">digital</span>.
           </h1>
 
           <p className="mt-6 text-lg text-muted-foreground max-w-xl animate-slide-up delay-100">
-            Gestioná todas tus pólizas desde un solo lugar. Pagá tus cuotas, 
-            descargá comprobantes y reportá siniestros sin vueltas.
+            Una organización familiar de productores especializados. Cotizá tu seguro,
+            gestioná tus pólizas y resolvé siniestros desde un solo lugar.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-slide-up delay-200">
-            <Link to="/portal" className="btn-hero inline-flex items-center justify-center gap-2 group">
-              Ingresar al Portal
+          <div className="mt-10 flex flex-col sm:flex-row gap-3 animate-slide-up delay-200">
+            <Link to="/cotizar" className="btn-hero inline-flex items-center justify-center gap-2 group">
+              Cotizar ahora
               <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link to="/cotizar" className="btn-hero-outline inline-flex items-center justify-center gap-2">
-              Cotizar mi vehículo
+            <Link to="/portal" className="btn-hero-outline inline-flex items-center justify-center gap-2">
+              Ingresar al portal
+            </Link>
+            <Link to="/sumate" className="btn-hero-outline inline-flex items-center justify-center gap-2">
+              Soy productor: quiero sumarme
             </Link>
           </div>
 
