@@ -188,6 +188,7 @@ export type Database = {
           description: string
           documents: Json | null
           external_claim_id: string | null
+          external_source: string | null
           id: string
           incident_date: string
           incident_location: string | null
@@ -197,6 +198,8 @@ export type Database = {
           resolution_notes: string | null
           resolved_at: string | null
           status: string
+          sync_error: string | null
+          sync_status: string | null
           updated_at: string
           user_id: string | null
         }
@@ -206,6 +209,7 @@ export type Database = {
           description: string
           documents?: Json | null
           external_claim_id?: string | null
+          external_source?: string | null
           id?: string
           incident_date: string
           incident_location?: string | null
@@ -215,6 +219,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           status?: string
+          sync_error?: string | null
+          sync_status?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -224,6 +230,7 @@ export type Database = {
           description?: string
           documents?: Json | null
           external_claim_id?: string | null
+          external_source?: string | null
           id?: string
           incident_date?: string
           incident_location?: string | null
@@ -233,6 +240,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           status?: string
+          sync_error?: string | null
+          sync_status?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -282,12 +291,58 @@ export type Database = {
         }
         Relationships: []
       }
+      external_identity_matches: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          external_customer_id: string | null
+          external_policy_id: string | null
+          external_source: string
+          id: string
+          match_method: string | null
+          notes: string | null
+          payload: Json | null
+          profile_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          external_customer_id?: string | null
+          external_policy_id?: string | null
+          external_source?: string
+          id?: string
+          match_method?: string | null
+          notes?: string | null
+          payload?: Json | null
+          profile_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          external_customer_id?: string | null
+          external_policy_id?: string | null
+          external_source?: string
+          id?: string
+          match_method?: string | null
+          notes?: string | null
+          payload?: Json | null
+          profile_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number
           created_at: string
           due_date: string
           external_installment_id: string | null
+          external_source: string | null
           id: string
           installment_number: number
           last_synced_at: string | null
@@ -299,6 +354,8 @@ export type Database = {
           policy_id: string
           receipt_url: string | null
           status: string
+          sync_error: string | null
+          sync_status: string | null
           updated_at: string
         }
         Insert: {
@@ -306,6 +363,7 @@ export type Database = {
           created_at?: string
           due_date: string
           external_installment_id?: string | null
+          external_source?: string | null
           id?: string
           installment_number: number
           last_synced_at?: string | null
@@ -317,6 +375,8 @@ export type Database = {
           policy_id: string
           receipt_url?: string | null
           status?: string
+          sync_error?: string | null
+          sync_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -324,6 +384,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           external_installment_id?: string | null
+          external_source?: string | null
           id?: string
           installment_number?: number
           last_synced_at?: string | null
@@ -335,6 +396,8 @@ export type Database = {
           policy_id?: string
           receipt_url?: string | null
           status?: string
+          sync_error?: string | null
+          sync_status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -374,6 +437,7 @@ export type Database = {
       integration_runs: {
         Row: {
           created_at: string
+          created_by: string | null
           error_message: string | null
           finished_at: string | null
           id: string
@@ -385,6 +449,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           error_message?: string | null
           finished_at?: string | null
           id?: string
@@ -396,6 +461,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           error_message?: string | null
           finished_at?: string | null
           id?: string
@@ -415,6 +481,7 @@ export type Database = {
           provider: string
           refreshed_at: string | null
           token_type: string | null
+          updated_at: string | null
         }
         Insert: {
           access_token: string
@@ -423,6 +490,7 @@ export type Database = {
           provider: string
           refreshed_at?: string | null
           token_type?: string | null
+          updated_at?: string | null
         }
         Update: {
           access_token?: string
@@ -431,6 +499,7 @@ export type Database = {
           provider?: string
           refreshed_at?: string | null
           token_type?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -516,6 +585,7 @@ export type Database = {
           created_at: string
           documents: Json | null
           end_date: string
+          external_customer_id: string | null
           external_policy_id: string | null
           external_source: string | null
           id: string
@@ -544,6 +614,7 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date: string
+          external_customer_id?: string | null
           external_policy_id?: string | null
           external_source?: string | null
           id?: string
@@ -572,6 +643,7 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date?: string
+          external_customer_id?: string | null
           external_policy_id?: string | null
           external_source?: string | null
           id?: string
@@ -607,6 +679,62 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_documents: {
+        Row: {
+          created_at: string
+          document_type: string | null
+          external_document_id: string | null
+          external_source: string | null
+          file_path: string | null
+          file_url: string | null
+          id: string
+          issued_at: string | null
+          last_synced_at: string | null
+          policy_id: string
+          sync_error: string | null
+          sync_status: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string | null
+          external_document_id?: string | null
+          external_source?: string | null
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          last_synced_at?: string | null
+          policy_id: string
+          sync_error?: string | null
+          sync_status?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string | null
+          external_document_id?: string | null
+          external_source?: string | null
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          last_synced_at?: string | null
+          policy_id?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
             referencedColumns: ["id"]
           },
         ]
