@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\pepe_\\\\kipperSeguros\" -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem -Path 'c:\\\\Users\\\\pepe_\\\\kipperSeguros' -Force | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\) {\"Dir\"} else {\"File\"}}} | Format-Table -AutoSize)",
+      "Bash(awk '{print $9}')",
+      "Bash(Get-ChildItem -Path 'c:\\\\Users\\\\pepe_\\\\kipperSeguros\\\\public' -Recurse)",
+      "Bash(pandoc --version)",
+      "Bash(npm --version)"
+    ]
+  }
+}
