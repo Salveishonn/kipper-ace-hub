@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta de Valor — Kipper Seguros</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bordo: #7C1515;
+    --bordo-dark: #5a0f0f;
+    --bordo-light: #f9f0f0;
+    --bordo-mid: #b83232;
+    --text: #1a1a1a;
+    --text-muted: #555;
+    --border: #e0e0e0;
+    --bg: #ffffff;
+    --bg-alt: #fafafa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  /* ── COVER PAGE ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 60px 70px;
+    background: linear-gradient(160deg, var(--bordo-dark) 0%, var(--bordo) 60%, var(--bordo-mid) 100%);
+    color: white;
+    page-break-after: always;
+  }
+
+  .cover-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .cover-logo {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--bordo);
+    flex-shrink: 0;
+  }
+
+  .cover-brand { line-height: 1.1; }
+  .cover-brand-name { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .cover-brand-sub { font-size: 12px; opacity: 0.7; letter-spacing: 2px; text-transform: uppercase; }
+
+  .cover-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 80px 0 40px; }
+
+  .cover-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    width: fit-content;
+  }
+
+  .cover-title {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+  }
+
+  .cover-subtitle {
+    font-size: 20px;
+    opacity: 0.75;
+    font-weight: 300;
+    margin-bottom: 48px;
+  }
+
+  .cover-divider {
+    width: 60px;
+    height: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+    margin-bottom: 40px;
+  }
+
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .cover-meta-item label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .cover-meta-item span {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .cover-footer {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    opacity: 0.5;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 60px 70px;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section {
+    margin-bottom: 52px;
+    page-break-inside: avoid;
+  }
+
+  .section-number {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--bordo);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: -0.4px;
+    border-bottom: 2px solid var(--bordo-light);
+    padding-bottom: 12px;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bordo-dark);
+    margin: 24px 0 10px;
+    letter-spacing: -0.2px;
+  }
+
+  p { margin-bottom: 12px; color: var(--text-muted); }
+
+  strong { color: var(--text); font-weight: 600; }
+
+  ul, ol {
+    margin: 10px 0 14px 18px;
+    color: var(--text-muted);
+  }
+
+  li { margin-bottom: 5px; }
+
+  /* ── TABLES ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 10px;
+  }
+
+  th {
+    background: var(--bordo);
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: 0.3px;
+  }
+
+  th:first-child { border-radius: 6px 0 0 0; }
+  th:last-child { border-radius: 0 6px 0 0; }
+
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: var(--bg-alt); }
+
+  tr:last-child td { border-bottom: none; }
+
+  td strong, td b { color: var(--text); }
+
+  /* ── CALLOUT BOXES ── */
+  .callout {
+    background: var(--bordo-light);
+    border-left: 4px solid var(--bordo);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .callout strong { color: var(--bordo-dark); }
+
+  .callout-warning {
+    background: #fff8e1;
+    border-left-color: #f59e0b;
+  }
+
+  .callout-green {
+    background: #f0faf4;
+    border-left-color: #16a34a;
+  }
+
+  /* ── PRICING HIGHLIGHT ── */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .pricing-card {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+
+  .pricing-card.featured {
+    border-color: var(--bordo);
+    background: var(--bordo-light);
+  }
+
+  .pricing-card label {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .pricing-card .price {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--bordo);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pricing-card .price-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .pricing-card.featured label { color: var(--bordo); }
+
+  .badge {
+    display: inline-block;
+    background: var(--bordo);
+    color: white;
+    font-size: 8.5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  /* ── FEATURE LIST ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .feature-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--bg-alt);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .feature-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--bordo);
+    color: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .feature-item h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .feature-item p {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    position: relative;
+    padding-left: 28px;
+    margin: 16px 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--bordo), var(--bordo-light));
+    border-radius: 1px;
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 18px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bordo);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--bordo);
+  }
+
+  .timeline-item h4 {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .timeline-item .duration {
+    font-size: 9.5px;
+    color: var(--bordo);
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+
+  .timeline-item p {
+    font-size: 9.5px;
+    margin: 0;
+  }
+
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-box {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 9.5px;
+    color: var(--text-muted);
+    white-space: pre;
+    line-height: 1.6;
+  }
+
+  /* ── SIGNATURE PAGE ── */
+  .signature-page {
+    page-break-before: always;
+    padding: 60px 70px;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  .signature-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .signature-header h2 {
+    font-size: 26px;
+    border: none;
+    padding: 0;
+    color: var(--bordo-dark);
+  }
+
+  .signature-header p {
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .signature-terms {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 28px 0;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .signature-terms h4 {
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 50px;
+  }
+
+  .sig-block { }
+
+  .sig-label {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .sig-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 50px;
+  }
+
+  .sig-line {
+    border-bottom: 2px solid var(--text);
+    margin-bottom: 8px;
+  }
+
+  .sig-field {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { font-size: 10pt; }
+    .cover {
+      height: 297mm;
+      min-height: unset;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Each section starts on a fresh page with consistent top margin */
+    .content { padding-top: 0; }
+    .section {
+      break-before: page;
+      page-break-before: always;
+      padding-top: 60px;
+    }
+    h2, h3 { page-break-after: avoid; }
+    .pricing-grid { page-break-inside: avoid; }
+    .feature-grid { page-break-inside: avoid; }
+    .sig-grid { page-break-inside: avoid; }
+    .timeline-item { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    a { color: var(--bordo); text-decoration: none; }
+  }
+
+  /* Force background colors/gradients to print in all browsers */
+  .cover {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 0;
+    size: A4;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ COVER -->
+<div class="cover">
+  <div class="cover-header">
+    <div class="cover-logo">K</div>
+    <div class="cover-brand">
+      <div class="cover-brand-name">KIPPER</div>
+      <div class="cover-brand-sub">Seguros</div>
+    </div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-tag">Propuesta comercial</div>
+    <div class="cover-title">Propuesta<br>de Valor</div>
+    <div class="cover-subtitle">Portal de Productores · Sitio Web · Integraciones</div>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <label>Preparado para</label>
+        <span>Kipper Seguros</span>
+      </div>
+      <div class="cover-meta-item">
+        <label>Fecha</label>
+        <span>Mayo 2026</span>
+      </div>
+      <div class="cover-meta-item">
+        <label>Versión</label>
+        <span>V1.0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>Documento confidencial — uso exclusivo del destinatario</span>
+    <span>kipperseguros.com</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ CONTENT -->
+<div class="content">
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-number">Introducción</div>
+    <h2>Contexto del Proyecto</h2>
+    <p>
+      Kipper Seguros es una organización de productores de seguros especializados que actúa como intermediaria entre productores asesores de seguros (PAS) y la compañía aseguradora <strong>Federación Patronal</strong>. El objetivo de este proyecto es construir una plataforma digital propia que centralice las herramientas de trabajo de los productores, refuerce la identidad de marca y habilite canales de comunicación 24/7 con asegurados.
+    </p>
+    <p>
+      El proyecto parte de un sitio web existente cuyo diseño visual y branding son correctos y se conservan íntegramente. Se descarta la funcionalidad de gestión compleja (CRM, sincronización con FedPat, gestión de pólizas/siniestros) en favor de un conjunto acotado y de alto valor para el productor.
+    </p>
+
+  </div>
+
+  <!-- SCOPE -->
+  <div class="section">
+    <div class="section-number">Alcance · V1</div>
+    <h2>¿Qué incluye esta propuesta?</h2>
+
+    <h3>Sitio Web Público (se conserva el diseño existente)</h3>
+    <p>Todas las páginas públicas se portan al nuevo repositorio manteniendo el diseño, colores y branding actuales: landing principal, seguros (auto, moto, hogar, comercio, accidentes personales, vida), servicios, nosotros, comunidad, academy, contacto y cotizar.</p>
+
+    <h3>Portal de Productores — 4 funciones principales</h3>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="feature-icon">🎓</div>
+        <div>
+          <h4>Kipper Academy</h4>
+          <p>Videos de formación embebidos desde YouTube/Vimeo. Módulos y lecciones administrables por el equipo de Kipper.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📦</div>
+        <div>
+          <h4>Material de Producción</h4>
+          <p>Biblioteca de contenido para redes sociales (stories, posts, reels, guías). Descarga real desde almacenamiento seguro en la nube.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📅</div>
+        <div>
+          <h4>Reserva de Cowork</h4>
+          <p>Calendario de slots disponibles en la oficina de Ingeniero Maschwitz. Reserva y cancelación en tiempo real por parte del productor.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">👤</div>
+        <div>
+          <h4>Mi Perfil</h4>
+          <p>Datos personales y de contacto del productor. Foto de perfil. Cambio de contraseña.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Panel de Administración (equipo Kipper)</h3>
+    <p>Interfaz privada para gestionar el contenido del portal sin necesidad de acceso técnico: subir materiales, crear y publicar lecciones de Academy, administrar slots de cowork y gestionar usuarios productores.</p>
+
+    <h3>Cotizador Online (widget Federación Patronal)</h3>
+    <p>Integración del widget HTML provisto por Federación Patronal en la página de cotización. El cálculo de precios corre íntegramente del lado de la aseguradora — sin lógica de negocio adicional para Kipper.</p>
+
+    <h3>Bot de WhatsApp — Botmaker + Federación Patronal</h3>
+    <p>Atención 24/7 vía WhatsApp para productores y asegurados. El bot se conecta <strong>directamente a las APIs de Federación Patronal</strong> (conexión ya existente del lado de la aseguradora). Kipper sólo aporta el webhook para consultas de cowork (reservas, disponibilidad) y la configuración de los flujos conversacionales en Botmaker.</p>
+
+    <div class="callout">
+      <strong>Lo que queda para V2 (mejoras futuras):</strong> Portal web de asegurados (ver pólizas, pagos online), inventario de productos por productor, notificaciones push, integración directa con FedPat para gestión de cartera, app móvil.
+    </div>
+  </div>
+
+  <!-- TECH -->
+  <div class="section">
+    <div class="section-number">Tecnología</div>
+    <h2>Stack Tecnológico</h2>
+
+    <p>La elección tecnológica prioriza la reutilización del trabajo ya realizado (diseño 100% conservado), la seguridad de los datos y la capacidad de escalar sin cambiar de plataforma.</p>
+
+    <table>
+      <tr>
+        <th>Capa</th>
+        <th>Tecnología</th>
+        <th>Por qué esta elección</th>
+      </tr>
+      <tr>
+        <td><strong>Frontend</strong></td>
+        <td>React 18 + TypeScript + Vite + Tailwind CSS</td>
+        <td>El diseño y los componentes ya están construidos. Reutilizar ahorra 4–6 semanas de trabajo.</td>
+      </tr>
+      <tr>
+        <td><strong>Base de datos</strong></td>
+        <td>PostgreSQL 16 (gestionado por Supabase)</td>
+        <td>Motor robusto con ACID compliance. Backups automáticos diarios. SOC 2 Type 2.</td>
+      </tr>
+      <tr>
+        <td><strong>Autenticación</strong></td>
+        <td>Supabase Auth (JWT + verificación por email)</td>
+        <td>Sistema battle-tested. No requiere construir auth desde cero. Roles: admin y productor.</td>
+      </tr>
+      <tr>
+        <td><strong>Seguridad de datos</strong></td>
+        <td>Row Level Security (RLS) en PostgreSQL</td>
+        <td>El acceso se controla a nivel de base de datos — incluso un bug en el código no puede filtrar datos entre usuarios.</td>
+      </tr>
+      <tr>
+        <td><strong>Archivos</strong></td>
+        <td>Supabase Storage (S3-compatible)</td>
+        <td>Almacenamiento de materiales, PDFs y avatares con políticas de acceso por usuario.</td>
+      </tr>
+      <tr>
+        <td><strong>Tiempo real</strong></td>
+        <td>Supabase Realtime (WebSocket)</td>
+        <td>Disponibilidad de slots de cowork actualizada en vivo para todos los productores conectados.</td>
+      </tr>
+      <tr>
+        <td><strong>WhatsApp Bot</strong></td>
+        <td>Botmaker + API Federación Patronal</td>
+        <td>Fed. Patronal ya tiene la conexión construida. Kipper configura flujos y aporta webhook para cowork.</td>
+      </tr>
+    </table>
+
+    <div class="callout">
+      <strong>¿Por qué no .NET + Angular o Node.js + Prisma desde cero?</strong><br>
+      El diseño completo ya está en React — rehacerlo en Angular implicaría rediseñar todo desde cero. Supabase es PostgreSQL gestionado: agregar un backend Node.js + Prisma por encima replica lo que Supabase ya provee (auth, almacenamiento, tiempo real, seguridad) sin ganancia funcional a esta escala.
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="section">
+    <div class="section-number">Arquitectura</div>
+    <h2>Diagrama de Infraestructura</h2>
+
+    <div class="arch-box">  Usuario (navegador / WhatsApp)
+         │
+         ▼
+  Cloudflare  ──  DNS + DDoS + TLS 1.3 + CDN global
+         │
+         ├──▶  Cloudflare Pages  (Frontend React)
+         │      SPA estática · sin servidor de origen · 99.99% uptime
+         │
+         └──▶  Supabase Cloud  (Backend)
+                ├─ PostgreSQL 16  (datos, RLS, backups automáticos)
+                ├─ Auth  (JWT, verificación email, roles)
+                ├─ Storage  (materiales, avatares, PDFs)
+                ├─ Realtime  (WebSocket para cowork en vivo)
+                └─ Edge Functions  (webhook Botmaker → cowork)
+
+  Usuario WhatsApp
+         │
+         ▼
+  Botmaker Platform
+         ├──▶  Federación Patronal API  (pólizas, pagos, coberturas)
+         └──▶  Supabase Edge Function  (reservas cowork de Kipper)</div>
+
+    <h3>Atributos de Calidad</h3>
+    <table>
+      <tr>
+        <th>Atributo</th>
+        <th>Cómo se garantiza</th>
+      </tr>
+      <tr>
+        <td><strong>Escalabilidad</strong></td>
+        <td>Supabase escala conexiones y almacenamiento de forma independiente. Cloudflare CDN absorbe picos de tráfico automáticamente. La arquitectura modular permite agregar el portal de asegurados o FedPat sync sin afectar lo existente.</td>
+      </tr>
+      <tr>
+        <td><strong>Disponibilidad</strong></td>
+        <td>Supabase Pro: 99.9% SLA con failover automático. Cloudflare Pages: 99.99%+. Frontend y backend son independientes — un incidente en Supabase no baja el sitio público.</td>
+      </tr>
+      <tr>
+        <td><strong>Seguridad</strong></td>
+        <td>RLS en PostgreSQL: el acceso se controla a nivel de base de datos. HTTPS obligatorio vía Cloudflare. Supabase certificado SOC 2 Type 2. Tokens de API de Fed. Patronal nunca expuestos al frontend. Políticas de storage por usuario.</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- HOSTING -->
+  <div class="section">
+    <div class="section-number">Infraestructura</div>
+    <h2>Opciones de Hosting</h2>
+    <p>Se presentan tres opciones de alojamiento. La diferencia principal es el nivel de control técnico versus simplicidad operativa.</p>
+
+    <table>
+      <tr>
+        <th></th>
+        <th>Opción A — Todo gestionado</th>
+        <th>Opción B — Híbrido</th>
+        <th>Opción C — Self-hosted</th>
+      </tr>
+      <tr>
+        <td><strong>Frontend</strong></td>
+        <td>Cloudflare Pages (gratis)</td>
+        <td>Hetzner VPS CX21 + nginx</td>
+        <td>Hetzner VPS CX31 + nginx</td>
+      </tr>
+      <tr>
+        <td><strong>Backend</strong></td>
+        <td>Supabase Pro</td>
+        <td>Supabase Pro</td>
+        <td>Supabase self-hosted (Docker)</td>
+      </tr>
+      <tr>
+        <td><strong>Costo mensual (infra)</strong></td>
+        <td><strong>~USD 25/mes</strong></td>
+        <td><strong>~USD 33/mes</strong></td>
+        <td><strong>~USD 15–20/mes</strong> + tiempo técnico</td>
+      </tr>
+      <tr>
+        <td><strong>Backups</strong></td>
+        <td>Automáticos diarios</td>
+        <td>Automáticos diarios</td>
+        <td>Deben configurarse manualmente</td>
+      </tr>
+      <tr>
+        <td><strong>Carga operativa</strong></td>
+        <td>Ninguna</td>
+        <td>Baja</td>
+        <td>Alta (parches, monitoreo, seguridad)</td>
+      </tr>
+      <tr>
+        <td><strong>Recomendado para</strong></td>
+        <td>Inicio y crecimiento</td>
+        <td>Cuando se necesite una API propia</td>
+        <td>Capacidad DevOps dedicada</td>
+      </tr>
+    </table>
+
+    <div class="callout-warning callout">
+      <strong>Nota sobre Opción C:</strong> No se recomienda para una organización que maneja datos sensibles sin capacidad técnica dedicada. Un backup mal configurado o un servidor sin parchear puede derivar en incidentes legales graves.
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Recomendación: Opción B — Híbrido.</strong> El servidor VPS de Hetzner permite alojar APIs propias y lógica de negocio personalizada además del frontend, manteniendo Supabase Pro como backend gestionado. Ofrece el equilibrio óptimo entre control técnico, costo y confiabilidad operativa.
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="section">
+    <div class="section-number">Plan de Trabajo</div>
+    <h2>Etapas y Cronograma</h2>
+    <p>El proyecto se estructura en 10 etapas secuenciales con entregables concretos al final de cada una. Duración total estimada: <strong>~14 semanas desde el inicio.</strong></p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="duration">Semana 1</div>
+        <h4>Fase 1 — Fundación</h4>
+        <p>Nuevo repositorio, proyecto Supabase limpio, CI/CD a Cloudflare Pages, dominio kipperseguros.com configurado.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semanas 2–3</div>
+        <h4>Fase 2 — Sitio Web Público</h4>
+        <p>Todas las páginas de landing, seguros por ramo, formularios de contacto y cotización.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semana 4</div>
+        <h4>Fase 3 — Auth + Portal Shell</h4>
+        <p>Login, registro, recuperación de contraseña, navegación del portal de productores, seguridad por roles.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semanas 5–6</div>
+        <h4>Fase 4 — Kipper Academy</h4>
+        <p>Listado de módulos, visor de lecciones con YouTube embed, panel de administración de contenido.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semana 7</div>
+        <h4>Fase 5 — Material de Producción</h4>
+        <p>Integración con Supabase Storage, descargas reales, panel de subida para el equipo de Kipper.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semanas 8–10</div>
+        <h4>Fase 6 — Reserva de Cowork</h4>
+        <p>Base de datos de slots y reservas, calendario UI, flujo de reserva/cancelación, disponibilidad en tiempo real (Realtime WebSocket), vista de administrador.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semana 11</div>
+        <h4>Fase 7 — Mi Perfil + Panel Admin</h4>
+        <p>Edición de perfil con guardado real, subida de avatar, gestión de usuarios en el admin.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semana 12</div>
+        <h4>Fase 8 — QA y Lanzamiento</h4>
+        <p>Testing end-to-end, auditoría de seguridad (RLS), optimización de rendimiento, deploy a producción.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semana 12.5</div>
+        <h4>Fase 9 — Cotizador Widget</h4>
+        <p>Recepción e integración del HTML embed de Fed. Patronal en /cotizar, adaptación visual, testing mobile.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="duration">Semanas 13–14</div>
+        <h4>Fase 10 — Bot de WhatsApp (Botmaker)</h4>
+        <p>Coordinación con Fed. Patronal sobre API del bot existente, Edge Function de Kipper para cowork, configuración de flujos en Botmaker (productores y asegurados), QA en sandbox de WhatsApp.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="section">
+    <div class="section-number">Inversión</div>
+    <h2>Estructura de Precios</h2>
+
+    <div class="pricing-grid">
+      <div class="pricing-card featured">
+        <label>Desarrollo V1 — Pago único</label>
+        <div class="price">USD 2.000</div>
+        <div class="price-sub">Todo incluido · precio cerrado</div>
+        <span class="badge">Precio fijo</span>
+      </div>
+      <div class="pricing-card">
+        <label>Abono mensual</label>
+        <div class="price" style="font-size:24px;">USD 500</div>
+        <div class="price-sub">Mantenimiento + infra + mejoras</div>
+      </div>
+      <div class="pricing-card">
+        <label>Tarifa hora</label>
+        <div class="price" style="font-size:24px;">USD 20</div>
+        <div class="price-sub">Para trabajos fuera del abono</div>
+      </div>
+    </div>
+
+    <h3>Opción de pago dividido</h3>
+    <table>
+      <tr>
+        <th>Momento</th>
+        <th>Monto</th>
+        <th>Condición</th>
+      </tr>
+      <tr>
+        <td>Al inicio del proyecto</td>
+        <td><strong>USD 1.000</strong></td>
+        <td>Confirmación de inicio de trabajo</td>
+      </tr>
+      <tr>
+        <td>Al lanzamiento (Fase 8)</td>
+        <td><strong>USD 1.000</strong></td>
+        <td>Sitio en producción con todas las funciones V1</td>
+      </tr>
+    </table>
+
+    <h3>Detalle de horas por funcionalidad</h3>
+    <p>La tarifa de referencia es <strong>USD 20/hora</strong>. El desarrollo V1 se cotiza como precio fijo cerrado.</p>
+    <table>
+      <tr>
+        <th>Funcionalidad / Fase</th>
+        <th style="text-align:center;">Horas est.</th>
+        <th style="text-align:center;">Valor hora</th>
+        <th style="text-align:right;">Subtotal ref.</th>
+      </tr>
+      <tr>
+        <td>Fundación: repositorio, Supabase, CI/CD, dominio</td>
+        <td style="text-align:center;">15–20 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 300–400</td>
+      </tr>
+      <tr>
+        <td>Sitio web público (landing + páginas por ramo + formularios)</td>
+        <td style="text-align:center;">25–35 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 500–700</td>
+      </tr>
+      <tr>
+        <td>Auth + portal shell (login, registro, roles, navegación)</td>
+        <td style="text-align:center;">15–20 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 300–400</td>
+      </tr>
+      <tr>
+        <td>Kipper Academy (módulos, visor YouTube, admin CMS)</td>
+        <td style="text-align:center;">20–30 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 400–600</td>
+      </tr>
+      <tr>
+        <td>Material de Producción (Storage, descargas reales, admin upload)</td>
+        <td style="text-align:center;">15–20 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 300–400</td>
+      </tr>
+      <tr>
+        <td>Reserva de Cowork (slots, calendario, tiempo real, admin)</td>
+        <td style="text-align:center;">35–50 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 700–1.000</td>
+      </tr>
+      <tr>
+        <td>Mi Perfil + Panel de Administración</td>
+        <td style="text-align:center;">20–25 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 400–500</td>
+      </tr>
+      <tr>
+        <td>QA, auditoría de seguridad, deploy a producción</td>
+        <td style="text-align:center;">15–20 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 300–400</td>
+      </tr>
+      <tr>
+        <td>Cotizador Widget (embed Fed. Patronal, estilos, mobile)</td>
+        <td style="text-align:center;">7–13 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 140–260</td>
+      </tr>
+      <tr>
+        <td>Bot WhatsApp Botmaker (Edge Function cowork + flujos conversacionales)</td>
+        <td style="text-align:center;">28–45 h</td>
+        <td style="text-align:center;">USD 20</td>
+        <td style="text-align:right;">USD 560–900</td>
+      </tr>
+      <tr style="background:#fafafa;">
+        <td><strong>Total estimado</strong></td>
+        <td style="text-align:center;"><strong>195–278 h</strong></td>
+        <td></td>
+        <td style="text-align:right;"><strong>Precio cerrado: USD 2.000</strong></td>
+      </tr>
+    </table>
+
+    <h3>Desglose del abono mensual — USD 500</h3>
+    <table>
+      <tr>
+        <th>Concepto</th>
+        <th>Detalle</th>
+        <th style="text-align:right;">Estimado</th>
+      </tr>
+      <tr>
+        <td>Infraestructura</td>
+        <td>Supabase Pro + Cloudflare Pages</td>
+        <td style="text-align:right;">~USD 25–30</td>
+      </tr>
+      <tr>
+        <td>Actualizaciones de seguridad y dependencias</td>
+        <td>2–3 h/mes a USD 20/h</td>
+        <td style="text-align:right;">~USD 40–60</td>
+      </tr>
+      <tr>
+        <td>Corrección de bugs en producción</td>
+        <td>2–4 h/mes a USD 20/h</td>
+        <td style="text-align:right;">~USD 40–80</td>
+      </tr>
+      <tr>
+        <td>Soporte, ajustes y consultas</td>
+        <td>1–3 h/mes a USD 20/h</td>
+        <td style="text-align:right;">~USD 20–60</td>
+      </tr>
+      <tr>
+        <td>Horas de mejoras incluidas</td>
+        <td>~17 h/mes disponibles para funcionalidades nuevas</td>
+        <td style="text-align:right;">~USD 340</td>
+      </tr>
+      <tr>
+        <td><strong>Total mensual</strong></td>
+        <td></td>
+        <td style="text-align:right;"><strong>USD 500/mes</strong></td>
+      </tr>
+    </table>
+
+    <div class="callout">
+      <strong>Botmaker (costo adicional a confirmar):</strong> El precio de Botmaker no está publicado — varía según volumen de mensajes y configuración. Se recomienda solicitar cotización directamente a <em>botmaker.com/es</em> y confirmar con Federación Patronal si Kipper puede operar bajo su cuenta existente (lo que podría reducir o eliminar este costo). Este ítem se factura por separado y no está incluido en el abono mensual.
+    </div>
+
+    <h3>Mejoras Futuras — V2 (referencia en horas)</h3>
+    <table>
+      <tr>
+        <th>Funcionalidad</th>
+        <th style="text-align:center;">Horas est.</th>
+        <th style="text-align:right;">Referencia USD 20/h</th>
+      </tr>
+      <tr>
+        <td>Portal web de asegurados (pólizas, pagos, siniestros)</td>
+        <td style="text-align:center;">50–80 h</td>
+        <td style="text-align:right;">USD 1.000–1.600</td>
+      </tr>
+      <tr>
+        <td>Inventario de productos por productor</td>
+        <td style="text-align:center;">20–30 h</td>
+        <td style="text-align:right;">USD 400–600</td>
+      </tr>
+      <tr>
+        <td>Notificaciones por email (reservas, vencimientos)</td>
+        <td style="text-align:center;">8–12 h</td>
+        <td style="text-align:right;">USD 160–240</td>
+      </tr>
+      <tr>
+        <td>Integración directa con API FedPat (gestión de cartera)</td>
+        <td style="text-align:center;">40–60 h</td>
+        <td style="text-align:right;">USD 800–1.200</td>
+      </tr>
+      <tr>
+        <td>Pasarela de pagos (MercadoPago)</td>
+        <td style="text-align:center;">25–35 h</td>
+        <td style="text-align:right;">USD 500–700</td>
+      </tr>
+    </table>
+    <p style="font-size:9.5px;">Las mejoras V2 pueden cubrirse con las horas incluidas en el abono mensual o cotizarse por separado según el alcance.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SIGNATURE -->
+<div class="signature-page">
+
+  <div class="signature-header">
+    <h2>Acuerdo y Firma</h2>
+    <p>La firma de este documento implica la aceptación de los términos, alcance y condiciones descritos en esta propuesta.</p>
+  </div>
+
+  <div class="signature-terms">
+    <h4>Términos y Condiciones</h4>
+    <p><strong>1. Alcance:</strong> El desarrollo incluye exclusivamente las funcionalidades descritas en la sección "¿Qué incluye esta propuesta?" (V1). Cualquier funcionalidad adicional se presupuestará por separado a la tarifa horaria acordada.</p>
+    <p><strong>2. Forma de pago:</strong> Se acordará entre las partes el esquema de pago único o dividido. El inicio del trabajo queda condicionado al pago del primer tramo.</p>
+    <p><strong>3. Abono mensual:</strong> El servicio de mantenimiento comienza al momento del lanzamiento en producción. El abono cubre los conceptos detallados en el desglose mensual. No incluye el costo de plataformas de terceros (Botmaker, Supabase, Cloudflare).</p>
+    <p><strong>4. Propiedad del código:</strong> Al completar el pago del desarrollo, el cliente recibe la titularidad completa del código fuente y el acceso a todos los repositorios y servicios asociados.</p>
+    <p><strong>5. Confidencialidad:</strong> Ambas partes se comprometen a mantener la confidencialidad de la información compartida durante el desarrollo del proyecto.</p>
+    <p><strong>6. Cronograma:</strong> Los plazos estimados son referenciales y están sujetos a la disponibilidad oportuna de materiales, credenciales y feedback por parte del cliente. Demoras en la entrega de insumos (widget Fed. Patronal, acceso Botmaker) pueden extender el plazo proporcionalmente.</p>
+  </div>
+
+  <div class="sig-grid">
+    <div class="sig-block">
+      <div class="sig-label">Proveedor del servicio</div>
+      <div class="sig-name">Salvador Marin</div>
+      <div class="sig-line"></div>
+      <div class="sig-field">Firma</div>
+      <div class="sig-line" style="margin-top:30px;"></div>
+      <div class="sig-field">Fecha</div>
+    </div>
+
+    <div class="sig-block">
+      <div class="sig-label">Cliente — Kipper Seguros</div>
+      <div class="sig-name">&nbsp;</div>
+      <div class="sig-line"></div>
+      <div class="sig-field">Firma y aclaración</div>
+      <div class="sig-line" style="margin-top:30px;"></div>
+      <div class="sig-field">Fecha</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
