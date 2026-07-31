@@ -208,7 +208,7 @@ BEGIN
     app_id := meta_app_id::uuid;
   EXCEPTION WHEN OTHERS THEN
     RETURN NEW;
-  END IF;
+  END;
 
   SELECT * INTO app_row FROM public.producer_applications WHERE id = app_id;
   IF app_row.id IS NULL THEN
@@ -285,7 +285,7 @@ BEGIN
     app_id := meta_app_id::uuid;
   EXCEPTION WHEN OTHERS THEN
     RETURN NEW;
-  END IF;
+  END;
 
   SELECT * INTO app_row FROM public.producer_applications WHERE id = app_id;
   IF app_row.id IS NULL THEN

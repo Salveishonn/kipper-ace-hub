@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -56,6 +56,19 @@
     --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.08);
     --shadow-card: 0 8px 30px -8px hsl(0 0% 0% / 0.1);
     --shadow-elevated: 0 20px 60px -15px hsl(0 85% 27% / 0.15);
+
+    /* Layout */
+    --container-public: 80rem;
+    --space-section-y: 4.5rem;
+
+    /* Motion */
+    --motion-fast: 180ms;
+    --motion-hover: 220ms;
+    --motion-standard: 560ms;
+    --motion-reveal: 680ms;
+    --motion-cinematic: 1000ms;
+    --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --motion-ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 30%;
@@ -125,19 +138,45 @@
 @layer components {
   .btn-hero {
     @apply bg-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold 
-           transition-all duration-300 hover:shadow-elevated hover:-translate-y-0.5
-           focus:ring-2 focus:ring-primary/50 focus:outline-none;
+           transition-[box-shadow,background-color,border-color,color] duration-200
+           hover:shadow-elevated active:scale-[0.99]
+           focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none;
   }
 
   .btn-hero-outline {
     @apply border-2 border-primary text-primary px-8 py-4 rounded-xl font-semibold 
-           transition-all duration-300 hover:bg-primary hover:text-primary-foreground
-           focus:ring-2 focus:ring-primary/50 focus:outline-none;
+           transition-[background-color,color,border-color,box-shadow] duration-200
+           hover:bg-primary hover:text-primary-foreground
+           focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none;
+  }
+
+  .btn-whatsapp {
+    @apply border border-emerald-700/40 text-emerald-900 bg-emerald-50
+           px-8 py-4 rounded-xl font-semibold transition-colors duration-200
+           hover:bg-emerald-100 hover:border-emerald-700/55
+           focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:outline-none;
+  }
+
+  .portal-pas-link {
+    @apply inline-flex items-center justify-center text-sm font-medium text-muted-foreground
+           underline-offset-4 hover:text-primary hover:underline transition-colors duration-200
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-md px-2 py-1;
+  }
+
+  .sumate-pas-link {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border
+           bg-background px-5 py-2.5 text-sm font-semibold text-foreground
+           transition-colors duration-200 hover:border-primary/40 hover:text-primary
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .scroll-story [data-scroll-track] {
+    min-height: 100vh;
   }
 
   .card-elevated {
-    @apply bg-card rounded-2xl p-6 shadow-card transition-all duration-300
-           hover:shadow-elevated hover:-translate-y-1;
+    @apply bg-card rounded-xl p-6 shadow-card transition-[box-shadow,border-color] duration-200
+           border border-transparent hover:border-primary/20;
   }
 
   .card-glass {
