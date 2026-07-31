@@ -12,8 +12,7 @@ export function CTASection() {
           ¿Buscás seguro para tu vehículo?
         </h2>
         <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
-          Completá el cotizador y recibí una propuesta personalizada 
-          en menos de 24 horas. Sin compromiso.
+          Próximamente el cotizador oficial de Federación Patronal. Mientras tanto, escribinos por WhatsApp.
         </p>
         <Link
           to="/cotizar"

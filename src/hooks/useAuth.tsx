@@ -18,6 +18,7 @@ interface Profile {
   avatar_url: string | null;
   marketing_consent: boolean;
   preferred_contact: string;
+  account_status: string;
 }
 
 interface AuthContextType {
@@ -30,8 +31,9 @@ interface AuthContextType {
   isAdmin: boolean;
   isProductor: boolean;
   isCliente: boolean;
+  isAccountActive: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
+  completeInvitePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   getDefaultDashboard: () => string;
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getDefaultDashboard = (): string => {
     if (roles.includes('admin')) return '/admin';
     if (roles.includes('productor')) return '/productor';
-    return '/portal';
+    return '/login';
   };
 
   useEffect(() => {
@@ -104,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -113,7 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(initialSession);
           setUser(initialSession.user);
           
-          // Fetch profile and roles in parallel
           await Promise.all([
             fetchProfile(initialSession.user.id),
             fetchRoles(initialSession.user.id)
@@ -135,16 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      async (_event, newSession) => {
         if (!mounted) return;
 
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
-          // Don't set loading to true here to avoid flicker
           await Promise.all([
             fetchProfile(newSession.user.id),
             fetchRoles(newSession.user.id)
@@ -169,11 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     
     if (!error) {
-      // Roles will be fetched by the auth state change listener
-      // But we need to wait for them
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (currentUser) {
         await fetchRoles(currentUser.id);
+        await fetchProfile(currentUser.id);
         setRolesLoaded(true);
       }
     }
@@ -181,32 +178,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { full_name: fullName }
-      }
-    });
-
-    if (!error && data.user) {
-      // Create profile
-      await supabase.from('profiles').insert({
-        user_id: data.user.id,
-        email: email,
-        full_name: fullName || null
-      });
-      
-      // Assign default 'cliente' role
-      await supabase.from('user_roles').insert({
-        user_id: data.user.id,
-        role: 'cliente'
-      });
+  const completeInvitePassword = async (password: string) => {
+    const { data, error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      return { error };
     }
 
-    return { error };
+    await supabase.auth.refreshSession();
+    const uid = data.user?.id ?? user?.id;
+    if (uid) {
+      await Promise.all([fetchProfile(uid), fetchRoles(uid)]);
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -221,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = roles.includes('admin');
   const isProductor = roles.includes('productor');
   const isCliente = roles.includes('cliente');
+  const isAccountActive = profile?.account_status === 'active' || isAdmin;
 
   return (
     <AuthContext.Provider value={{
@@ -233,8 +217,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isProductor,
       isCliente,
+      isAccountActive,
       signIn,
-      signUp,
+      completeInvitePassword,
       signOut,
       refreshProfile,
       getDefaultDashboard

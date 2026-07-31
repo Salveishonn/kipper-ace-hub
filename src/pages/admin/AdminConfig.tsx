@@ -45,7 +45,7 @@ const AdminConfig = () => {
     }
   };
 
-  const setRole = async (role: "admin" | "productor" | "cliente") => {
+  const setRole = async (role: "admin") => {
     if (!foundUser) return;
     setUpdating(true);
     try {
@@ -105,7 +105,10 @@ const AdminConfig = () => {
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Shield size={20} className="text-primary" /> Gestión de Roles
         </h2>
-        <p className="text-sm text-muted-foreground mb-4">Buscá un usuario por email para ver o cambiar su rol.</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Buscá un usuario por email para asignar rol <strong>admin</strong> (uso excepcional).
+          Los productores PAS deben crearse desde <strong>Solicitudes PAS</strong> con invitación por email.
+        </p>
 
         <div className="flex gap-3 mb-6">
           <div className="flex-1 relative">
@@ -135,20 +138,17 @@ const AdminConfig = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              {(["cliente", "productor", "admin"] as const).map(role => (
-                <button
-                  key={role}
-                  onClick={() => setRole(role)}
-                  disabled={updating}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    foundUser.roles.includes(role)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80 text-foreground"
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
+              <button
+                onClick={() => setRole("admin")}
+                disabled={updating}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  foundUser.roles.includes("admin")
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80 text-foreground"
+                }`}
+              >
+                admin
+              </button>
             </div>
           </div>
         )}

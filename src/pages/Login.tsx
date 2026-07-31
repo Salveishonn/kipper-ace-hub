@@ -67,10 +67,10 @@ const LoginPage = () => {
               </div>
             </Link>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Bienvenido al Portal
+              Portal PAS
             </h1>
             <p className="text-muted-foreground">
-              Ingresá tus datos para acceder a tu cuenta
+              Ingresá con tu email y contraseña de productor Kipper
             </p>
           </div>
 
@@ -147,9 +147,9 @@ const LoginPage = () => {
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            ¿No tenés cuenta?{" "}
-            <Link to="/registro" className="text-primary font-medium hover:underline">
-              Registrate
+            ¿Querés sumarte como productor?{" "}
+            <Link to="/sumate" className="text-primary font-medium hover:underline">
+              Enviá tu solicitud
             </Link>
           </p>
         </div>
@@ -159,24 +159,24 @@ const LoginPage = () => {
       <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-12">
         <div className="max-w-md text-primary-foreground">
           <h2 className="text-3xl font-bold mb-6">
-            Todo tu seguro en un solo lugar
+            Herramientas para productores PAS
           </h2>
           <ul className="space-y-4">
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
-              <span>Consultá tus pólizas y coberturas vigentes</span>
+              <span>Recursos semanales y material de producción</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
-              <span>Pagá tus cuotas de forma rápida y segura</span>
+              <span>Kipper Academy y capacitación continua</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
-              <span>Descargá comprobantes y tarjetas de circulación</span>
+              <span>Consultas y casos con el equipo Kipper</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">4</span>
-              <span>Reportá siniestros y hacé seguimiento online</span>
+              <span>Acceso exclusivo por invitación aprobada</span>
             </li>
           </ul>
         </div>

@@ -1,231 +1,261 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, Loader2, Check } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoKipper from "@/assets/logo-kipper.png";
+import {
+  getAuthHashError,
+  isInviteAuthUser,
+  isInviteHashPresent,
+} from "@/lib/inviteSession";
+import { waitForPasProvisioning } from "@/lib/waitForPasProvisioning";
+
+type InviteGate = "loading" | "invalid" | "expired" | "ready";
 
 const RegistroPage = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inviteGate, setInviteGate] = useState<InviteGate>("loading");
+  const [provisionError, setProvisionError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { completeInvitePassword, refreshProfile, loading, rolesLoaded, getDefaultDashboard, isProductor, isAccountActive } = useAuth();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const resolveInviteGate = async () => {
+      const hashError = getAuthHashError();
+      if (hashError) {
+        if (mounted) setInviteGate("expired");
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+
+      if (!session?.user) {
+        if (isInviteHashPresent()) {
+          setInviteGate("loading");
+          return;
+        }
+        setInviteGate("invalid");
+        return;
+      }
+
+      const u = session.user;
+
+      if (isProductor && isAccountActive && u.email_confirmed_at && !isInviteAuthUser(u)) {
+        navigate(getDefaultDashboard(), { replace: true });
+        return;
+      }
+
+      if (!isInviteAuthUser(u) && !isInviteHashPresent()) {
+        setInviteGate("invalid");
+        return;
+      }
+
+      if (!isInviteAuthUser(u) && isInviteHashPresent()) {
+        setInviteGate("loading");
+        return;
+      }
+
+      setInviteGate("ready");
+    };
+
+    resolveInviteGate();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (event === "SIGNED_IN" && session?.user) {
+        if (isInviteAuthUser(session.user) || isInviteHashPresent()) {
+          setInviteGate("ready");
+        }
+      }
+      if (event === "PASSWORD_RECOVERY" || event === "USER_UPDATED") {
+        /* no-op */
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, getDefaultDashboard, isProductor, isAccountActive]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (inviteGate !== "ready") {
+      toast.error("Invitación no válida");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-
-    if (!acceptTerms) {
-      toast.error("Debés aceptar los términos y condiciones");
+    if (password.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres");
       return;
     }
 
     setIsLoading(true);
-
-    const { error } = await signUp(email, password, fullName);
+    setProvisionError(null);
+    const { error } = await completeInvitePassword(password);
 
     if (error) {
-      toast.error("Error al registrarse", {
-        description: error.message,
-      });
+      const msg = error.message.toLowerCase();
+      if (msg.includes("expired") || msg.includes("invalid") || msg.includes("session")) {
+        setInviteGate("expired");
+      }
+      toast.error("No se pudo completar el registro", { description: error.message });
       setIsLoading(false);
       return;
     }
 
-    toast.success("¡Cuenta creada exitosamente!", {
-      description: "Ya podés ingresar al portal.",
-    });
-    
-    navigate("/portal");
-    setIsLoading(false);
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser?.id) {
+      const provision = await waitForPasProvisioning(currentUser.id);
+      await refreshProfile();
+      if (!provision.ok) {
+        const message =
+          provision.reason === "not_active"
+            ? "Tu contraseña se guardó, pero la cuenta PAS aún no está activa. Esperá unos segundos e ingresá desde Login, o contactá a Kipper si persiste."
+            : "La activación está demorada. Intentá ingresar en unos segundos desde Login.";
+        setProvisionError(message);
+        toast.error("Activación pendiente", { description: message });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    toast.success("¡Cuenta activada!");
+    navigate(getDefaultDashboard(), { replace: true });
   };
 
-  return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="mb-10">
-            <Link to="/" className="inline-flex items-center gap-3 mb-8">
-              <img src={logoKipper} alt="Kipper Seguros" className="h-12" />
-              <div>
-                <span className="text-xl font-bold text-primary block">KIPPER</span>
-                <span className="text-xs text-muted-foreground tracking-wider">SEGUROS</span>
-              </div>
-            </Link>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Creá tu cuenta
-            </h1>
-            <p className="text-muted-foreground">
-              Registrate para acceder al portal de clientes
+  if (loading || inviteGate === "loading" || (rolesLoaded && inviteGate === "loading")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 size={48} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (inviteGate === "expired") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 bg-muted/30">
+        <div className="max-w-md w-full text-center space-y-6">
+          <img src={logoKipper} alt="Kipper Seguros" className="h-14 mx-auto" />
+          <div className="bg-card rounded-2xl p-8 shadow-soft">
+            <AlertCircle className="mx-auto text-destructive mb-4" size={40} />
+            <h1 className="text-2xl font-bold mb-2">Invitación expirada o inválida</h1>
+            <p className="text-muted-foreground mb-6">
+              El enlace de invitación ya no es válido. Pedile a un administrador de Kipper que reenvíe la invitación.
             </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Juan Pérez"
-                className="input-kipper"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                className="input-kipper"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="input-kipper pr-12"
-                  required
-                  minLength={6}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Confirmar contraseña
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repetí tu contraseña"
-                className="input-kipper"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={acceptTerms}
-                onChange={(e) => setAcceptTerms(e.target.checked)}
-                className="w-4 h-4 mt-0.5 rounded border-border text-primary focus:ring-primary" 
-              />
-              <span className="text-sm text-muted-foreground">
-                Acepto los{" "}
-                <Link to="/terminos" className="text-primary hover:underline">
-                  términos y condiciones
-                </Link>{" "}
-                y la{" "}
-                <Link to="/privacidad" className="text-primary hover:underline">
-                  política de privacidad
-                </Link>
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={isLoading || !acceptTerms}
-              className="btn-hero w-full flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Creando cuenta...
-                </>
-              ) : (
-                <>
-                  Crear cuenta
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            ¿Ya tenés cuenta?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">
-              Ingresá
+            <Link to="/login" className="btn-hero inline-flex items-center gap-2">
+              Ir a ingresar <ArrowRight size={16} />
             </Link>
-          </p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-12">
-        <div className="max-w-md text-primary-foreground">
-          <h2 className="text-3xl font-bold mb-6">
-            Beneficios de tener tu cuenta
-          </h2>
-          <ul className="space-y-4">
-            <li className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                <Check size={14} />
-              </div>
-              <span>Acceso 24/7 a toda tu información</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                <Check size={14} />
-              </div>
-              <span>Pagá tus cuotas online sin salir de casa</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                <Check size={14} />
-              </div>
-              <span>Descargá documentos al instante</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                <Check size={14} />
-              </div>
-              <span>Reportá y seguí tus siniestros en tiempo real</span>
-            </li>
-          </ul>
+  if (inviteGate === "invalid") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 bg-muted/30">
+        <div className="max-w-md w-full text-center space-y-6">
+          <img src={logoKipper} alt="Kipper Seguros" className="h-14 mx-auto" />
+          <div className="bg-card rounded-2xl p-8 shadow-soft">
+            <Lock className="mx-auto text-primary mb-4" size={40} />
+            <h1 className="text-2xl font-bold mb-2">Acceso solo por invitación</h1>
+            <p className="text-muted-foreground mb-6">
+              El portal PAS es exclusivo para productores aprobados. Recibirás un email con un
+              enlace de un solo uso cuando tu solicitud sea aceptada.
+            </p>
+            <Link to="/sumate" className="btn-hero inline-flex items-center gap-2">
+              Quiero sumarme <ArrowRight size={16} />
+            </Link>
+            <p className="mt-4 text-sm text-muted-foreground">
+              ¿Ya tenés cuenta?{" "}
+              <Link to="/login" className="text-primary font-medium hover:underline">
+                Ingresar
+              </Link>
+            </p>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-8 bg-muted/30">
+      <div className="w-full max-w-md">
+        <Link to="/" className="inline-flex items-center gap-3 mb-8">
+          <img src={logoKipper} alt="Kipper Seguros" className="h-12" />
+          <div>
+            <span className="text-xl font-bold text-primary block">KIPPER</span>
+            <span className="text-xs text-muted-foreground tracking-wider">SEGUROS</span>
+          </div>
+        </Link>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Activá tu acceso PAS</h1>
+        <p className="text-muted-foreground mb-8">
+          Definí tu contraseña para ingresar al portal de productores.
+        </p>
+
+        {provisionError && (
+          <div className="mb-6 p-4 rounded-xl bg-destructive/10 text-destructive text-sm">
+            {provisionError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium mb-2">Nueva contraseña</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-kipper pr-12"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Confirmar contraseña</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input-kipper"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn-hero w-full flex items-center justify-center gap-2"
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>Activar cuenta <ArrowRight size={18} /></>}
+          </button>
+        </form>
       </div>
     </div>
   );

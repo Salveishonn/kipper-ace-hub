@@ -2,3 +2,9 @@ project_id = "bmaozcfolgwqhbqhqbnr"
 
 [functions.fedpat-sync]
 verify_jwt = false
+
+[functions.invite-pas-producer]
+verify_jwt = true
+
+[functions.google-reviews]
+verify_jwt = false

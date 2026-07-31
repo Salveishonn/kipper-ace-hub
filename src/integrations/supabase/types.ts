@@ -786,54 +786,148 @@ export type Database = {
       }
       producer_applications: {
         Row: {
+          admin_notes: string | null
           city: string | null
           created_at: string
           current_companies: string | null
           email: string
           full_name: string
           id: string
+          invite_expires_at: string | null
+          invited_at: string | null
           matricula_ssn: string | null
           message: string | null
           phone: string | null
           province: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           updated_at: string
+          user_id: string | null
           years_experience: number | null
         }
         Insert: {
+          admin_notes?: string | null
           city?: string | null
           created_at?: string
           current_companies?: string | null
           email: string
           full_name: string
           id?: string
+          invite_expires_at?: string | null
+          invited_at?: string | null
           matricula_ssn?: string | null
           message?: string | null
           phone?: string | null
           province?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
           years_experience?: number | null
         }
         Update: {
+          admin_notes?: string | null
           city?: string | null
           created_at?: string
           current_companies?: string | null
           email?: string
           full_name?: string
           id?: string
+          invite_expires_at?: string | null
+          invited_at?: string | null
           matricula_ssn?: string | null
           message?: string | null
           phone?: string | null
           province?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
           years_experience?: number | null
+        }
+        Relationships: []
+      }
+      google_reviews_cache: {
+        Row: {
+          fetched_at: string
+          id: string
+          maps_url: string
+          place_id: string
+          rating: number | null
+          reviews_json: Json
+          user_ratings_total: number | null
+        }
+        Insert: {
+          fetched_at?: string
+          id?: string
+          maps_url: string
+          place_id: string
+          rating?: number | null
+          reviews_json?: Json
+          user_ratings_total?: number | null
+        }
+        Update: {
+          fetched_at?: string
+          id?: string
+          maps_url?: string
+          place_id?: string
+          rating?: number | null
+          reviews_json?: Json
+          user_ratings_total?: number | null
+        }
+        Relationships: []
+      }
+      pas_resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          file_path: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          resource_type: string
+          sort_order: number
+          title: string
+          updated_at: string
+          week_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          resource_type: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          week_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          resource_type?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          week_label?: string | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          account_status: string
           address: string | null
           avatar_url: string | null
           city: string | null
@@ -851,6 +945,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_status?: string
           address?: string | null
           avatar_url?: string | null
           city?: string | null
@@ -868,6 +963,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_status?: string
           address?: string | null
           avatar_url?: string | null
           city?: string | null
@@ -883,6 +979,68 @@ export type Database = {
           province?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          producer_id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          producer_id: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          producer_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }

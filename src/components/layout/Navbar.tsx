@@ -21,21 +21,20 @@ export function Navbar() {
   // Determine the correct CTA based on auth state and role
   const getAuthCTA = () => {
     if (loading || !rolesLoaded) {
-      return { href: "/login", label: "Ingresar", variant: "primary" };
+      return { href: "/login", label: "Portal PAS", variant: "primary" };
     }
     
     if (!user) {
-      return { href: "/login", label: "Ingresar", variant: "primary" };
+      return { href: "/login", label: "Portal PAS", variant: "primary" };
     }
 
-    // User is logged in - show role-appropriate dashboard link
     if (isAdmin) {
       return { href: "/admin", label: "Admin", variant: "primary" };
     }
     if (isProductor) {
-      return { href: "/productor", label: "Panel Productor", variant: "primary" };
+      return { href: "/productor", label: "Portal PAS", variant: "primary" };
     }
-    return { href: "/portal", label: "Mi Portal", variant: "primary" };
+    return { href: "/login", label: "Portal PAS", variant: "primary" };
   };
 
   const authCTA = getAuthCTA();

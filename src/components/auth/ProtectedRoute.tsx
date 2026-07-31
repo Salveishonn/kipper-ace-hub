@@ -1,21 +1,20 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'productor' | 'cliente')[];
+  allowedRoles?: ('admin' | 'productor')[];
 }
 
 export const ProtectedRoute = ({ 
   children, 
   allowedRoles 
 }: ProtectedRouteProps) => {
-  const { user, roles, loading, rolesLoaded, isAdmin, isProductor } = useAuth();
+  const { user, roles, loading, rolesLoaded, isAdmin, isProductor, isAccountActive, profile } = useAuth();
   const location = useLocation();
 
-  // CRITICAL: While loading or roles not yet fetched, show loading state
-  // DO NOT redirect during this phase
   if (loading || !rolesLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -27,29 +26,46 @@ export const ProtectedRoute = ({
     );
   }
 
-  // User not authenticated -> redirect to login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Determine the correct dashboard based on role (priority: admin > productor > cliente)
   const getCorrectDashboard = (): string => {
     if (isAdmin) return "/admin";
     if (isProductor) return "/productor";
-    return "/portal";
+    return "/login";
   };
 
-  // If allowedRoles is specified, check access
   if (allowedRoles && allowedRoles.length > 0) {
     const hasAccess = allowedRoles.some(role => roles.includes(role));
     
     if (!hasAccess) {
       const correctDashboard = getCorrectDashboard();
-      // Prevent redirect loop: only redirect if we're not already at the correct path
       if (location.pathname !== correctDashboard) {
         return <Navigate to={correctDashboard} replace />;
       }
     }
+  }
+
+  if (allowedRoles?.includes("productor") && !isAdmin) {
+    if (!isProductor) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+  }
+
+  if (!isAdmin && isProductor && profile && !isAccountActive) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6">
+        <div className="max-w-md text-center space-y-4">
+          <h1 className="text-xl font-bold">Cuenta pendiente</h1>
+          <p className="text-muted-foreground">
+            Tu acceso al portal PAS aún no está activo. Si recibiste una invitación,
+            completá el registro desde el enlace del email.
+          </p>
+          <Link to="/sumate" className="btn-hero inline-block">Sumate a Kipper</Link>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

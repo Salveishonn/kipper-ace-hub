@@ -1,31 +1,21 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, Users, FileText, 
-  TrendingUp, Settings, LogOut,
-  Menu, X, Bell, Search, UserCheck, MessageSquare, Mail,
-  CreditCard, AlertTriangle, Clock, ListChecks, RefreshCw, Link2
+import {
+  LayoutDashboard, Settings, LogOut,
+  Menu, X, UserCheck, MessageSquare, Mail,
+  FileText, FolderOpen
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
 
-// Canonical admin routes only
 const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/leads", label: "Leads", icon: TrendingUp },
-  { href: "/admin/clientes", label: "Clientes", icon: Users },
+  { href: "/admin/solicitudes-pas", label: "Solicitudes PAS", icon: Mail },
   { href: "/admin/productores", label: "Productores", icon: UserCheck },
-  { href: "/admin/polizas", label: "Pólizas", icon: FileText },
-  { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
-  { href: "/admin/siniestros", label: "Siniestros", icon: AlertTriangle },
-  { href: "/admin/vencimientos", label: "Vencimientos", icon: Clock },
-  { href: "/admin/tareas", label: "Tareas", icon: ListChecks },
-  { href: "/admin/renovaciones", label: "Renovaciones", icon: RefreshCw },
-  { href: "/admin/solicitudes", label: "Solicitudes", icon: Mail },
-  { href: "/admin/contacts", label: "Contactos", icon: Mail },
-  { href: "/admin/blog", label: "Blog", icon: MessageSquare },
+  { href: "/admin/recursos", label: "Recursos PAS", icon: FolderOpen },
+  { href: "/admin/consultas", label: "Consultas PAS", icon: MessageSquare },
+  { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/academy", label: "Academy", icon: FileText },
-  { href: "/admin/integraciones", label: "Integraciones", icon: Link2 },
   { href: "/admin/config", label: "Configuración", icon: Settings },
 ];
 
@@ -40,20 +30,18 @@ const AdminLayout = () => {
     navigate('/login');
   };
 
-  const initials = profile?.full_name 
+  const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'AD';
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary text-primary-foreground transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="p-6 border-b border-primary-foreground/20">
             <Link to="/" className="flex items-center gap-3">
               <img src={logoKipper} alt="Kipper" className="h-10 brightness-0 invert" />
@@ -64,21 +52,18 @@ const AdminLayout = () => {
             </Link>
           </div>
 
-          {/* Nav */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {adminLinks.map((link) => {
-              const isActive = location.pathname === link.href || 
+              const isActive = location.pathname === link.href ||
                 (link.href !== '/admin' && location.pathname.startsWith(link.href));
-              
+
               return (
                 <Link
                   key={link.href}
                   to={link.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isActive
-                      ? "bg-primary-foreground/20"
-                      : "hover:bg-primary-foreground/10"
+                    isActive ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
                   }`}
                 >
                   <link.icon size={20} />
@@ -88,7 +73,6 @@ const AdminLayout = () => {
             })}
           </nav>
 
-          {/* User */}
           <div className="p-4 border-t border-primary-foreground/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
@@ -100,6 +84,7 @@ const AdminLayout = () => {
               </div>
             </div>
             <button
+              type="button"
               onClick={handleSignOut}
               className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity text-sm w-full"
             >
@@ -110,46 +95,21 @@ const AdminLayout = () => {
         </div>
       </aside>
 
-      {/* Overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-foreground/20 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Main */}
       <div className="flex-1 lg:ml-64">
-        {/* Top bar */}
-        <header className="bg-card border-b border-border px-4 py-4 flex items-center gap-4 sticky top-0 z-30">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 text-foreground"
-          >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar leads, clientes, pólizas..."
-                className="input-kipper pl-10 py-2"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 ml-auto">
-            <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border lg:hidden">
+          <div className="flex items-center justify-between p-4">
+            <button type="button" onClick={() => setSidebarOpen(true)} className="p-2">
+              <Menu size={24} />
             </button>
+            <span className="font-semibold">Admin</span>
+            <div className="w-10" />
           </div>
         </header>
-
-        {/* Content */}
-        <main className="p-6">
+        <main className="p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
