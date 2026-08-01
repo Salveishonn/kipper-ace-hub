@@ -27,22 +27,6 @@ export function useCreateProducerApplication() {
         .single();
       if (error) throw error;
 
-      try {
-        await supabase.from("contacts").upsert(
-          {
-            email: input.email,
-            full_name: input.full_name,
-            phone: input.phone ?? null,
-            origin: "sumate",
-            tags: ["producer_candidate"],
-            opt_in: true,
-          },
-          { onConflict: "email" }
-        );
-      } catch {
-        /* non-blocking */
-      }
-
       trackEvent("producer_application_submitted");
       return data;
     },

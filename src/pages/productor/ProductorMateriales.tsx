@@ -50,13 +50,13 @@ const ProductorMateriales = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Recursos semanales</h1>
-        <p className="text-muted-foreground">Material actualizado por el equipo Kipper</p>
+        <h1 className="text-2xl font-bold text-foreground">Novedades</h1>
+        <p className="text-muted-foreground">Actualizaciones y material publicado por el equipo Kipper</p>
       </div>
 
       {!resources?.length ? (
         <EmptyState
-          title="Sin recursos publicados"
+          title="Sin novedades publicadas"
           description="Pronto verás PDFs, videos e imágenes de la semana acá."
         />
       ) : (

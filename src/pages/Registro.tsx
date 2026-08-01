@@ -175,7 +175,7 @@ const RegistroPage = () => {
             <Lock className="mx-auto text-primary mb-4" size={40} />
             <h1 className="text-2xl font-bold mb-2">Acceso solo por invitación</h1>
             <p className="text-muted-foreground mb-6">
-              El portal PAS es exclusivo para productores aprobados. Recibirás un email con un
+              El Portal Productores es exclusivo para productores aprobados. Recibirás un email con un
               enlace de un solo uso cuando tu solicitud sea aceptada.
             </p>
             <Link to="/sumate" className="btn-hero inline-flex items-center gap-2">

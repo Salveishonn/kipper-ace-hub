@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/", label: "Inicio" },
-  { href: "/servicios", label: "Servicios" },
+  { href: "/seguros", label: "Seguros" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/comunidad", label: "Comunidad" },
   { href: "/academy", label: "Academy" },
@@ -37,14 +37,7 @@ export function Navbar({ overlay = false }: NavbarProps) {
     return "/login";
   };
 
-  const portalLabel =
-    !loading && rolesLoaded && user
-      ? isAdmin
-        ? "Admin"
-        : isProductor
-          ? "Portal Productores"
-          : "Portal Productores"
-      : "Portal Productores";
+  const portalLabel = !loading && rolesLoaded && user && isAdmin ? "Admin" : "Portal Productores";
 
   useEffect(() => {
     setIsOpen(false);

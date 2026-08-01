@@ -5,7 +5,7 @@ import { motion } from "@/lib/motion/tokens";
 import { PortalPasLink, SumatePasLink } from "@/components/ui/KipperCta";
 
 const items = [
-  "Recursos semanales y material de producción",
+  "Recursos gráficos y novedades semanales",
   "Kipper Academy y capacitación",
   "Consultas y casos con el equipo central",
   "Comunidad de productores PAS",

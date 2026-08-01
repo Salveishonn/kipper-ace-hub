@@ -24,7 +24,7 @@ const AcademyPage = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Kipper Academy</h1>
             <p className="text-xl opacity-90 mb-8">
               Capacitación exclusiva para productores de seguros.
-              Mejorá tus técnicas de venta y accedé a contenido exclusivo del portal PAS.
+              Mejorá tus técnicas de venta y accedé a contenido exclusivo del Portal Productores.
             </p>
             {!user ? (
               <div className="flex gap-4 flex-wrap">
@@ -32,7 +32,7 @@ const AcademyPage = () => {
                 <Link to="/sumate" className="border-2 border-white px-6 py-3 rounded-xl font-semibold hover:bg-white/10 transition-colors">Sumate a Kipper</Link>
               </div>
             ) : hasAccess ? (
-              <Link to="/academy/contenido" className="inline-flex items-center gap-2 bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors">
+              <Link to="/productor/academy" className="inline-flex items-center gap-2 bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors">
                 <Check size={20} /> Ir a los cursos <ArrowRight size={16} />
               </Link>
             ) : (

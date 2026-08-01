@@ -4,6 +4,7 @@ import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import logoKipper from "@/assets/logo-kipper.png";
+import { siteConfig } from "@/lib/siteConfig";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -67,10 +68,11 @@ const LoginPage = () => {
               </div>
             </Link>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Portal PAS
+              Portal Productores
             </h1>
             <p className="text-muted-foreground">
-              Ingresá con tu email y contraseña de productor Kipper
+              Acceso exclusivo para productores asesores (PAS) aprobados por Kipper.
+              Ingresá con tu email y contraseña de productor.
             </p>
           </div>
 
@@ -114,18 +116,13 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary" 
-                />
-                <span className="text-sm text-muted-foreground">Recordarme</span>
-              </label>
-              <Link to="/recuperar" className="text-sm text-primary hover:underline">
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              ¿Olvidaste tu contraseña? Escribinos a{" "}
+              <a href={`mailto:${siteConfig.contactEmail}`} className="text-primary hover:underline">
+                {siteConfig.contactEmail}
+              </a>{" "}
+              y te ayudamos a recuperar el acceso.
+            </p>
 
             <button
               type="submit"
@@ -164,7 +161,7 @@ const LoginPage = () => {
           <ul className="space-y-4">
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
-              <span>Recursos semanales y material de producción</span>
+              <span>Recursos gráficos y novedades semanales</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>

@@ -1,53 +1,72 @@
+import { lazy, Suspense } from "react";
+import { useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import CotizarPage from "./pages/Cotizar";
-import LoginPage from "./pages/Login";
-import RegistroPage from "./pages/Registro";
-import ServiciosPage from "./pages/Servicios";
-import NosotrosPage from "./pages/Nosotros";
-import ContactoPage from "./pages/Contacto";
-import ComunidadPage from "./pages/Comunidad";
-import AcademyPage from "./pages/Academy";
-import AcademyContenido from "./pages/academy/AcademyContenido";
-import AcademyLesson from "./pages/academy/AcademyLesson";
-import SumatePage from "./pages/Sumate";
+// Public
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CotizarPage = lazy(() => import("./pages/Cotizar"));
+const LoginPage = lazy(() => import("./pages/Login"));
+const RegistroPage = lazy(() => import("./pages/Registro"));
+const ServiciosPage = lazy(() => import("./pages/Servicios"));
+const NosotrosPage = lazy(() => import("./pages/Nosotros"));
+const ContactoPage = lazy(() => import("./pages/Contacto"));
+const ComunidadPage = lazy(() => import("./pages/Comunidad"));
+const AcademyPage = lazy(() => import("./pages/Academy"));
+const AcademyContenido = lazy(() => import("./pages/academy/AcademyContenido"));
+const AcademyLesson = lazy(() => import("./pages/academy/AcademyLesson"));
+const SumatePage = lazy(() => import("./pages/Sumate"));
 
-import SeguroAuto from "./pages/landing/SeguroAuto";
-import SeguroMoto from "./pages/landing/SeguroMoto";
-import SeguroHogar from "./pages/landing/SeguroHogar";
-import SeguroComercio from "./pages/landing/SeguroComercio";
-import SeguroAccidentesPersonales from "./pages/landing/SeguroAccidentesPersonales";
-import SeguroVida from "./pages/landing/SeguroVida";
+// Public landings
+const SeguroAuto = lazy(() => import("./pages/landing/SeguroAuto"));
+const SeguroMoto = lazy(() => import("./pages/landing/SeguroMoto"));
+const SeguroHogar = lazy(() => import("./pages/landing/SeguroHogar"));
+const SeguroComercio = lazy(() => import("./pages/landing/SeguroComercio"));
+const SeguroAccidentesPersonales = lazy(() => import("./pages/landing/SeguroAccidentesPersonales"));
+const SeguroVida = lazy(() => import("./pages/landing/SeguroVida"));
 
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProductores from "./pages/admin/AdminProductores";
-import AdminContacts from "./pages/admin/AdminContacts";
-import AdminBlog from "./pages/admin/AdminBlog";
-import AdminConfig from "./pages/admin/AdminConfig";
-import AdminAcademy from "./pages/admin/AdminAcademy";
-import AdminPasSolicitudes from "./pages/admin/AdminPasSolicitudes";
-import AdminRecursos from "./pages/admin/AdminRecursos";
-import AdminConsultas from "./pages/admin/AdminConsultas";
-import AdminConsultaDetail from "./pages/admin/AdminConsultaDetail";
+// Admin
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminProductores = lazy(() => import("./pages/admin/AdminProductores"));
+const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
+const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
+const AdminAcademy = lazy(() => import("./pages/admin/AdminAcademy"));
+const AdminPasSolicitudes = lazy(() => import("./pages/admin/AdminPasSolicitudes"));
+const AdminNovedades = lazy(() => import("./pages/admin/AdminNovedades"));
+const AdminRecursosGraficos = lazy(() => import("./pages/admin/AdminRecursosGraficos"));
+const AdminConsultas = lazy(() => import("./pages/admin/AdminConsultas"));
+const AdminConsultaDetail = lazy(() => import("./pages/admin/AdminConsultaDetail"));
 
-import ProductorLayout from "./pages/productor/ProductorLayout";
-import ProductorDashboard from "./pages/productor/ProductorDashboard";
-import ProductorTutoriales from "./pages/productor/ProductorTutoriales";
-import ProductorMateriales from "./pages/productor/ProductorMateriales";
-import ProductorPerfil from "./pages/productor/ProductorPerfil";
-import ProductorConsultas from "./pages/productor/ProductorConsultas";
-import ProductorConsultaDetail from "./pages/productor/ProductorConsultaDetail";
+// Productor
+const ProductorLayout = lazy(() => import("./pages/productor/ProductorLayout"));
+const ProductorDashboard = lazy(() => import("./pages/productor/ProductorDashboard"));
+const ProductorMateriales = lazy(() => import("./pages/productor/ProductorMateriales"));
+const ProductorRecursos = lazy(() => import("./pages/productor/ProductorRecursos"));
+const ProductorPerfil = lazy(() => import("./pages/productor/ProductorPerfil"));
+const ProductorConsultas = lazy(() => import("./pages/productor/ProductorConsultas"));
+const ProductorConsultaDetail = lazy(() => import("./pages/productor/ProductorConsultaDetail"));
 
 const queryClient = new QueryClient();
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 size={36} className="animate-spin text-primary" aria-label="Cargando" />
+  </div>
+);
+
+/** Compatibility redirect: /academy/:moduleSlug/:lessonSlug → /productor/academy/... */
+const LegacyAcademyLessonRedirect = () => {
+  const { moduleSlug, lessonSlug } = useParams();
+  return <Navigate to={`/productor/academy/${moduleSlug}/${lessonSlug}`} replace />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -56,76 +75,78 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/servicios" element={<ServiciosPage />} />
-            <Route path="/nosotros" element={<NosotrosPage />} />
-            <Route path="/comunidad" element={<ComunidadPage />} />
-            <Route path="/comunidad/:slug" element={<ComunidadPage />} />
-            <Route path="/contacto" element={<ContactoPage />} />
-            <Route path="/cotizar" element={<CotizarPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/registro" element={<RegistroPage />} />
-            <Route path="/academy" element={<AcademyPage />} />
-            <Route path="/academy/contenido" element={
-              <ProtectedRoute allowedRoles={['admin', 'productor']}>
-                <AcademyContenido />
-              </ProtectedRoute>
-            } />
-            <Route path="/academy/:moduleSlug/:lessonSlug" element={
-              <ProtectedRoute allowedRoles={['admin', 'productor']}>
-                <AcademyLesson />
-              </ProtectedRoute>
-            } />
-            <Route path="/sumate" element={<SumatePage />} />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/seguros" element={<ServiciosPage />} />
+              <Route path="/servicios" element={<Navigate to="/seguros" replace />} />
+              <Route path="/nosotros" element={<NosotrosPage />} />
+              <Route path="/comunidad" element={<ComunidadPage />} />
+              <Route path="/comunidad/:slug" element={<ComunidadPage />} />
+              <Route path="/contacto" element={<ContactoPage />} />
+              <Route path="/cotizar" element={<CotizarPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/registro" element={<RegistroPage />} />
+              <Route path="/academy" element={<AcademyPage />} />
+              {/* Internal Academy moved into the producer portal */}
+              <Route path="/academy/contenido" element={<Navigate to="/productor/academy" replace />} />
+              <Route path="/academy/:moduleSlug/:lessonSlug" element={<LegacyAcademyLessonRedirect />} />
+              <Route path="/sumate" element={<SumatePage />} />
 
-            <Route path="/seguro-auto" element={<SeguroAuto />} />
-            <Route path="/seguro-moto" element={<SeguroMoto />} />
-            <Route path="/seguro-hogar" element={<SeguroHogar />} />
-            <Route path="/seguro-comercio" element={<SeguroComercio />} />
-            <Route path="/seguro-accidentes-personales" element={<SeguroAccidentesPersonales />} />
-            <Route path="/seguro-vida" element={<SeguroVida />} />
+              <Route path="/seguro-auto" element={<SeguroAuto />} />
+              <Route path="/seguro-moto" element={<SeguroMoto />} />
+              <Route path="/seguro-hogar" element={<SeguroHogar />} />
+              <Route path="/seguro-comercio" element={<SeguroComercio />} />
+              <Route path="/seguro-accidentes-personales" element={<SeguroAccidentesPersonales />} />
+              <Route path="/seguro-vida" element={<SeguroVida />} />
 
-            <Route path="/portal" element={<Navigate to="/" replace />} />
-            <Route path="/portal/*" element={<Navigate to="/" replace />} />
+              {/* Legacy customer-portal routes: public site only */}
+              <Route path="/portal" element={<Navigate to="/" replace />} />
+              <Route path="/portal/*" element={<Navigate to="/" replace />} />
 
-            <Route path="/productor" element={
-              <ProtectedRoute allowedRoles={['admin', 'productor']}>
-                <ProductorLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<ProductorDashboard />} />
-              <Route path="novedades" element={<ProductorMateriales />} />
-              <Route path="materiales" element={<Navigate to="/productor/novedades" replace />} />
-              <Route path="consultas" element={<ProductorConsultas />} />
-              <Route path="consultas/:id" element={<ProductorConsultaDetail />} />
-              <Route path="tutoriales" element={<ProductorTutoriales />} />
-              <Route path="perfil" element={<ProductorPerfil />} />
-            </Route>
+              <Route path="/productor" element={
+                <ProtectedRoute allowedRoles={['admin', 'productor']}>
+                  <ProductorLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<ProductorDashboard />} />
+                <Route path="academy" element={<AcademyContenido />} />
+                <Route path="academy/:moduleSlug/:lessonSlug" element={<AcademyLesson />} />
+                <Route path="recursos" element={<ProductorRecursos />} />
+                <Route path="novedades" element={<ProductorMateriales />} />
+                <Route path="materiales" element={<Navigate to="/productor/novedades" replace />} />
+                <Route path="tutoriales" element={<Navigate to="/productor/academy" replace />} />
+                <Route path="consultas" element={<ProductorConsultas />} />
+                <Route path="consultas/:id" element={<ProductorConsultaDetail />} />
+                <Route path="perfil" element={<ProductorPerfil />} />
+              </Route>
 
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<AdminDashboard />} />
-              <Route path="solicitudes-pas" element={<AdminPasSolicitudes />} />
-              <Route path="productores" element={<AdminProductores />} />
-              <Route path="recursos" element={<AdminRecursos />} />
-              <Route path="consultas" element={<AdminConsultas />} />
-              <Route path="consultas/:id" element={<AdminConsultaDetail />} />
-              <Route path="contacts" element={<AdminContacts />} />
-              <Route path="blog" element={<AdminBlog />} />
-              <Route path="academy" element={<AdminAcademy />} />
-              <Route path="config" element={<AdminConfig />} />
-            </Route>
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="solicitudes-pas" element={<AdminPasSolicitudes />} />
+                <Route path="productores" element={<AdminProductores />} />
+                <Route path="academy" element={<AdminAcademy />} />
+                <Route path="recursos-graficos" element={<AdminRecursosGraficos />} />
+                <Route path="novedades" element={<AdminNovedades />} />
+                <Route path="recursos" element={<Navigate to="/admin/novedades" replace />} />
+                <Route path="consultas" element={<AdminConsultas />} />
+                <Route path="consultas/:id" element={<AdminConsultaDetail />} />
+                <Route path="contacts" element={<Navigate to="/admin" replace />} />
+                <Route path="blog" element={<AdminBlog />} />
+                <Route path="config" element={<AdminConfig />} />
+              </Route>
 
-            <Route path="/app" element={<Navigate to="/login" replace />} />
-            <Route path="/app/*" element={<Navigate to="/login" replace />} />
-            <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+              <Route path="/app" element={<Navigate to="/login" replace />} />
+              <Route path="/app/*" element={<Navigate to="/login" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/login" replace />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'productor' | 'cliente';
+type AppRole = 'admin' | 'productor';
 
 interface Profile {
   id: string;
@@ -30,7 +30,6 @@ interface AuthContextType {
   rolesLoaded: boolean;
   isAdmin: boolean;
   isProductor: boolean;
-  isCliente: boolean;
   isAccountActive: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   completeInvitePassword: (password: string) => Promise<{ error: Error | null }>;
@@ -203,7 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = roles.includes('admin');
   const isProductor = roles.includes('productor');
-  const isCliente = roles.includes('cliente');
   const isAccountActive = profile?.account_status === 'active' || isAdmin;
 
   return (
@@ -216,7 +214,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rolesLoaded,
       isAdmin,
       isProductor,
-      isCliente,
       isAccountActive,
       signIn,
       completeInvitePassword,

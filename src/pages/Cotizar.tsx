@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
-import { Clock, MessageCircle, ArrowRight } from "lucide-react";
+import { Clock, MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
 
 const CotizarPage = () => {
@@ -9,31 +9,86 @@ const CotizarPage = () => {
     <MainLayout>
       <Seo
         title="Cotizar | Kipper Seguros"
-        description="Próximamente cotizador online con Federación Patronal."
+        description="Cotizá tu seguro con Kipper. Muy pronto con el cotizador online de Federación Patronal; mientras tanto, cotizás al instante por WhatsApp."
       />
       <section className="section-padding">
-        <div className="max-w-2xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Clock size={16} /> Próximamente
-          </span>
-          <h1 className="text-4xl font-bold mb-4">Cotizador online</h1>
-          <p className="text-muted-foreground text-lg mb-8">
-            Estamos integrando el cotizador oficial de Federación Patronal en esta sección.
-            Mientras tanto, contactanos por WhatsApp o el formulario de contacto.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-4">Cotizá tu seguro</h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Te asesoramos en minutos y comparamos opciones de las mejores compañías.
+            </p>
+          </div>
+
+          {/*
+            Reserved container for the Federación Patronal quoting widget.
+            When the official HTML embed is available, mount it inside #fedpat-cotizador.
+          */}
+          <div
+            id="fedpat-cotizador"
+            className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-10 sm:p-14 text-center mb-10"
+            aria-label="Cotizador online de Federación Patronal"
+          >
+            <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-5">
+              <Clock size={16} aria-hidden /> Próximamente
+            </span>
+            <div className="flex items-center justify-center gap-3 mb-3 text-foreground">
+              <ShieldCheck size={26} className="text-primary" aria-hidden />
+              <h2 className="text-xl font-semibold">Cotizador online de Federación Patronal</h2>
+            </div>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              En esta sección vas a poder cotizar y comparar coberturas de forma directa con el
+              cotizador oficial. Mientras lo integramos, cotizá al instante por WhatsApp.
+            </p>
+          </div>
+
+          <div className="text-center">
             <a
-              href={`${siteConfig.whatsappUrl}?text=Hola%2C%20quiero%20cotizar%20mi%20seguro`}
+              href={`${siteConfig.whatsappUrl}?text=Hola%20Kipper%2C%20quiero%20cotizar%20mi%20seguro`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-hero inline-flex items-center justify-center gap-2"
+              className="btn-hero inline-flex items-center justify-center gap-2 text-lg"
             >
-              <MessageCircle size={18} /> Cotizar por WhatsApp
+              <MessageCircle size={20} aria-hidden /> Cotizar por WhatsApp
             </a>
-            <Link to="/contacto" className="btn-hero-outline inline-flex items-center justify-center gap-2">
-              Contacto <ArrowRight size={16} />
-            </Link>
+            <p className="text-sm text-muted-foreground mt-3">
+              Respondemos en el horario de atención, de lunes a viernes de 9 a 18 h.
+            </p>
           </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 mt-12 max-w-2xl mx-auto">
+            <a
+              href={`tel:${siteConfig.whatsappNumber}`}
+              className="bg-card rounded-xl border border-border/70 p-5 flex items-center gap-4 hover:border-primary/30 transition-colors"
+            >
+              <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                <Phone size={20} aria-hidden />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">Llamanos</p>
+                <p className="text-sm text-muted-foreground">{siteConfig.phoneDisplay}</p>
+              </div>
+            </a>
+            <a
+              href={`mailto:${siteConfig.contactEmail}`}
+              className="bg-card rounded-xl border border-border/70 p-5 flex items-center gap-4 hover:border-primary/30 transition-colors"
+            >
+              <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                <Mail size={20} aria-hidden />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">Escribinos por email</p>
+                <p className="text-sm text-muted-foreground">{siteConfig.contactEmail}</p>
+              </div>
+            </a>
+          </div>
+
+          <p className="text-center mt-10 text-sm text-muted-foreground">
+            ¿Preferís que te contactemos nosotros?{" "}
+            <Link to="/contacto" className="text-primary font-medium hover:underline inline-flex items-center gap-1">
+              Ver datos de contacto <ArrowRight size={14} aria-hidden />
+            </Link>
+          </p>
         </div>
       </section>
     </MainLayout>

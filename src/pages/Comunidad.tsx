@@ -65,14 +65,7 @@ const ComunidadPage = () => {
 const ComunidadListing = () => {
   const { data: posts, isLoading, error } = useBlogPosts(true);
 
-  // Fallback mock data when no DB posts exist
-  const mockPosts = [
-    { id: "1", title: "¿Cuándo comienza la cobertura de una póliza?", excerpt: "Conocé el día y horario de inicio de tu cobertura.", tags: ["Tips"], slug: "cuando-comienza-cobertura", published_at: "2025-01-15", status: "published" },
-    { id: "2", title: "Cómo conducir con niebla", excerpt: "Consejos para manejar con seguridad.", tags: ["KipperTips"], slug: "conducir-con-niebla", published_at: "2025-01-12", status: "published" },
-    { id: "3", title: "Mitos sobre el seguro de auto", excerpt: "Desmintiendo creencias populares.", tags: ["Mitos"], slug: "mitos-seguro-auto", published_at: "2025-01-10", status: "published" },
-  ];
-
-  const displayPosts = posts && posts.length > 0 ? posts : mockPosts;
+  const displayPosts = posts ?? [];
 
   return (
     <MainLayout>
@@ -91,6 +84,11 @@ const ComunidadListing = () => {
             <LoadingState text="Cargando artículos..." />
           ) : error ? (
             <ErrorState title="Error" message="No se pudieron cargar los artículos" />
+          ) : displayPosts.length === 0 ? (
+            <EmptyState
+              title="Todavía no hay artículos"
+              description="Muy pronto vas a encontrar tips y novedades sobre seguros acá."
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayPosts.map((post: any) => (

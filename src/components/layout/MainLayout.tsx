@@ -13,7 +13,7 @@ interface MainLayoutProps {
 }
 
 function isDashboardPath(path: string) {
-  return path.startsWith("/admin") || path.startsWith("/productor") || path.startsWith("/portal");
+  return path.startsWith("/admin") || path.startsWith("/productor");
 }
 
 export function MainLayout({ children, showFooter = true, overlayNav = false }: MainLayoutProps) {

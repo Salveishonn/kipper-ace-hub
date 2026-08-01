@@ -1,20 +1,16 @@
-import { useParams, Navigate, Link } from "react-router-dom";
-import { ArrowLeft, Video, MessageSquare, FileText } from "lucide-react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { useAuth } from "@/hooks/useAuth";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState } from "@/components/ui/loading-state";
 
+/** Internal Academy lesson. Rendered inside ProductorLayout at /productor/academy/:moduleSlug/:lessonSlug. */
 const AcademyLesson = () => {
   const { moduleSlug, lessonSlug } = useParams();
-  const { isProductor, isAdmin, user, loading, rolesLoaded } = useAuth();
-  const hasAccess = isProductor || isAdmin;
 
   const { data: lesson, isLoading } = useQuery({
     queryKey: ["academy_lesson", moduleSlug, lessonSlug],
     queryFn: async () => {
-      // First get module
       const { data: mod } = await supabase
         .from("academy_modules")
         .select("id, title, slug")
@@ -33,22 +29,19 @@ const AcademyLesson = () => {
       if (error) return null;
       return { ...data, module: mod };
     },
-    enabled: hasAccess && !!moduleSlug && !!lessonSlug,
+    enabled: !!moduleSlug && !!lessonSlug,
   });
 
-  if (loading || !rolesLoaded) return <LoadingState text="Cargando..." />;
-  if (!user || !hasAccess) return <Navigate to="/academy" replace />;
-
-  if (isLoading) return <MainLayout><LoadingState text="Cargando lección..." /></MainLayout>;
+  if (isLoading) return <LoadingState text="Cargando lección..." />;
 
   if (!lesson) {
     return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Lección no encontrada</h1>
-          <Link to="/academy/contenido" className="text-primary hover:underline">Volver a Academy</Link>
-        </div>
-      </MainLayout>
+      <div className="py-16 text-center">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Lección no encontrada</h1>
+        <Link to="/productor/academy" className="text-primary hover:underline">
+          Volver a Academy
+        </Link>
+      </div>
     );
   }
 
@@ -69,54 +62,57 @@ const AcademyLesson = () => {
   };
 
   return (
-    <MainLayout>
-      <section className="bg-primary text-primary-foreground py-8">
-        <div className="container mx-auto px-4">
-          <Link to="/academy/contenido" className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100 mb-4">
-            <ArrowLeft size={16} /> Volver a Academy
-          </Link>
-          <p className="text-sm opacity-70 mb-1">{lesson.module?.title}</p>
-          <h1 className="text-2xl font-bold">{lesson.title}</h1>
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <Link
+          to="/productor/academy"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-3"
+        >
+          <ArrowLeft size={16} aria-hidden /> Volver a Academy
+        </Link>
+        <p className="text-sm text-muted-foreground mb-1">{lesson.module?.title}</p>
+        <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
+      </div>
+
+      {lesson.type === "video" && lesson.video_url && (
+        <div className="aspect-video bg-black rounded-xl overflow-hidden">
+          <iframe
+            src={getVideoEmbedUrl(lesson.video_url)}
+            className="w-full h-full"
+            allowFullScreen
+            allow="autoplay; encrypted-media"
+            title={lesson.title}
+          />
         </div>
-      </section>
+      )}
 
-      <section className="py-12">
-        <div className="container mx-auto px-4 max-w-4xl">
-          {lesson.type === "video" && lesson.video_url && (
-            <div className="aspect-video bg-black rounded-2xl overflow-hidden mb-8">
-              <iframe
-                src={getVideoEmbedUrl(lesson.video_url)}
-                className="w-full h-full"
-                allowFullScreen
-                allow="autoplay; encrypted-media"
-              />
-            </div>
-          )}
+      {lesson.type === "chat" && lesson.content_text && (
+        <div className="bg-card rounded-xl border border-border/60 shadow-soft p-8">
+          <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+            {lesson.content_text}
+          </div>
+        </div>
+      )}
 
-          {lesson.type === "chat" && lesson.content_text && (
-            <div className="bg-card rounded-2xl shadow-soft p-8">
-              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
-                {lesson.content_text}
-              </div>
-            </div>
-          )}
-
-          {lesson.type === "pdf" && (
-            <div className="bg-card rounded-2xl shadow-soft p-8 text-center">
-              <FileText size={48} className="text-primary mx-auto mb-4" />
-              <p className="text-foreground font-medium mb-4">Documento PDF</p>
-              {lesson.file_path ? (
-                <a href={lesson.file_path} target="_blank" rel="noopener noreferrer" className="btn-hero text-sm px-6 py-2">
-                  Descargar PDF
-                </a>
-              ) : (
-                <p className="text-muted-foreground">Archivo no disponible aún</p>
-              )}
-            </div>
+      {lesson.type === "pdf" && (
+        <div className="bg-card rounded-xl border border-border/60 shadow-soft p-8 text-center">
+          <FileText size={48} className="text-primary mx-auto mb-4" aria-hidden />
+          <p className="text-foreground font-medium mb-4">Documento PDF</p>
+          {lesson.file_path ? (
+            <a
+              href={lesson.file_path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-hero text-sm px-6 py-2"
+            >
+              Descargar PDF
+            </a>
+          ) : (
+            <p className="text-muted-foreground">Archivo no disponible aún</p>
           )}
         </div>
-      </section>
-    </MainLayout>
+      )}
+    </div>
   );
 };
 

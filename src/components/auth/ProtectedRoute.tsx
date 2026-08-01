@@ -59,7 +59,7 @@ export const ProtectedRoute = ({
         <div className="max-w-md text-center space-y-4">
           <h1 className="text-xl font-bold">Cuenta pendiente</h1>
           <p className="text-muted-foreground">
-            Tu acceso al portal PAS aún no está activo. Si recibiste una invitación,
+            Tu acceso al Portal Productores aún no está activo. Si recibiste una invitación,
             completá el registro desde el enlace del email.
           </p>
           <Link to="/sumate" className="btn-hero inline-block">Sumate a Kipper</Link>

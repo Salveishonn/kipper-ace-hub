@@ -13,13 +13,13 @@ export default function SeguroAuto() {
         "Granizo, robo, incendio y daños totales",
         "Cristales, cerraduras y ruedas según cobertura",
         "Auto sustituto en planes premium",
-        "Trámite de siniestro 100% digital desde tu portal",
+        "Trámite de siniestro 100% digital por WhatsApp",
         "Asesoramiento personal de un productor matriculado",
       ]}
       faqs={[
         { q: "¿Cuánto tarda la emisión?", a: "Una vez aprobada la cotización, la póliza suele emitirse en 24 a 48 horas hábiles." },
         { q: "¿Puedo elegir la compañía?", a: "Sí. Trabajamos con varias compañías y te asesoramos para elegir la mejor relación cobertura–precio." },
-        { q: "¿Cómo denuncio un siniestro?", a: "Desde el portal del cliente cargás los datos y la documentación. Un asesor te acompaña hasta el cierre." },
+        { q: "¿Cómo denuncio un siniestro?", a: "Nos escribís por WhatsApp con los datos y la documentación, y un asesor te acompaña hasta el cierre." },
         { q: "¿Hay descuentos por antigüedad?", a: "Sí, las compañías premian la siniestralidad baja y la antigüedad como cliente." },
       ]}
       whatsappMsg="Hola Kipper, quiero cotizar un seguro de auto."

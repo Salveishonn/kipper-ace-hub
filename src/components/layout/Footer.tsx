@@ -39,19 +39,19 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Seguros</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/servicios#auto" className="hover:opacity-100">Auto y Moto</Link></li>
-              <li><Link to="/servicios#hogar" className="hover:opacity-100">Hogar</Link></li>
-              <li><Link to="/servicios#vida" className="hover:opacity-100">Vida</Link></li>
-              <li><Link to="/servicios#accidentes" className="hover:opacity-100">Accidentes Personales</Link></li>
-              <li><Link to="/servicios#comercio" className="hover:opacity-100">Comercio / PyME</Link></li>
-              <li><Link to="/servicios#flotas" className="hover:opacity-100">Flotas</Link></li>
+              <li><Link to="/seguro-auto" className="hover:opacity-100">Auto</Link></li>
+              <li><Link to="/seguro-moto" className="hover:opacity-100">Moto</Link></li>
+              <li><Link to="/seguro-hogar" className="hover:opacity-100">Hogar</Link></li>
+              <li><Link to="/seguro-vida" className="hover:opacity-100">Vida</Link></li>
+              <li><Link to="/seguro-accidentes-personales" className="hover:opacity-100">Accidentes Personales</Link></li>
+              <li><Link to="/seguro-comercio" className="hover:opacity-100">Comercio / PyME</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Productores PAS</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/login" className="hover:opacity-100">Portal PAS</Link></li>
+              <li><Link to="/login" className="hover:opacity-100">Portal Productores</Link></li>
               <li><Link to="/sumate" className="hover:opacity-100">Sumate a Kipper</Link></li>
               <li><Link to="/academy" className="hover:opacity-100">Kipper Academy</Link></li>
               <li><Link to="/cotizar" className="hover:opacity-100">Cotizar</Link></li>

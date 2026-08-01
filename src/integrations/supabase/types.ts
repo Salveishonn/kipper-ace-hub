@@ -880,6 +880,51 @@ export type Database = {
         }
         Relationships: []
       }
+      design_resources: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          download_path: string | null
+          editable_url: string | null
+          id: string
+          preview_path: string | null
+          published: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_path?: string | null
+          editable_url?: string | null
+          id?: string
+          preview_path?: string | null
+          published?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_path?: string | null
+          editable_url?: string | null
+          id?: string
+          preview_path?: string | null
+          published?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pas_resources: {
         Row: {
           created_at: string

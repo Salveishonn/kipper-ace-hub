@@ -2,21 +2,25 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Settings, LogOut,
   Menu, X, UserCheck, MessageSquare, Mail,
-  FileText, FolderOpen
+  FileText, BookOpen, Palette, Newspaper,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
 
 const adminLinks = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin", label: "Resumen", icon: LayoutDashboard },
   { href: "/admin/solicitudes-pas", label: "Solicitudes PAS", icon: Mail },
   { href: "/admin/productores", label: "Productores", icon: UserCheck },
-  { href: "/admin/recursos", label: "Recursos PAS", icon: FolderOpen },
-  { href: "/admin/consultas", label: "Consultas PAS", icon: MessageSquare },
-  { href: "/admin/blog", label: "Blog", icon: FileText },
-  { href: "/admin/academy", label: "Academy", icon: FileText },
-  { href: "/admin/config", label: "Configuración", icon: Settings },
+  { href: "/admin/academy", label: "Academy", icon: BookOpen },
+  { href: "/admin/recursos-graficos", label: "Recursos gráficos", icon: Palette },
+  { href: "/admin/novedades", label: "Novedades", icon: Newspaper },
+  { href: "/admin/consultas", label: "Consultas", icon: MessageSquare },
+];
+
+const siteLinks = [
+  { href: "/admin/blog", label: "Blog público", icon: FileText },
+  { href: "/admin/config", label: "Configuración del sitio", icon: Settings },
 ];
 
 const AdminLayout = () => {
@@ -34,12 +38,32 @@ const AdminLayout = () => {
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'AD';
 
+  const renderLink = (link: { href: string; label: string; icon: typeof Mail }) => {
+    const isActive = location.pathname === link.href ||
+      (link.href !== '/admin' && location.pathname.startsWith(link.href));
+    return (
+      <Link
+        key={link.href}
+        to={link.href}
+        onClick={() => setSidebarOpen(false)}
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors text-sm ${
+          isActive ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
+        }`}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <link.icon size={18} aria-hidden />
+        <span className="font-medium">{link.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 flex">
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary text-primary-foreground transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        aria-label="Navegación de administración"
       >
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-primary-foreground/20">
@@ -47,30 +71,18 @@ const AdminLayout = () => {
               <img src={logoKipper} alt="Kipper" className="h-10 brightness-0 invert" />
               <div>
                 <span className="font-bold">KIPPER</span>
-                <span className="text-xs opacity-80 block">Admin Panel</span>
+                <span className="text-xs opacity-80 block">Administración</span>
               </div>
             </Link>
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {adminLinks.map((link) => {
-              const isActive = location.pathname === link.href ||
-                (link.href !== '/admin' && location.pathname.startsWith(link.href));
+            {adminLinks.map(renderLink)}
 
-              return (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isActive ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
-                  }`}
-                >
-                  <link.icon size={20} />
-                  <span className="font-medium">{link.label}</span>
-                </Link>
-              );
-            })}
+            <p className="px-4 pt-5 pb-1 text-[11px] uppercase tracking-wider opacity-60">
+              Sitio público
+            </p>
+            {siteLinks.map(renderLink)}
           </nav>
 
           <div className="p-4 border-t border-primary-foreground/20">
@@ -78,9 +90,9 @@ const AdminLayout = () => {
               <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
                 {initials}
               </div>
-              <div>
-                <p className="font-medium text-sm">{profile?.full_name || 'Admin'}</p>
-                <p className="text-xs opacity-80">{profile?.email || 'admin@kipper.com'}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate">{profile?.full_name || 'Admin'}</p>
+                <p className="text-xs opacity-80 truncate">{profile?.email}</p>
               </div>
             </div>
             <button
@@ -88,7 +100,7 @@ const AdminLayout = () => {
               onClick={handleSignOut}
               className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity text-sm w-full"
             >
-              <LogOut size={16} />
+              <LogOut size={16} aria-hidden />
               Cerrar sesión
             </button>
           </div>
@@ -96,16 +108,27 @@ const AdminLayout = () => {
       </aside>
 
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <button
+          type="button"
+          className="fixed inset-0 bg-foreground/20 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Cerrar menú"
+        />
       )}
 
       <div className="flex-1 lg:ml-64">
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border lg:hidden">
           <div className="flex items-center justify-between p-4">
-            <button type="button" onClick={() => setSidebarOpen(true)} className="p-2">
-              <Menu size={24} />
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="p-2"
+              aria-expanded={sidebarOpen}
+              aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+            >
+              {sidebarOpen ? <X size={24} aria-hidden /> : <Menu size={24} aria-hidden />}
             </button>
-            <span className="font-semibold">Admin</span>
+            <span className="font-semibold">Administración</span>
             <div className="w-10" />
           </div>
         </header>

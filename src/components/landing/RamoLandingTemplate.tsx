@@ -1,19 +1,27 @@
+import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
-import { QuoteLeadForm } from "@/components/forms/QuoteLeadForm";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, MessageCircle } from "lucide-react";
+import { Check, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
-import type { QuoteRamo } from "@/hooks/useQuoteRequests";
+import { siteConfig } from "@/lib/siteConfig";
+
+export type RamoId =
+  | "auto"
+  | "moto"
+  | "hogar"
+  | "comercio"
+  | "accidentes_personales"
+  | "vida";
 
 interface RamoLandingProps {
-  ramo: QuoteRamo;
+  ramo: RamoId;
   title: string;
   metaTitle: string;
   metaDescription: string;
@@ -22,8 +30,6 @@ interface RamoLandingProps {
   faqs: { q: string; a: string }[];
   whatsappMsg?: string;
 }
-
-const WA_NUMBER = "5491112345678";
 
 export function RamoLandingTemplate({
   ramo,
@@ -35,7 +41,7 @@ export function RamoLandingTemplate({
   faqs,
   whatsappMsg,
 }: RamoLandingProps) {
-  const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
+  const waUrl = `${siteConfig.whatsappUrl}?text=${encodeURIComponent(
     whatsappMsg ?? `Hola Kipper, quiero información sobre ${title}.`
   )}`;
 
@@ -61,13 +67,10 @@ export function RamoLandingTemplate({
                 onClick={() => trackEvent("whatsapp_click", { ramo })}
               >
                 <a href={waUrl} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle size={18} className="mr-2" /> WhatsApp
+                  <MessageCircle size={18} className="mr-2" aria-hidden /> WhatsApp
                 </a>
               </Button>
             </div>
-          </div>
-          <div className="hidden md:block">
-            <div id="cotizar" />
           </div>
         </div>
       </section>
@@ -80,7 +83,7 @@ export function RamoLandingTemplate({
             {benefits.map((b, i) => (
               <div key={i} className="flex items-start gap-3 bg-card p-4 rounded-xl shadow-soft">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Check className="text-primary" size={18} />
+                  <Check className="text-primary" size={18} aria-hidden />
                 </div>
                 <p className="text-foreground">{b}</p>
               </div>
@@ -89,7 +92,7 @@ export function RamoLandingTemplate({
         </div>
       </section>
 
-      {/* Form + FAQ */}
+      {/* Quote CTA + FAQ */}
       <section className="py-16">
         <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-10 items-start">
           <div>
@@ -103,8 +106,30 @@ export function RamoLandingTemplate({
               ))}
             </Accordion>
           </div>
-          <div id="cotizar">
-            <QuoteLeadForm ramo={ramo} source={`landing_${ramo}`} />
+          <div id="cotizar" className="bg-card rounded-2xl shadow-card p-8 lg:sticky lg:top-24">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Cotizá {title}</h2>
+            <p className="text-muted-foreground mb-6">
+              Contanos qué necesitás y un asesor Kipper te prepara la cotización con las mejores
+              compañías, sin compromiso.
+            </p>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("whatsapp_click", { ramo, placement: "landing_cotizar" })}
+              className="btn-hero w-full inline-flex items-center justify-center gap-2 mb-3"
+            >
+              <MessageCircle size={18} aria-hidden /> Cotizar por WhatsApp
+            </a>
+            <Link
+              to="/cotizar"
+              className="btn-hero-outline w-full inline-flex items-center justify-center gap-2"
+            >
+              Más formas de cotizar <ArrowRight size={16} aria-hidden />
+            </Link>
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              Atención de lunes a viernes de 9 a 18 h · Sábados de 9 a 13 h
+            </p>
           </div>
         </div>
       </section>

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 
 const benefits = [
-  { icon: Shield, title: "Herramientas Profesionales", description: "Portal PAS con recursos, academy y consultas" },
+  { icon: Shield, title: "Herramientas Profesionales", description: "Portal Productores con recursos, academy y consultas" },
   { icon: TrendingUp, title: "Crecimiento", description: "Capacitación continua en Kipper Academy" },
   { icon: Users, title: "Comunidad", description: "Red de productores y soporte permanente" },
   { icon: Briefcase, title: "Organización PAS", description: "Acompañamiento comercial y operativo centralizado" },
