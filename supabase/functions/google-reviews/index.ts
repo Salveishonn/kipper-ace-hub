@@ -91,9 +91,11 @@ Deno.serve(async (req: Request) => {
       .eq("place_id", placeId)
       .maybeSingle();
 
-      const url =
+    // languageCode keeps relative times / localized fields in Spanish when Google translates.
+    // Review body still prefers originalText so Spanish originals are not replaced by English.
+    const url =
       `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}` +
-      `?languageCode=es-419`;
+      `?languageCode=es`;
     const fieldMask =
       "id,displayName,rating,userRatingCount,reviews,googleMapsUri";
 
@@ -105,6 +107,7 @@ Deno.serve(async (req: Request) => {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
           "X-Goog-FieldMask": fieldMask,
+          "Accept-Language": "es",
         },
       });
     } catch (netErr) {
@@ -333,6 +336,27 @@ function normalizePlaceId(raw: string): string {
   return trimmed.startsWith("places/") ? trimmed.slice("places/".length) : trimmed;
 }
 
+function isSpanishLang(code?: string): boolean {
+  return Boolean(code?.toLowerCase().startsWith("es"));
+}
+
+/** Prefer original Spanish text over Google's English translation. */
+function pickReviewText(row: {
+  text?: { text?: string; languageCode?: string };
+  originalText?: { text?: string; languageCode?: string };
+}): string {
+  const original = row.originalText?.text?.trim() || "";
+  const localized = row.text?.text?.trim() || "";
+  const originalLang = row.originalText?.languageCode;
+  const localizedLang = row.text?.languageCode;
+
+  if (original && isSpanishLang(originalLang)) return original;
+  if (localized && isSpanishLang(localizedLang)) return localized;
+  // Prefer the author's original wording over an auto-translated `text` field.
+  if (original) return original;
+  return localized;
+}
+
 function normalizeReviews(reviews: unknown[]): ReviewRow[] {
   return reviews.slice(0, 5).map((r) => {
     const row = r as {
@@ -351,9 +375,6 @@ function normalizeReviews(reviews: unknown[]): ReviewRow[] {
       relativePublishTimeDescription?: string;
     };
 
-    const originalText = row.originalText?.text?.trim();
-    const localizedText = row.text?.text?.trim();
-
     return {
       author:
         row.authorAttribution?.displayName?.trim() ||
@@ -362,7 +383,7 @@ function normalizeReviews(reviews: unknown[]): ReviewRow[] {
         typeof row.rating === "number"
           ? row.rating
           : undefined,
-      text: originalText || localizedText || "",
+      text: pickReviewText(row),
       relativeTime:
         row.relativePublishTimeDescription || "",
     };
