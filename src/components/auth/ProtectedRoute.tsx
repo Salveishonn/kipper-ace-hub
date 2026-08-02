@@ -15,7 +15,9 @@ export const ProtectedRoute = ({
   const { user, roles, loading, rolesLoaded, isAdmin, isProductor, isAccountActive, profile } = useAuth();
   const location = useLocation();
 
-  if (loading || !rolesLoaded) {
+  // Anonymous visitors have no roles to load; only wait for rolesLoaded
+  // when there is an authenticated user whose role lookup is in flight.
+  if (loading || (user && !rolesLoaded)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
@@ -27,7 +29,9 @@ export const ProtectedRoute = ({
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Admin routes use the discreet admin entry point; everything else uses Portal Productores.
+    const loginPath = location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   const getCorrectDashboard = (): string => {
@@ -49,7 +53,8 @@ export const ProtectedRoute = ({
 
   if (allowedRoles?.includes("productor") && !isAdmin) {
     if (!isProductor) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      // Authenticated but without a runtime role: back to the producer entry point.
+      return <Navigate to="/login" replace />;
     }
   }
 

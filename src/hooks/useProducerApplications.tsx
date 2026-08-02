@@ -2,7 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
 import { getSupabaseFunctionUrl } from "@/lib/siteConfig";
-import { PRODUCER_APPLICATION_STATUS } from "@/lib/producerApplicationStatus";
+import {
+  getProducerApplicationErrorMessage,
+  logProducerApplicationError,
+} from "@/lib/producerApplicationErrors";
 
 export interface ProducerApplicationInput {
   full_name: string;
@@ -16,19 +19,42 @@ export interface ProducerApplicationInput {
   message?: string | null;
 }
 
+/**
+ * Public Sumate submission: INSERT only.
+ * Do not chain .select()/.single() — applicants have no SELECT policy, and
+ * Prefer: return=representation would fail even when the row was written.
+ * Do not send workflow fields (status, user_id, reviewed_*, invite_*); the
+ * database assigns status = 'nuevo'.
+ */
 export function useCreateProducerApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProducerApplicationInput) => {
-      const { data, error } = await supabase
+      const payload = {
+        full_name: input.full_name.trim(),
+        email: input.email.trim(),
+        phone: input.phone ?? null,
+        matricula_ssn: input.matricula_ssn ?? null,
+        city: input.city ?? null,
+        province: input.province ?? null,
+        years_experience: input.years_experience ?? null,
+        current_companies: input.current_companies ?? null,
+        message: input.message ?? null,
+      };
+
+      const { error } = await supabase
         .from("producer_applications")
-        .insert({ ...input, status: PRODUCER_APPLICATION_STATUS.NUEVO })
-        .select()
-        .single();
-      if (error) throw error;
+        .insert(payload);
+
+      if (error) {
+        logProducerApplicationError(error);
+        const mapped = new Error(getProducerApplicationErrorMessage(error));
+        (mapped as Error & { cause?: unknown }).cause = error;
+        throw mapped;
+      }
 
       trackEvent("producer_application_submitted");
-      return data;
+      return { ok: true as const };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["producer_applications"] }),
   });

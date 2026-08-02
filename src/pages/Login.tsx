@@ -13,16 +13,27 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, loading, rolesLoaded, getDefaultDashboard } = useAuth();
+  const { signIn, user, roles, loading, rolesLoaded, authError, getDefaultDashboard } = useAuth();
 
   const from = location.state?.from?.pathname || null;
 
   // Redirect if already logged in and roles are loaded
   useEffect(() => {
-    if (!loading && rolesLoaded && user) {
-      const targetPath = from || getDefaultDashboard();
-      navigate(targetPath, { replace: true });
+    if (loading || !rolesLoaded || !user) return;
+
+    const fallback = getDefaultDashboard();
+    let targetPath = from || fallback;
+    // Never send a non-admin toward /admin from here; use their own dashboard.
+    if (targetPath.startsWith("/admin") && fallback !== "/admin") {
+      targetPath = fallback;
     }
+    // No runtime role: stay on the page instead of looping through redirects.
+    if (targetPath === "/login") {
+      setIsLoading(false);
+      return;
+    }
+
+    navigate(targetPath, { replace: true });
   }, [loading, rolesLoaded, user, from, navigate, getDefaultDashboard]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,14 +56,17 @@ const LoginPage = () => {
     // The useEffect will handle the redirect once roles are loaded
   };
 
-  // Show loading while checking auth state
-  if (loading) {
+  // Show loading while checking auth state. Anonymous visitors never wait on
+  // rolesLoaded — they have no roles to load.
+  if (loading || (user && !rolesLoaded)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <Loader2 size={48} className="animate-spin text-primary" />
       </div>
     );
   }
+
+  const hasNoAssignedAccess = !!user && rolesLoaded && !authError && roles.length === 0;
 
   return (
     <div className="min-h-screen flex">
@@ -75,6 +89,32 @@ const LoginPage = () => {
               Ingresá con tu email y contraseña de productor.
             </p>
           </div>
+
+          {authError && (
+            <div
+              role="alert"
+              className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+            >
+              {authError}
+            </div>
+          )}
+
+          {hasNoAssignedAccess && (
+            <div
+              role="alert"
+              className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              <p className="font-semibold mb-1">Tu cuenta no tiene acceso asignado</p>
+              <p>
+                Iniciaste sesión correctamente, pero tu cuenta todavía no tiene un rol de
+                productor o administrador. Escribinos a{" "}
+                <a href={`mailto:${siteConfig.contactEmail}`} className="underline">
+                  {siteConfig.contactEmail}
+                </a>{" "}
+                para activar tu acceso.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

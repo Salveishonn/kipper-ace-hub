@@ -31,7 +31,7 @@ const AdminLayout = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   const initials = profile?.full_name

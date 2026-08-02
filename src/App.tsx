@@ -14,6 +14,7 @@ const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CotizarPage = lazy(() => import("./pages/Cotizar"));
 const LoginPage = lazy(() => import("./pages/Login"));
+const AdminLoginPage = lazy(() => import("./pages/AdminLogin"));
 const RegistroPage = lazy(() => import("./pages/Registro"));
 const ServiciosPage = lazy(() => import("./pages/Servicios"));
 const NosotrosPage = lazy(() => import("./pages/Nosotros"));
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/contacto" element={<ContactoPage />} />
               <Route path="/cotizar" element={<CotizarPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/registro" element={<RegistroPage />} />
               <Route path="/academy" element={<AcademyPage />} />
               {/* Internal Academy moved into the producer portal */}

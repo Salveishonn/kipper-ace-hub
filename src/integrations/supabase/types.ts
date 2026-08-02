@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -291,48 +291,78 @@ export type Database = {
         }
         Relationships: []
       }
-      external_identity_matches: {
+      design_resources: {
         Row: {
-          confidence: number | null
+          category: string
           created_at: string
-          external_customer_id: string | null
-          external_policy_id: string | null
-          external_source: string
+          created_by: string | null
+          description: string | null
+          download_path: string | null
+          editable_url: string | null
           id: string
-          match_method: string | null
-          notes: string | null
-          payload: Json | null
-          profile_id: string | null
-          status: string | null
+          preview_path: string | null
+          published: boolean
+          sort_order: number
+          title: string
           updated_at: string
         }
         Insert: {
-          confidence?: number | null
+          category: string
           created_at?: string
-          external_customer_id?: string | null
-          external_policy_id?: string | null
-          external_source?: string
+          created_by?: string | null
+          description?: string | null
+          download_path?: string | null
+          editable_url?: string | null
           id?: string
-          match_method?: string | null
-          notes?: string | null
-          payload?: Json | null
-          profile_id?: string | null
-          status?: string | null
+          preview_path?: string | null
+          published?: boolean
+          sort_order?: number
+          title: string
           updated_at?: string
         }
         Update: {
-          confidence?: number | null
+          category?: string
           created_at?: string
-          external_customer_id?: string | null
-          external_policy_id?: string | null
-          external_source?: string
+          created_by?: string | null
+          description?: string | null
+          download_path?: string | null
+          editable_url?: string | null
           id?: string
-          match_method?: string | null
-          notes?: string | null
-          payload?: Json | null
-          profile_id?: string | null
-          status?: string | null
+          preview_path?: string | null
+          published?: boolean
+          sort_order?: number
+          title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      google_reviews_cache: {
+        Row: {
+          fetched_at: string
+          id: string
+          maps_url: string
+          place_id: string
+          rating: number | null
+          reviews_json: Json
+          user_ratings_total: number | null
+        }
+        Insert: {
+          fetched_at?: string
+          id?: string
+          maps_url: string
+          place_id: string
+          rating?: number | null
+          reviews_json?: Json
+          user_ratings_total?: number | null
+        }
+        Update: {
+          fetched_at?: string
+          id?: string
+          maps_url?: string
+          place_id?: string
+          rating?: number | null
+          reviews_json?: Json
+          user_ratings_total?: number | null
         }
         Relationships: []
       }
@@ -437,7 +467,6 @@ export type Database = {
       integration_runs: {
         Row: {
           created_at: string
-          created_by: string | null
           error_message: string | null
           finished_at: string | null
           id: string
@@ -449,7 +478,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by?: string | null
           error_message?: string | null
           finished_at?: string | null
           id?: string
@@ -461,7 +489,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string | null
           error_message?: string | null
           finished_at?: string | null
           id?: string
@@ -481,7 +508,6 @@ export type Database = {
           provider: string
           refreshed_at: string | null
           token_type: string | null
-          updated_at: string | null
         }
         Insert: {
           access_token: string
@@ -490,7 +516,6 @@ export type Database = {
           provider: string
           refreshed_at?: string | null
           token_type?: string | null
-          updated_at?: string | null
         }
         Update: {
           access_token?: string
@@ -499,7 +524,6 @@ export type Database = {
           provider?: string
           refreshed_at?: string | null
           token_type?: string | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -578,6 +602,51 @@ export type Database = {
         }
         Relationships: []
       }
+      pas_resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          file_path: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          resource_type: string
+          sort_order: number
+          title: string
+          updated_at: string
+          week_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          resource_type: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          week_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          resource_type?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          week_label?: string | null
+        }
+        Relationships: []
+      }
       payment_proofs: {
         Row: {
           amount: number | null
@@ -630,7 +699,6 @@ export type Database = {
           created_at: string
           documents: Json | null
           end_date: string
-          external_customer_id: string | null
           external_policy_id: string | null
           external_source: string | null
           id: string
@@ -659,7 +727,6 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date: string
-          external_customer_id?: string | null
           external_policy_id?: string | null
           external_source?: string | null
           id?: string
@@ -688,7 +755,6 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           end_date?: string
-          external_customer_id?: string | null
           external_policy_id?: string | null
           external_source?: string | null
           id?: string
@@ -724,62 +790,6 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      policy_documents: {
-        Row: {
-          created_at: string
-          document_type: string | null
-          external_document_id: string | null
-          external_source: string | null
-          file_path: string | null
-          file_url: string | null
-          id: string
-          issued_at: string | null
-          last_synced_at: string | null
-          policy_id: string
-          sync_error: string | null
-          sync_status: string | null
-          title: string | null
-        }
-        Insert: {
-          created_at?: string
-          document_type?: string | null
-          external_document_id?: string | null
-          external_source?: string | null
-          file_path?: string | null
-          file_url?: string | null
-          id?: string
-          issued_at?: string | null
-          last_synced_at?: string | null
-          policy_id: string
-          sync_error?: string | null
-          sync_status?: string | null
-          title?: string | null
-        }
-        Update: {
-          created_at?: string
-          document_type?: string | null
-          external_document_id?: string | null
-          external_source?: string | null
-          file_path?: string | null
-          file_url?: string | null
-          id?: string
-          issued_at?: string | null
-          last_synced_at?: string | null
-          policy_id?: string
-          sync_error?: string | null
-          sync_status?: string | null
-          title?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "policy_documents_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
             referencedColumns: ["id"]
           },
         ]
@@ -850,126 +860,6 @@ export type Database = {
         }
         Relationships: []
       }
-      google_reviews_cache: {
-        Row: {
-          fetched_at: string
-          id: string
-          maps_url: string
-          place_id: string
-          rating: number | null
-          reviews_json: Json
-          user_ratings_total: number | null
-        }
-        Insert: {
-          fetched_at?: string
-          id?: string
-          maps_url: string
-          place_id: string
-          rating?: number | null
-          reviews_json?: Json
-          user_ratings_total?: number | null
-        }
-        Update: {
-          fetched_at?: string
-          id?: string
-          maps_url?: string
-          place_id?: string
-          rating?: number | null
-          reviews_json?: Json
-          user_ratings_total?: number | null
-        }
-        Relationships: []
-      }
-      design_resources: {
-        Row: {
-          category: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          download_path: string | null
-          editable_url: string | null
-          id: string
-          preview_path: string | null
-          published: boolean
-          sort_order: number
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          download_path?: string | null
-          editable_url?: string | null
-          id?: string
-          preview_path?: string | null
-          published?: boolean
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          download_path?: string | null
-          editable_url?: string | null
-          id?: string
-          preview_path?: string | null
-          published?: boolean
-          sort_order?: number
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      pas_resources: {
-        Row: {
-          created_at: string
-          description: string | null
-          external_url: string | null
-          file_path: string | null
-          id: string
-          published: boolean
-          published_at: string | null
-          resource_type: string
-          sort_order: number
-          title: string
-          updated_at: string
-          week_label: string | null
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          external_url?: string | null
-          file_path?: string | null
-          id?: string
-          published?: boolean
-          published_at?: string | null
-          resource_type: string
-          sort_order?: number
-          title: string
-          updated_at?: string
-          week_label?: string | null
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          external_url?: string | null
-          file_path?: string | null
-          id?: string
-          published?: boolean
-          published_at?: string | null
-          resource_type?: string
-          sort_order?: number
-          title?: string
-          updated_at?: string
-          week_label?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           account_status: string
@@ -1024,68 +914,6 @@ export type Database = {
           province?: string | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      support_messages: {
-        Row: {
-          author_user_id: string
-          body: string
-          created_at: string
-          id: string
-          ticket_id: string
-        }
-        Insert: {
-          author_user_id: string
-          body: string
-          created_at?: string
-          id?: string
-          ticket_id: string
-        }
-        Update: {
-          author_user_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          ticket_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_messages_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "support_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      support_tickets: {
-        Row: {
-          category: string
-          created_at: string
-          id: string
-          producer_id: string
-          status: string
-          subject: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          id?: string
-          producer_id: string
-          status?: string
-          subject: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          id?: string
-          producer_id?: string
-          status?: string
-          subject?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -1161,6 +989,68 @@ export type Database = {
           vehicle_use?: string | null
           vehicle_version?: string | null
           vehicle_year?: number | null
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          producer_id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          producer_id: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          producer_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }

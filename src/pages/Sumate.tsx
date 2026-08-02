@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useCreateProducerApplication } from "@/hooks/useProducerApplications";
+import { getProducerApplicationErrorMessage } from "@/lib/producerApplicationErrors";
 import {
   Select,
   SelectContent,
@@ -73,8 +74,12 @@ const SumatePage = () => {
       setIsSubmitted(true);
       toast.success("¡Solicitud enviada! Nos pondremos en contacto.");
     } catch (error) {
-      console.error('Error submitting application:', error);
-      toast.error("Error al enviar la solicitud. Intentá nuevamente.");
+      // Hook already logs Supabase code/message/details/hint in development paths.
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : getProducerApplicationErrorMessage(error);
+      toast.error(message);
     }
   };
 
