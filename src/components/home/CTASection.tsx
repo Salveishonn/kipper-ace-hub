@@ -62,8 +62,8 @@ export function CTASection() {
           style={{ opacity: 0 }}
         >
           <CotizarButton
-            label="Cotizar ahora"
-            className="bg-primary-foreground text-primary hover:shadow-elevated"
+            label="Cotizá tu seguro"
+            className="bg-primary-foreground text-primary border-[hsl(var(--kipper-gold)/0.55)] hover:bg-primary-foreground/95"
           />
           <WhatsAppButton className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10" />
         </div>

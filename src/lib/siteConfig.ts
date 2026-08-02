@@ -1,7 +1,9 @@
 /** Public site links — override via Vite env in production. */
+const whatsappNumber = (import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined)?.trim() || "5491112345678";
+
 export const siteConfig = {
-  whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER ?? "5491112345678",
-  whatsappUrl: `https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER ?? "5491112345678"}`,
+  whatsappNumber,
+  whatsappUrl: `https://wa.me/${whatsappNumber}`,
   instagramUrl:
     import.meta.env.VITE_INSTAGRAM_URL ?? "https://www.instagram.com/kipperseguros",
   facebookUrl:
@@ -12,6 +14,11 @@ export const siteConfig = {
   contactEmail:
     import.meta.env.VITE_CONTACT_EMAIL ?? "info@kipperseguros.com.ar",
 };
+
+/** True when the WhatsApp number is still the known placeholder. */
+export function isWhatsAppPlaceholder() {
+  return siteConfig.whatsappNumber === "5491112345678";
+}
 
 export function getSupabaseFunctionUrl(name: string) {
   const base = import.meta.env.VITE_SUPABASE_URL as string;

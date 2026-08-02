@@ -4,7 +4,8 @@ import { Menu, X } from "lucide-react";
 import { createTimeline, stagger } from "animejs";
 import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
-import { CotizarButton, WhatsAppButton, PortalPasLink } from "@/components/ui/KipperCta";
+import { CotizarButton, PortalPasLink } from "@/components/ui/KipperCta";
+import { siteConfig } from "@/lib/siteConfig";
 import { motion } from "@/lib/motion/tokens";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,10 @@ export function Navbar({ overlay = false }: NavbarProps) {
     return "/login";
   };
 
-  const portalLabel = !loading && rolesLoaded && user && isAdmin ? "Admin" : "Portal Productores";
+  const portalLabel =
+    !loading && rolesLoaded && user && isAdmin ? "Admin" : "Acceso productores";
+  const portalMobileLabel =
+    !loading && rolesLoaded && user && isAdmin ? "Admin" : "Portal Productores";
 
   useEffect(() => {
     setIsOpen(false);
@@ -149,10 +153,14 @@ export function Navbar({ overlay = false }: NavbarProps) {
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <WhatsAppButton size="sm" className="hidden xl:inline-flex" />
-            <PortalPasLink href={getPortalHref()} label={portalLabel} />
-            <CotizarButton size="sm" />
+          <div className="hidden md:flex items-center gap-2.5">
+            <PortalPasLink
+              href={getPortalHref()}
+              label={portalLabel}
+              mobileLabel={portalMobileLabel}
+              showSecondary={!isAdmin}
+            />
+            <CotizarButton size="sm" label="Cotizar ahora" className="shadow-elevated" />
           </div>
 
           <button
@@ -207,10 +215,16 @@ export function Navbar({ overlay = false }: NavbarProps) {
               ))}
               <div className="pt-5 mt-3 border-t border-border flex flex-col gap-3">
                 <div data-mobile-nav-cta>
-                  <CotizarButton size="sm" className="w-full justify-center" />
+                  <CotizarButton size="sm" label="Cotizar ahora" className="w-full justify-center" />
                 </div>
                 <div data-mobile-nav-cta>
-                  <WhatsAppButton size="sm" className="w-full justify-center" />
+                  <PortalPasLink
+                    href={getPortalHref()}
+                    label={portalLabel}
+                    mobileLabel={portalMobileLabel}
+                    showSecondary={false}
+                    className="w-full justify-center"
+                  />
                 </div>
                 <div data-mobile-nav-cta>
                   <Link
@@ -222,7 +236,15 @@ export function Navbar({ overlay = false }: NavbarProps) {
                   </Link>
                 </div>
                 <div data-mobile-nav-cta>
-                  <PortalPasLink href={getPortalHref()} label={portalLabel} className="w-full justify-center" />
+                  <a
+                    href={siteConfig.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={closeMenu}
+                    className="block py-3 px-3 rounded-lg text-base font-medium text-foreground hover:bg-muted"
+                  >
+                    WhatsApp
+                  </a>
                 </div>
               </div>
             </div>

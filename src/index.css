@@ -143,6 +143,18 @@
            focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none;
   }
 
+  /* Dominant public quote CTA — stronger than secondary header controls */
+  .quote-primary {
+    @apply bg-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold
+           border border-[hsl(var(--kipper-gold)/0.45)]
+           shadow-[0_10px_28px_-12px_hsl(var(--kipper-bordo)/0.55)]
+           transition-[box-shadow,background-color,border-color,transform] duration-200
+           hover:bg-[hsl(var(--kipper-bordo-dark))] hover:shadow-elevated
+           active:translate-y-px active:shadow-soft
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           focus-visible:ring-primary/55;
+  }
+
   .btn-hero-outline {
     @apply border-2 border-primary text-primary px-8 py-4 rounded-xl font-semibold 
            transition-[background-color,color,border-color,box-shadow] duration-200
@@ -157,10 +169,14 @@
            focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:outline-none;
   }
 
+  /* Internal producer access — outline, muted, never a conversion fill */
   .portal-pas-link {
-    @apply inline-flex items-center justify-center text-sm font-medium text-muted-foreground
-           underline-offset-4 hover:text-primary hover:underline transition-colors duration-200
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-md px-2 py-1;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg
+           border border-border/80 bg-background/60 px-3 py-2
+           text-xs sm:text-sm font-medium text-muted-foreground
+           transition-[background-color,border-color,color] duration-200
+           hover:bg-muted/70 hover:border-primary/35 hover:text-foreground
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
   .sumate-pas-link {

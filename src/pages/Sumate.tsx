@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useCreateProducerApplication } from "@/hooks/useProducerApplications";
 import { getProducerApplicationErrorMessage } from "@/lib/producerApplicationErrors";
+import { siteConfig } from "@/lib/siteConfig";
 import {
   Select,
   SelectContent,
@@ -137,7 +138,7 @@ const SumatePage = () => {
                   contarte más sobre cómo sumarte a Kipper.
                 </p>
                 <a 
-                  href="https://wa.me/5491112345678?text=Hola! Acabo de completar el formulario para sumarme como productor."
+                  href={`${siteConfig.whatsappUrl}?text=${encodeURIComponent("Hola! Acabo de completar el formulario para sumarme como productor.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-hero inline-flex items-center gap-2"

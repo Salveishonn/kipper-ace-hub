@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Briefcase } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
 import { cn } from "@/lib/utils";
 
@@ -7,9 +7,16 @@ type CotizarProps = {
   className?: string;
   size?: "sm" | "md" | "lg";
   label?: string;
+  /** Dominant quote CTA. Default for public conversion surfaces. */
+  variant?: "quote" | "hero";
 };
 
-export function CotizarButton({ className, size = "md", label = "Cotizar" }: CotizarProps) {
+export function CotizarButton({
+  className,
+  size = "md",
+  label = "Cotizar ahora",
+  variant = "quote",
+}: CotizarProps) {
   const sizes = {
     sm: "text-sm px-5 py-2.5",
     md: "px-8 py-4",
@@ -19,8 +26,10 @@ export function CotizarButton({ className, size = "md", label = "Cotizar" }: Cot
   return (
     <Link
       to="/cotizar"
+      data-cta="quote-primary"
       className={cn(
-        "btn-hero inline-flex items-center justify-center gap-2 group/kipper-cta",
+        variant === "quote" ? "quote-primary" : "btn-hero",
+        "inline-flex items-center justify-center gap-2 group/kipper-cta",
         sizes[size],
         className,
       )}
@@ -62,6 +71,7 @@ export function WhatsAppButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      data-cta="whatsapp"
       className={cn("btn-whatsapp inline-flex items-center justify-center gap-2", sizes[size], className)}
     >
       <svg viewBox="0 0 24 24" className="w-[1.1em] h-[1.1em] fill-current shrink-0" aria-hidden>
@@ -75,24 +85,47 @@ export function WhatsAppButton({
 type PortalPasProps = {
   className?: string;
   href?: string;
+  /** Desktop / default label */
   label?: string;
+  /** Compact label for narrow viewports; falls back to label */
+  mobileLabel?: string;
+  showSecondary?: boolean;
 };
 
+/**
+ * Internal producer access — visually secondary to Cotizar.
+ * Never styled as a customer conversion CTA.
+ */
 export function PortalPasLink({
   className,
   href = "/login",
-  label = "Portal Productores",
+  label = "Acceso productores",
+  mobileLabel = "Portal Productores",
+  showSecondary = true,
 }: PortalPasProps) {
   return (
-    <Link to={href} className={cn("portal-pas-link", className)}>
-      {label}
+    <Link
+      to={href}
+      data-cta="portal-internal"
+      className={cn("portal-pas-link", className)}
+    >
+      <Briefcase size={15} className="shrink-0 opacity-80" aria-hidden />
+      <span className="flex flex-col items-start leading-tight">
+        <span className="hidden sm:inline">{label}</span>
+        <span className="sm:hidden">{mobileLabel}</span>
+        {showSecondary && (
+          <span className="hidden lg:inline text-[10px] font-normal text-muted-foreground tracking-wide">
+            Área interna
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
 
 export function SumatePasLink({ className }: { className?: string }) {
   return (
-    <Link to="/sumate" className={cn("sumate-pas-link", className)}>
+    <Link to="/sumate" className={cn("sumate-pas-link", className)} data-cta="sumate-pas">
       Sumate como PAS
     </Link>
   );

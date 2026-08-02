@@ -1,8 +1,8 @@
-import { animate, createDrawable, onScroll } from "animejs";
+import { animate, createDrawable, onScroll, stagger } from "animejs";
 import { useAnimeScope } from "@/hooks/useAnimeScope";
 import { registerSectionReveal } from "@/lib/motion/sectionReveal";
 import { motion } from "@/lib/motion/tokens";
-import { Users, Award, Building, Headphones } from "lucide-react";
+import { Users, Award, Building, Headphones, Star } from "lucide-react";
 
 const stats = [
   { icon: Users, value: "15+", label: "Productores especializados" },
@@ -11,10 +11,11 @@ const stats = [
   { icon: Headphones, value: "24hs", label: "Tiempo de respuesta" },
 ];
 
-const insurers = [
+const FEATURED_INSURER = "Federación Patronal";
+
+const otherInsurers = [
   "La Segunda",
   "Sancor",
-  "Federación Patronal",
   "Rivadavia",
   "San Cristóbal",
   "Zurich",
@@ -47,6 +48,34 @@ export function TrustSection() {
       });
       scope.register(drawAnim);
     }
+
+    const insurersBlock = scope.root.querySelector("[data-insurers]");
+    const featured = scope.root.querySelector("[data-insurer-featured]");
+    const pills = scope.root.querySelectorAll("[data-insurer-pill]");
+    if (!insurersBlock || !featured) return;
+
+    const reveal = onScroll({
+      target: insurersBlock,
+      enter: "bottom 88%",
+      onEnter: () => {
+        animate(featured, {
+          opacity: [0, 1],
+          translateY: [14, 0],
+          duration: motion.duration.reveal,
+          ease: motion.easing.out,
+        });
+        if (pills.length) {
+          animate(pills, {
+            opacity: [0, 1],
+            translateY: [10, 0],
+            duration: motion.duration.standard,
+            delay: stagger(motion.stagger.tight, { start: 140 }),
+            ease: motion.easing.out,
+          });
+        }
+      },
+    });
+    scope.register(reveal);
   });
 
   return (
@@ -79,18 +108,34 @@ export function TrustSection() {
           </svg>
         </div>
 
-        <div className="text-center">
+        <div className="text-center" data-insurers>
           <p
             data-reveal="heading"
             className="text-sm text-muted-foreground mb-6 uppercase tracking-wider font-medium"
           >
             Trabajamos con las mejores compañías
           </p>
-          <div className="flex flex-wrap justify-center gap-3 md:gap-5">
-            {insurers.map((insurer) => (
+
+          <div
+            data-insurer-featured
+            className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-primary/45 bg-card px-6 py-5 shadow-soft"
+          >
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold mb-3">
+              <Star size={12} className="fill-primary" aria-hidden />
+              Compañía principal
+            </div>
+            <p className="text-xl font-bold text-foreground tracking-tight">{FEATURED_INSURER}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Nuestra principal compañía con la que trabajamos
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+            {otherInsurers.map((insurer) => (
               <div
                 key={insurer}
-                className="px-5 py-2.5 bg-muted rounded-lg text-muted-foreground font-medium text-sm"
+                data-insurer-pill
+                className="px-5 py-2.5 bg-muted rounded-lg text-muted-foreground font-medium text-sm border border-transparent"
               >
                 {insurer}
               </div>

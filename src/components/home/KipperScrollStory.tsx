@@ -308,7 +308,7 @@ export function KipperScrollStory() {
                         data-moment-part
                         className="mt-8 flex flex-col sm:flex-row gap-3 pointer-events-auto"
                       >
-                        <CotizarButton label="Cotizar ahora" />
+                        <CotizarButton label="Cotizá tu seguro" />
                         <WhatsAppButton label="WhatsApp" />
                       </div>
                     )}
@@ -323,7 +323,7 @@ export function KipperScrollStory() {
                   Deslizá para conocer Kipper · Cotizá cuando quieras
                 </p>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                  <CotizarButton size="sm" />
+                  <CotizarButton size="sm" label="Cotizar ahora" />
                   <WhatsAppButton size="sm" />
                   <Link
                     to="/sumate"

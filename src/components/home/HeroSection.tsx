@@ -132,9 +132,9 @@ export function HeroSection() {
             className="mt-9 flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center"
             style={{ opacity: 0 }}
           >
-            <CotizarButton />
-            <WhatsAppButton />
-            <PortalPasLink className="sm:ml-1" />
+            <CotizarButton label="Cotizá tu seguro" size="lg" />
+            <WhatsAppButton label="WhatsApp" />
+            <PortalPasLink className="sm:ml-1" showSecondary={false} />
           </div>
 
           <div

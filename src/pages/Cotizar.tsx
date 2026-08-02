@@ -47,7 +47,7 @@ const CotizarPage = () => {
               href={`${siteConfig.whatsappUrl}?text=Hola%20Kipper%2C%20quiero%20cotizar%20mi%20seguro`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-hero inline-flex items-center justify-center gap-2 text-lg"
+              className="quote-primary inline-flex items-center justify-center gap-2 text-lg"
             >
               <MessageCircle size={20} aria-hidden /> Cotizar por WhatsApp
             </a>

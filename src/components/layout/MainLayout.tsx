@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { animate } from "animejs";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
+import { KipperAssistant } from "@/components/assistant/KipperAssistant";
 import { cn } from "@/lib/utils";
 import { motion } from "@/lib/motion/tokens";
 
@@ -42,6 +43,7 @@ export function MainLayout({ children, showFooter = true, overlayNav = false }: 
         {children}
       </main>
       {showFooter && <Footer />}
+      <KipperAssistant />
     </div>
   );
 }
