@@ -1,7 +1,13 @@
 /** Public site links — override via Vite env in production. */
 const whatsappNumber = (import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined)?.trim() || "5491112345678";
 
+/** Canonical production origin (apex). */
+export const SITE_ORIGIN =
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "") ||
+  "https://kipperseguros.com";
+
 export const siteConfig = {
+  siteOrigin: SITE_ORIGIN,
   whatsappNumber,
   whatsappUrl: `https://wa.me/${whatsappNumber}`,
   instagramUrl:

@@ -1,11 +1,13 @@
 // Server-side only. Never import from frontend.
 const ALLOWED_ORIGINS = [
+  "https://kipperseguros.com",
+  "https://www.kipperseguros.com",
   "https://kipperseguros.com.ar",
   "https://www.kipperseguros.com.ar",
   "https://app.kipperseguros.com.ar",
-  "https://kipperseguros.com",
-  "https://www.kipperseguros.com",
   "https://kipperseguros.info",
+  "https://kipper-ace-hub.vercel.app",
+  // Legacy Lovable hosts kept during cutover rollback window
   "https://kipper-ace-hub.lovable.app",
   "https://id-preview--4cdc6eb5-eca8-4412-9273-dc0ba6d8d8c5.lovable.app",
   "http://localhost:3000",
@@ -13,9 +15,18 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8080",
 ];
 
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return true; // server-to-server / curl
+  return (
+    ALLOWED_ORIGINS.includes(origin) ||
+    origin.endsWith(".vercel.app") ||
+    origin.endsWith(".lovable.app") ||
+    origin.endsWith(".lovableproject.com")
+  );
+}
+
 export function buildCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed =
-    origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".lovable.app") || origin.endsWith(".lovableproject.com"));
+  const allowed = Boolean(origin && isAllowedOrigin(origin));
   return {
     "Access-Control-Allow-Origin": allowed ? origin! : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
@@ -26,12 +37,7 @@ export function buildCorsHeaders(origin: string | null): Record<string, string> 
 }
 
 export function isOriginAllowed(origin: string | null): boolean {
-  if (!origin) return true; // server-to-server / curl
-  return (
-    ALLOWED_ORIGINS.includes(origin) ||
-    origin.endsWith(".lovable.app") ||
-    origin.endsWith(".lovableproject.com")
-  );
+  return isAllowedOrigin(origin);
 }
 
 export function ok(data: unknown, cors: Record<string, string>, status = 200) {

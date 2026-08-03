@@ -31,11 +31,11 @@ export function Seo({ title, description, canonical, ogImage, jsonLd }: SeoProps
     }
     setMeta("og:title", fullTitle, "property");
     setMeta("og:type", "website", "property");
-    if (ogImage) setMeta("og:image", ogImage, "property");
 
-    // Canonical
+    // Canonical + og:url (prefer explicit prop; otherwise current location)
     const href = canonical || (typeof window !== "undefined" ? window.location.href : "");
     if (href) {
+      setMeta("og:url", href, "property");
       let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
       if (!link) {
         link = document.createElement("link");
@@ -44,6 +44,8 @@ export function Seo({ title, description, canonical, ogImage, jsonLd }: SeoProps
       }
       link.setAttribute("href", href);
     }
+
+    if (ogImage) setMeta("og:image", ogImage, "property");
 
     // JSON-LD
     let scriptEl: HTMLScriptElement | null = null;
