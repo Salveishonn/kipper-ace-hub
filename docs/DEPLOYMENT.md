@@ -1,5 +1,7 @@
 # Kipper Seguros — Deployment
 
+> Last verified: 2026-08-03 — production on Vercel (`kipperseguros.com`), Lovable unpublished/disconnected, GitHub `master` auto-deploys.
+
 ## Architecture
 
 | Layer | System | Notes |
