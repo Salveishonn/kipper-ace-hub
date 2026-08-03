@@ -90,6 +90,9 @@ describe("public assistant routing", () => {
     expect(shouldMountPublicAssistant("/login")).toBe(false);
     expect(shouldMountPublicAssistant("/admin/login")).toBe(false);
     expect(shouldMountPublicAssistant("/registro")).toBe(false);
+    expect(shouldMountPublicAssistant("/recuperar-contrasena")).toBe(false);
+    expect(shouldMountPublicAssistant("/restablecer-contrasena")).toBe(false);
+    expect(shouldMountPublicAssistant("/auth/callback")).toBe(false);
   });
 
   it("floating WhatsApp fallback renders on public routes and uses siteConfig", () => {

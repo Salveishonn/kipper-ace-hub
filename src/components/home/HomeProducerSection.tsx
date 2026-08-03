@@ -73,7 +73,7 @@ export function HomeProducerSection() {
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Intranet exclusiva para nuestra red</h2>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            Acceso por invitación tras aprobar tu solicitud. Herramientas pensadas para productores bajo Kipper.
+            Creá tu cuenta, enviá tu solicitud y accedé al portal cuando Kipper la apruebe.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <SumatePasLink />

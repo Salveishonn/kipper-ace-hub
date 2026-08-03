@@ -16,7 +16,7 @@ const AdminLoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, loading, rolesLoaded, isAdmin, isProductor } = useAuth();
+  const { signIn, user, loading, rolesLoaded, isAdmin, isProductor, getDefaultDashboard } = useAuth();
 
   const fromPath: string | null = location.state?.from?.pathname ?? null;
   // Only honor a preserved destination if it is an admin destination.
@@ -35,9 +35,9 @@ const AdminLoginPage = () => {
       navigate("/productor", { replace: true });
       return;
     }
-    // Authenticated but without any runtime role: no access.
-    navigate("/login", { replace: true });
-  }, [loading, rolesLoaded, user, isAdmin, isProductor, adminTarget, navigate]);
+    // Authenticated but without admin/productor: pending/rejected status screens.
+    navigate(getDefaultDashboard(), { replace: true });
+  }, [loading, rolesLoaded, user, isAdmin, isProductor, adminTarget, navigate, getDefaultDashboard]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -26,16 +26,14 @@ export function Navbar({ overlay = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [solid, setSolid] = useState(!overlay);
   const location = useLocation();
-  const { user, isAdmin, isProductor, loading, rolesLoaded } = useAuth();
+  const { user, isAdmin, isProductor, loading, rolesLoaded, getDefaultDashboard } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
   const menuPanelRef = useRef<HTMLDivElement>(null);
   const firstFocusRef = useRef<HTMLAnchorElement>(null);
 
   const getPortalHref = () => {
     if (loading || !rolesLoaded || !user) return "/login";
-    if (isAdmin) return "/admin";
-    if (isProductor) return "/productor";
-    return "/login";
+    return getDefaultDashboard();
   };
 
   const portalLabel =

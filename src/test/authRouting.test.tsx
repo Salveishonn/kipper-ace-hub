@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import LoginPage from "@/pages/Login";
 import AdminLoginPage from "@/pages/AdminLogin";
+import { resolvePostAuthDestination } from "@/lib/authRouting";
 
 /**
  * Mutable state consumed by the supabase client mock below.
@@ -14,6 +15,7 @@ const mockState = vi.hoisted(() => ({
   profile: null as Record<string, unknown> | null,
   profileError: null as { message: string } | null,
   roles: { data: [] as Array<{ role: string }> | null, error: null as { message: string } | null },
+  application: null as Record<string, unknown> | null,
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({
@@ -28,6 +30,14 @@ vi.mock("@/integrations/supabase/client", () => ({
       updateUser: async () => ({ data: { user: null }, error: null }),
       refreshSession: async () => ({ data: {}, error: null }),
       getUser: async () => ({ data: { user: mockState.session?.user ?? null } }),
+      resend: async () => ({ error: null }),
+      resetPasswordForEmail: async () => ({ error: null }),
+    },
+    rpc: async (name: string) => {
+      if (name === "get_my_producer_application") {
+        return { data: mockState.application ? [mockState.application] : [], error: null };
+      }
+      return { data: null, error: null };
     },
     from: (table: string) => ({
       select: () => ({
@@ -43,6 +53,12 @@ vi.mock("@/integrations/supabase/client", () => ({
           // user_roles: the query builder itself is awaited.
           return Promise.resolve(mockState.roles);
         },
+        order: () => ({
+          limit: async () => ({
+            data: mockState.application ? [mockState.application] : [],
+            error: null,
+          }),
+        }),
       }),
     }),
   },
@@ -80,7 +96,10 @@ const renderAt = (path: string) =>
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={<div>ADMIN_DASHBOARD</div>} />
           <Route path="/productor" element={<div>PRODUCTOR_DASHBOARD</div>} />
+          <Route path="/productor/solicitud-pendiente" element={<div>PENDING_SCREEN</div>} />
+          <Route path="/productor/acceso-no-disponible" element={<div>DENIED_SCREEN</div>} />
           <Route path="/sumate" element={<div>SUMATE</div>} />
+          <Route path="/recuperar-contrasena" element={<div>RECOVER</div>} />
         </Routes>
       </MemoryRouter>
     </AuthProvider>,
@@ -91,6 +110,29 @@ beforeEach(() => {
   mockState.profile = null;
   mockState.profileError = null;
   mockState.roles = { data: [], error: null };
+  mockState.application = null;
+});
+
+describe("resolvePostAuthDestination", () => {
+  it("routes pending applicants to solicitud-pendiente", () => {
+    expect(
+      resolvePostAuthDestination({
+        user: { id: "1" } as never,
+        roles: [],
+        application: { status: "pending", email: "a@b.com" },
+      }),
+    ).toBe("/productor/solicitud-pendiente");
+  });
+
+  it("routes rejected applicants to acceso-no-disponible", () => {
+    expect(
+      resolvePostAuthDestination({
+        user: { id: "1" } as never,
+        roles: [],
+        application: { status: "rechazado", email: "a@b.com" },
+      }),
+    ).toBe("/productor/acceso-no-disponible");
+  });
 });
 
 describe("auth routing", () => {
@@ -102,6 +144,10 @@ describe("auth routing", () => {
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("tu@email.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /olvidaste tu contraseña/i })).toHaveAttribute(
+      "href",
+      "/recuperar-contrasena",
+    );
   });
 
   it("anonymous user opens /admin/login: the admin login renders", async () => {
@@ -133,20 +179,22 @@ describe("auth routing", () => {
     expect(await screen.findByText("PRODUCTOR_DASHBOARD")).toBeInTheDocument();
   });
 
-  it("authenticated user with no role: clear access message, login page stays visible", async () => {
+  it("authenticated pending applicant: redirects to pending screen", async () => {
     mockState.session = makeSession();
-    mockState.profile = makeProfile();
+    mockState.profile = makeProfile({ account_status: "pending" });
     mockState.roles = { data: [], error: null };
+    mockState.application = {
+      id: "app-1",
+      email: "test@example.com",
+      full_name: "Test User",
+      status: "pending",
+      created_at: new Date().toISOString(),
+      approved_at: null,
+    };
 
     renderAt("/login");
 
-    expect(
-      await screen.findByText(/tu cuenta no tiene acceso asignado/i),
-    ).toBeInTheDocument();
-    // The page did not get stuck on a spinner and did not redirect away.
-    expect(screen.getByPlaceholderText("tu@email.com")).toBeInTheDocument();
-    expect(screen.queryByText("ADMIN_DASHBOARD")).not.toBeInTheDocument();
-    expect(screen.queryByText("PRODUCTOR_DASHBOARD")).not.toBeInTheDocument();
+    expect(await screen.findByText("PENDING_SCREEN")).toBeInTheDocument();
   });
 
   it("failed role query: loading finishes and an error state appears", async () => {
@@ -158,7 +206,6 @@ describe("auth routing", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/no pudimos verificar el acceso/i);
-    // Loading resolved: the form is interactive again.
     expect(screen.getByPlaceholderText("tu@email.com")).toBeInTheDocument();
   });
 });

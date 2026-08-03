@@ -39,7 +39,7 @@ const AdminProductores = () => {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Sin productores" description="Los productores aparecen acá después de aceptar la invitación PAS." />
+        <EmptyState title="Sin productores" description="Los productores aparecen acá después de aprobar su solicitud PAS." />
       ) : (
         <div className="space-y-4">
           {filtered.map(producer => (

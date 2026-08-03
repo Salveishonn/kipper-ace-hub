@@ -4,6 +4,7 @@ import {
   shouldLinkPendingProfileOnInsert,
   isNormalSignupWithoutInvite,
   isInviteApplicationValid,
+  shouldProvisionPendingApplicantOnSignup,
 } from "@/lib/pasProvisioningRules";
 
 const app = {
@@ -90,5 +91,22 @@ describe("PAS provisioning rules", () => {
     const user = invitedUser();
     expect(isInviteApplicationValid({ ...app, status: "nuevo" }, user)).toBe(false);
     expect(isInviteApplicationValid({ ...app, status: "activo" }, user)).toBe(false);
+  });
+
+  it("self-registration applicant: provision pending, do not treat as invite activation", () => {
+    const applicant = invitedUser({
+      invited_at: null,
+      application_id: null,
+      pas_applicant: true,
+    });
+    expect(shouldProvisionPendingApplicantOnSignup(applicant)).toBe(true);
+    expect(isNormalSignupWithoutInvite(applicant)).toBe(true);
+    expect(
+      shouldActivatePasOnEmailConfirmed(
+        { ...app, status: "pending" },
+        applicant,
+        { ...applicant, email_confirmed_at: "2026-01-02T00:00:00Z" },
+      ),
+    ).toBe(false);
   });
 });

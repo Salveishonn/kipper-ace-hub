@@ -41,10 +41,25 @@ Optional public overrides: `VITE_SITE_URL`, `VITE_WHATSAPP_NUMBER`, contact/soci
 ```sh
 npx supabase functions deploy google-reviews --project-ref qefzutfaawsegmwgaynj
 npx supabase functions deploy fedpat-sync --project-ref qefzutfaawsegmwgaynj
+npx supabase functions deploy register-pas-application --project-ref qefzutfaawsegmwgaynj
+npx supabase functions deploy approve-pas-producer --project-ref qefzutfaawsegmwgaynj
 npx supabase functions deploy invite-pas-producer --project-ref qefzutfaawsegmwgaynj
 ```
 
-`invite-pas-producer` requires Supabase secret `SITE_URL=https://kipperseguros.com`.
+Required secrets (Supabase Dashboard → Edge Functions → Secrets, never Vite):
+
+- `SITE_URL=https://kipperseguros.com` (register + approve + legacy invite)
+- Optional approval email via Resend:
+  - `RESEND_API_KEY`
+  - `RESEND_FROM_EMAIL` (verified domain sender)
+
+`invite-pas-producer` remains only for legacy applications without an Auth `user_id`.
+
+Apply DB migration:
+
+```sh
+npx supabase db push --project-ref qefzutfaawsegmwgaynj
+```
 
 ## Supabase Auth URLs
 
@@ -54,16 +69,21 @@ Site URL:
 https://kipperseguros.com
 ```
 
-Additional Redirect URLs (keep during cutover):
+Additional Redirect URLs:
 
 ```text
 https://kipperseguros.com/**
 https://www.kipperseguros.com/**
 https://kipper-ace-hub.vercel.app/**
-https://kipper-ace-hub.lovable.app/**
 http://localhost:5173/**
 http://localhost:8080/**
+https://kipperseguros.com/auth/callback
+https://kipperseguros.com/restablecer-contrasena
+http://localhost:5173/auth/callback
+http://localhost:5173/restablecer-contrasena
 ```
+
+Enable **Confirm email** under Authentication → Providers → Email unless production intentionally disables it.
 
 ## DNS
 

@@ -1,18 +1,31 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'productor')[];
+  allowedRoles?: ("admin" | "productor")[];
+  /** Allow authenticated pending/rejected applicants without productor role. */
+  allowApplicantStatus?: boolean;
 }
 
-export const ProtectedRoute = ({ 
-  children, 
-  allowedRoles 
+export const ProtectedRoute = ({
+  children,
+  allowedRoles,
+  allowApplicantStatus = false,
 }: ProtectedRouteProps) => {
-  const { user, roles, loading, rolesLoaded, isAdmin, isProductor, isAccountActive, profile } = useAuth();
+  const {
+    user,
+    roles,
+    loading,
+    rolesLoaded,
+    isAdmin,
+    isProductor,
+    isAccountActive,
+    isPendingApplicant,
+    isRejectedApplicant,
+    profile,
+  } = useAuth();
   const location = useLocation();
 
   // Anonymous visitors have no roles to load; only wait for rolesLoaded
@@ -29,48 +42,45 @@ export const ProtectedRoute = ({
   }
 
   if (!user) {
-    // Admin routes use the discreet admin entry point; everything else uses Portal Productores.
     const loginPath = location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
-  const getCorrectDashboard = (): string => {
-    if (isAdmin) return "/admin";
-    if (isProductor) return "/productor";
-    return "/login";
-  };
+  if (allowApplicantStatus) {
+    if (isAdmin) return <Navigate to="/admin" replace />;
+    if (isProductor && isAccountActive) return <Navigate to="/productor" replace />;
+    return <>{children}</>;
+  }
 
   if (allowedRoles && allowedRoles.length > 0) {
-    const hasAccess = allowedRoles.some(role => roles.includes(role));
-    
+    const hasAccess = allowedRoles.some((role) => roles.includes(role));
+
     if (!hasAccess) {
-      const correctDashboard = getCorrectDashboard();
-      if (location.pathname !== correctDashboard) {
-        return <Navigate to={correctDashboard} replace />;
+      if (isPendingApplicant) {
+        return <Navigate to="/productor/solicitud-pendiente" replace />;
       }
+      if (isRejectedApplicant) {
+        return <Navigate to="/productor/acceso-no-disponible" replace />;
+      }
+      const loginPath = location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
+      return <Navigate to={loginPath} replace />;
     }
   }
 
   if (allowedRoles?.includes("productor") && !isAdmin) {
     if (!isProductor) {
-      // Authenticated but without a runtime role: back to the producer entry point.
-      return <Navigate to="/login" replace />;
+      if (isPendingApplicant) {
+        return <Navigate to="/productor/solicitud-pendiente" replace />;
+      }
+      return <Navigate to="/productor/acceso-no-disponible" replace />;
     }
-  }
 
-  if (!isAdmin && isProductor && profile && !isAccountActive) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-xl font-bold">Cuenta pendiente</h1>
-          <p className="text-muted-foreground">
-            Tu acceso al Portal Productores aún no está activo. Si recibiste una invitación,
-            completá el registro desde el enlace del email.
-          </p>
-          <Link to="/sumate" className="btn-hero inline-block">Sumate a Kipper</Link>
-        </div>
-      </div>
-    );
+    if (profile && !isAccountActive) {
+      if (profile.account_status === "pending") {
+        return <Navigate to="/productor/solicitud-pendiente" replace />;
+      }
+      return <Navigate to="/productor/acceso-no-disponible" replace />;
+    }
   }
 
   return <>{children}</>;

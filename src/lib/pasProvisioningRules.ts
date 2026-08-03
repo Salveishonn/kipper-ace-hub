@@ -1,6 +1,10 @@
 /**
  * Pure rules mirroring DB triggers (for tests and documentation).
  * Authoritative logic lives in supabase/migrations SQL triggers.
+ *
+ * New self-registration: pas_applicant metadata → pending profile + application,
+ * no productor role until admin approval.
+ * Legacy invite activation below remains for invited_at users.
  */
 
 export type ApplicationRow = {
@@ -17,7 +21,13 @@ export type AuthUserSnapshot = {
   invited_at: string | null;
   email_confirmed_at: string | null;
   application_id: string | null;
+  pas_applicant?: boolean;
 };
+
+/** Self-registration signup: provision pending rows, never activate. */
+export function shouldProvisionPendingApplicantOnSignup(user: AuthUserSnapshot): boolean {
+  return Boolean(user.pas_applicant) && !user.invited_at;
+}
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

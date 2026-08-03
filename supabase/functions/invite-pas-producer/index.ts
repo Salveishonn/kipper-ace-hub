@@ -1,3 +1,8 @@
+/**
+ * LEGACY ONLY — for producer_applications without a linked Auth user_id.
+ * New applicants self-register via register-pas-application and are approved
+ * with approve-pas-producer (no Supabase invite).
+ */
 import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2";
 
 const INVITE_TTL_DAYS = 7;

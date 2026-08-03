@@ -797,6 +797,8 @@ export type Database = {
       producer_applications: {
         Row: {
           admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           city: string | null
           created_at: string
           current_companies: string | null
@@ -818,6 +820,8 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           city?: string | null
           created_at?: string
           current_companies?: string | null
@@ -839,6 +843,8 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           city?: string | null
           created_at?: string
           current_companies?: string | null
@@ -1178,6 +1184,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_pas_application: {
+        Args: {
+          p_admin_user_id: string
+          p_application_id: string
+        }
+        Returns: Json
+      }
+      get_my_producer_application: {
+        Args: never
+        Returns: {
+          approved_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

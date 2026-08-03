@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { resolvePostAuthDestination } from '@/lib/authRouting';
 
 type AppRole = 'admin' | 'productor';
 
@@ -21,17 +22,29 @@ interface Profile {
   account_status: string;
 }
 
+export type ProducerApplicationSummary = {
+  id: string;
+  email: string;
+  full_name: string;
+  status: string;
+  created_at: string;
+  approved_at: string | null;
+} | null;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   roles: AppRole[];
+  producerApplication: ProducerApplicationSummary;
   loading: boolean;
   rolesLoaded: boolean;
   authError: string | null;
   isAdmin: boolean;
   isProductor: boolean;
   isAccountActive: boolean;
+  isPendingApplicant: boolean;
+  isRejectedApplicant: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   completeInvitePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -61,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [producerApplication, setProducerApplication] =
+    useState<ProducerApplicationSummary>(null);
   const [loading, setLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -92,6 +107,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (data ?? []).map((r) => r.role as AppRole);
   };
 
+  const fetchProducerApplication = async (): Promise<ProducerApplicationSummary> => {
+    const { data, error } = await supabase.rpc('get_my_producer_application');
+    if (!error) {
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as ProducerApplicationSummary) ?? null;
+    }
+
+    const { data: rows, error: selErr } = await supabase
+      .from('producer_applications')
+      .select('id, email, full_name, status, created_at, approved_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (selErr) {
+      // Pending applicants without SELECT yet should not hard-fail auth.
+      console.warn('producer application lookup:', selErr.message);
+      return null;
+    }
+    return (rows?.[0] as ProducerApplicationSummary) ?? null;
+  };
+
   /**
    * Loads profile + roles for an authenticated user.
    * Guaranteed to finish: RLS errors, missing rows, network failures and
@@ -101,17 +137,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRolesLoaded(false);
     setAuthError(null);
     try {
-      const [profileData, rolesData] = await withTimeout(
-        Promise.all([fetchProfile(userId), fetchRoles(userId)]),
+      const [profileData, rolesData, applicationData] = await withTimeout(
+        Promise.all([fetchProfile(userId), fetchRoles(userId), fetchProducerApplication()]),
         USER_DATA_TIMEOUT_MS,
         'Profile/role lookup',
       );
       setProfile(profileData);
       setRoles(rolesData);
+      setProducerApplication(applicationData);
     } catch (error) {
       console.error('Error loading user data:', error);
       setProfile(null);
       setRoles([]);
+      setProducerApplication(null);
       setAuthError(AUTH_ERROR_MESSAGE);
     } finally {
       // rolesLoaded means "the role lookup finished", not "the user has a role".
@@ -126,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
+    setProducerApplication(null);
     setAuthError(null);
     setRolesLoaded(true);
     setLoading(false);
@@ -134,21 +173,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => {
     if (!user) return;
     try {
-      const [profileData, rolesData] = await Promise.all([
+      const [profileData, rolesData, applicationData] = await Promise.all([
         fetchProfile(user.id),
         fetchRoles(user.id),
+        fetchProducerApplication(),
       ]);
       setProfile(profileData);
       setRoles(rolesData);
+      setProducerApplication(applicationData);
     } catch (error) {
       console.error('Error refreshing profile:', error);
     }
   };
 
   const getDefaultDashboard = (): string => {
-    if (roles.includes('admin')) return '/admin';
-    if (roles.includes('productor')) return '/productor';
-    return '/login';
+    return resolvePostAuthDestination({
+      user,
+      roles,
+      accountStatus: profile?.account_status,
+      application: producerApplication
+        ? { status: producerApplication.status, email: producerApplication.email }
+        : null,
+    });
   };
 
   useEffect(() => {
@@ -248,6 +294,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = roles.includes('admin');
   const isProductor = roles.includes('productor');
   const isAccountActive = profile?.account_status === 'active' || isAdmin;
+  const isPendingApplicant =
+    !isAdmin &&
+    !isProductor &&
+    !!producerApplication &&
+    ['pending', 'nuevo', 'en_revision', 'aprobado', 'invitado'].includes(producerApplication.status);
+  const isRejectedApplicant =
+    !isAdmin &&
+    !isProductor &&
+    (producerApplication?.status === 'rechazado' || profile?.account_status === 'suspended');
 
   return (
     <AuthContext.Provider value={{
@@ -255,12 +310,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       roles,
+      producerApplication,
       loading,
       rolesLoaded,
       authError,
       isAdmin,
       isProductor,
       isAccountActive,
+      isPendingApplicant,
+      isRejectedApplicant,
       signIn,
       completeInvitePassword,
       signOut,

@@ -16,6 +16,11 @@ const CotizarPage = lazy(() => import("./pages/Cotizar"));
 const LoginPage = lazy(() => import("./pages/Login"));
 const AdminLoginPage = lazy(() => import("./pages/AdminLogin"));
 const RegistroPage = lazy(() => import("./pages/Registro"));
+const RecuperarContrasenaPage = lazy(() => import("./pages/RecuperarContrasena"));
+const RestablecerContrasenaPage = lazy(() => import("./pages/RestablecerContrasena"));
+const AuthCallbackPage = lazy(() => import("./pages/AuthCallback"));
+const SolicitudPendientePage = lazy(() => import("./pages/productor/SolicitudPendiente"));
+const AccesoNoDisponiblePage = lazy(() => import("./pages/productor/AccesoNoDisponible"));
 const ServiciosPage = lazy(() => import("./pages/Servicios"));
 const NosotrosPage = lazy(() => import("./pages/Nosotros"));
 const ContactoPage = lazy(() => import("./pages/Contacto"));
@@ -89,6 +94,9 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/registro" element={<RegistroPage />} />
+              <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
+              <Route path="/restablecer-contrasena" element={<RestablecerContrasenaPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/academy" element={<AcademyPage />} />
               {/* Internal Academy moved into the producer portal */}
               <Route path="/academy/contenido" element={<Navigate to="/productor/academy" replace />} />
@@ -105,6 +113,23 @@ const App = () => (
               {/* Legacy customer-portal routes: public site only */}
               <Route path="/portal" element={<Navigate to="/" replace />} />
               <Route path="/portal/*" element={<Navigate to="/" replace />} />
+
+              <Route
+                path="/productor/solicitud-pendiente"
+                element={
+                  <ProtectedRoute allowApplicantStatus>
+                    <SolicitudPendientePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/productor/acceso-no-disponible"
+                element={
+                  <ProtectedRoute allowApplicantStatus>
+                    <AccesoNoDisponiblePage />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route path="/productor" element={
                 <ProtectedRoute allowedRoles={['admin', 'productor']}>

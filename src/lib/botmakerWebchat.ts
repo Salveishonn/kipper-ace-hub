@@ -39,8 +39,11 @@ export function getBotmakerWebchatConfig(): BotmakerWebchatConfig {
 export function shouldMountPublicAssistant(pathname: string): boolean {
   if (pathname.startsWith("/admin")) return false;
   if (pathname.startsWith("/productor")) return false;
+  if (pathname.startsWith("/auth/")) return false;
   if (pathname === "/login" || pathname.startsWith("/login/")) return false;
   if (pathname === "/registro" || pathname.startsWith("/registro/")) return false;
+  if (pathname === "/recuperar-contrasena" || pathname.startsWith("/recuperar-contrasena/")) return false;
+  if (pathname === "/restablecer-contrasena" || pathname.startsWith("/restablecer-contrasena/")) return false;
   return true;
 }
 

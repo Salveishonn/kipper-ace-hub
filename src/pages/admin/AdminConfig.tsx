@@ -182,7 +182,7 @@ const AdminConfig = () => {
         </h2>
         <p className="text-sm text-muted-foreground mb-4">
           Buscá un usuario por email para asignar rol <strong>admin</strong> (uso excepcional).
-          Los productores PAS deben crearse desde <strong>Solicitudes PAS</strong> con invitación por email.
+          Los productores PAS se registran desde <strong>Sumate</strong> y se aprueban en <strong>Solicitudes PAS</strong>.
         </p>
 
         <div className="flex gap-3 mb-6">

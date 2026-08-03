@@ -10,6 +10,8 @@ import {
 export interface ProducerApplicationInput {
   full_name: string;
   email: string;
+  password: string;
+  confirm_password: string;
   phone?: string | null;
   matricula_ssn?: string | null;
   city?: string | null;
@@ -19,20 +21,26 @@ export interface ProducerApplicationInput {
   message?: string | null;
 }
 
+export type RegisterPasResult = {
+  ok: true;
+  message: string;
+  email_verified?: boolean;
+};
+
 /**
- * Public Sumate submission: INSERT only.
- * Do not chain .select()/.single() — applicants have no SELECT policy, and
- * Prefer: return=representation would fail even when the row was written.
- * Do not send workflow fields (status, user_id, reviewed_*, invite_*); the
- * database assigns status = 'nuevo'.
+ * Public Sumate submission via Edge Function:
+ * creates Auth user + pending application linked by user_id.
+ * Password never touches producer_applications.
  */
 export function useCreateProducerApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: ProducerApplicationInput) => {
+    mutationFn: async (input: ProducerApplicationInput): Promise<RegisterPasResult> => {
       const payload = {
         full_name: input.full_name.trim(),
         email: input.email.trim(),
+        password: input.password,
+        confirm_password: input.confirm_password,
         phone: input.phone ?? null,
         matricula_ssn: input.matricula_ssn ?? null,
         city: input.city ?? null,
@@ -42,19 +50,35 @@ export function useCreateProducerApplication() {
         message: input.message ?? null,
       };
 
-      const { error } = await supabase
-        .from("producer_applications")
-        .insert(payload);
+      const res = await fetch(getSupabaseFunctionUrl("register-pas-application"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      if (error) {
-        logProducerApplicationError(error);
-        const mapped = new Error(getProducerApplicationErrorMessage(error));
-        (mapped as Error & { cause?: unknown }).cause = error;
-        throw mapped;
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = {
+          code: String(res.status || "edge_error"),
+          message: typeof body.error === "string" ? body.error : "Error al enviar la solicitud",
+          status: res.status,
+        };
+        logProducerApplicationError(err, "register-pas-application");
+        // Prefer explicit Edge Function validation messages; fall back to mapped copy.
+        const mapped = getProducerApplicationErrorMessage(err);
+        const isGeneric = mapped === "Error al enviar la solicitud. Intentá nuevamente.";
+        throw new Error(isGeneric && err.message ? err.message : mapped);
       }
 
       trackEvent("producer_application_submitted");
-      return { ok: true as const };
+      return {
+        ok: true as const,
+        message:
+          typeof body.message === "string"
+            ? body.message
+            : "Recibimos tu solicitud. Revisá tu email para verificar tu dirección. Una vez verificada, el equipo de Kipper evaluará tu solicitud.",
+        email_verified: Boolean(body.email_verified),
+      };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["producer_applications"] }),
   });
@@ -70,6 +94,27 @@ export function useProducerApplications() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export function useMyProducerApplication() {
+  return useQuery({
+    queryKey: ["my_producer_application"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_my_producer_application");
+      if (error) {
+        // Fallback to RLS select if RPC not yet deployed.
+        const { data: rows, error: selErr } = await supabase
+          .from("producer_applications")
+          .select("id, email, full_name, status, created_at, approved_at")
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (selErr) throw error;
+        return rows?.[0] ?? null;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ?? null;
     },
   });
 }
@@ -99,6 +144,43 @@ export function useUpdateProducerApplication() {
   });
 }
 
+export function useApprovePasProducer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ application_id }: { application_id: string }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sesión requerida");
+
+      const res = await fetch(getSupabaseFunctionUrl("approve-pas-producer"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ application_id }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "Error al aprobar acceso");
+      return body as {
+        ok: boolean;
+        message?: string;
+        warning?: string | null;
+        email_notification_sent?: boolean;
+        email_verified?: boolean;
+        idempotent?: boolean;
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["producer_applications"] });
+      qc.invalidateQueries({ queryKey: ["producers"] });
+    },
+  });
+}
+
+/** Legacy-only: applications without Auth user_id. */
 export function useInvitePasProducer() {
   const qc = useQueryClient();
   return useMutation({
@@ -109,7 +191,9 @@ export function useInvitePasProducer() {
       application_id: string;
       resend?: boolean;
     }) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Sesión requerida");
 
       const res = await fetch(getSupabaseFunctionUrl("invite-pas-producer"), {
@@ -122,7 +206,7 @@ export function useInvitePasProducer() {
       });
 
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Error al enviar invitación");
+      if (!res.ok) throw new Error(body.error ?? "Error al enviar invitación legacy");
       return body;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["producer_applications"] }),
