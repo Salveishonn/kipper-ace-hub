@@ -97,7 +97,7 @@ type PortalPasProps = {
   /** Compact label for narrow viewports; falls back to label */
   mobileLabel?: string;
   showSecondary?: boolean;
-  /** Light chrome for the maroon brand header */
+  /** Light chrome for the FedPat-blue brand header */
   variant?: "default" | "onBrand";
 };
 

@@ -99,20 +99,21 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 bg-[hsl(var(--kipper-header))] text-primary-foreground shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]"
+      className="kipper-header-bar fixed top-0 left-0 right-0 z-50 h-[4.25rem] sm:h-[4.75rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]"
       aria-label="Principal"
     >
-      <div className="flex items-center h-[4.25rem] sm:h-[4.75rem] w-full">
+      <div className="relative h-full w-full">
+        {/* Brand: K flush to left / top / bottom edges */}
         <Link
           to="/"
-          className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0"
+          className="absolute left-0 top-0 bottom-0 z-20 flex items-stretch gap-2 sm:gap-2.5 group min-w-0"
           aria-label="Organización Kipper — Inicio"
         >
           <img
             src={kipperMarkK}
             alt=""
             aria-hidden
-            className="h-12 sm:h-14 w-auto object-contain object-left mix-blend-screen transition-transform duration-300 group-hover:scale-[1.02]"
+            className="block h-full w-auto object-cover object-left mix-blend-screen"
           />
           <div className="flex flex-col justify-center leading-none text-white pr-2">
             <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
@@ -124,8 +125,9 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
           </div>
         </Link>
 
-        <div className="ml-auto flex items-center gap-4 lg:gap-6 xl:gap-7 pr-3 sm:pr-6 lg:pr-8">
-          <div className="hidden lg:flex items-center gap-6 xl:gap-7">
+        {/* Desktop: nav + CTAs centered in the bar */}
+        <div className="hidden lg:flex absolute inset-0 z-10 items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-5 xl:gap-7">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -138,9 +140,26 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
                 {link.label}
               </Link>
             ))}
+            <div className="flex items-center gap-2.5 pl-1">
+              <PortalPasLink
+                href={getPortalHref()}
+                label={portalLabel}
+                mobileLabel={portalMobileLabel}
+                showSecondary={!isAdmin}
+                variant="onBrand"
+              />
+              <CotizarButton
+                size="sm"
+                label="Cotizar ahora"
+                variant="onBrand"
+              />
+            </div>
           </div>
+        </div>
 
-          <div className="hidden md:flex items-center gap-2.5">
+        {/* Tablet: CTAs centered when full nav is hidden */}
+        <div className="hidden md:flex lg:hidden absolute inset-0 z-10 items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2.5">
             <PortalPasLink
               href={getPortalHref()}
               label={portalLabel}
@@ -154,18 +173,18 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
               variant="onBrand"
             />
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            className="md:hidden p-2.5 rounded-lg text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            aria-expanded={isOpen}
-            aria-controls="mobile-nav-panel"
-          >
-            <span className="sr-only">{isOpen ? "Cerrar menú" : "Abrir menú"}</span>
-            {isOpen ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-lg text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          aria-expanded={isOpen}
+          aria-controls="mobile-nav-panel"
+        >
+          <span className="sr-only">{isOpen ? "Cerrar menú" : "Abrir menú"}</span>
+          {isOpen ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
+        </button>
       </div>
 
       {isOpen && (
@@ -185,7 +204,7 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
           />
           <div
             ref={menuPanelRef}
-            className="relative bg-[hsl(var(--kipper-header))] border-t border-white/10 shadow-elevated max-h-[calc(100svh-4.25rem)] overflow-y-auto"
+            className="kipper-header-bar relative border-t border-white/10 shadow-elevated max-h-[calc(100svh-4.25rem)] overflow-y-auto"
           >
             <div className="px-4 py-5 space-y-1">
               {navLinks.map((link, i) => (
