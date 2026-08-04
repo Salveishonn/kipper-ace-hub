@@ -125,7 +125,7 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
           </div>
         </Link>
 
-        {/* Desktop: nav + CTAs centered in the bar */}
+        {/* Desktop: nav links centered */}
         <div className="hidden lg:flex absolute inset-0 z-10 items-center justify-center pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-5 xl:gap-7">
             {navLinks.map((link) => (
@@ -140,39 +140,23 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
                 {link.label}
               </Link>
             ))}
-            <div className="flex items-center gap-2.5 pl-1">
-              <PortalPasLink
-                href={getPortalHref()}
-                label={portalLabel}
-                mobileLabel={portalMobileLabel}
-                showSecondary={!isAdmin}
-                variant="onBrand"
-              />
-              <CotizarButton
-                size="sm"
-                label="Cotizar ahora"
-                variant="onBrand"
-              />
-            </div>
           </div>
         </div>
 
-        {/* Tablet: CTAs centered when full nav is hidden */}
-        <div className="hidden md:flex lg:hidden absolute inset-0 z-10 items-center justify-center pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2.5">
-            <PortalPasLink
-              href={getPortalHref()}
-              label={portalLabel}
-              mobileLabel={portalMobileLabel}
-              showSecondary={!isAdmin}
-              variant="onBrand"
-            />
-            <CotizarButton
-              size="sm"
-              label="Cotizar ahora"
-              variant="onBrand"
-            />
-          </div>
+        {/* Cotizar + Productores flush right */}
+        <div className="hidden md:flex absolute right-3 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-20 items-center gap-2.5">
+          <PortalPasLink
+            href={getPortalHref()}
+            label={portalLabel}
+            mobileLabel={portalMobileLabel}
+            showSecondary={!isAdmin}
+            variant="onBrand"
+          />
+          <CotizarButton
+            size="sm"
+            label="Cotizar ahora"
+            variant="onBrand"
+          />
         </div>
 
         <button

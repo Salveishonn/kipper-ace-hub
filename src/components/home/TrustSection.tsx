@@ -3,6 +3,7 @@ import { useAnimeScope } from "@/hooks/useAnimeScope";
 import { registerSectionReveal } from "@/lib/motion/sectionReveal";
 import { motion } from "@/lib/motion/tokens";
 import { Users, Award, Building, Headphones, Star } from "lucide-react";
+import fedpatLogo from "@/assets/fedpat-logo.png";
 
 const stats = [
   { icon: Users, value: "15+", label: "Productores especializados" },
@@ -118,16 +119,28 @@ export function TrustSection() {
 
           <div
             data-insurer-featured
-            className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-primary/45 bg-card px-6 py-5 shadow-soft"
+            className="fedpat-featured-card mx-auto mb-5 max-w-md rounded-2xl px-6 py-6"
           >
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold mb-3">
-              <Star size={12} className="fill-primary" aria-hidden />
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 text-white px-3 py-1 text-xs font-semibold mb-4">
+              <Star size={12} className="fill-white text-white" aria-hidden />
               Compañía principal
             </div>
-            <p className="text-xl font-bold text-foreground tracking-tight">{FEATURED_INSURER}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Nuestra principal compañía con la que trabajamos
-            </p>
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <img
+                src={fedpatLogo}
+                alt=""
+                aria-hidden
+                className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-full shadow-[0_0_0_2px_rgba(255,255,255,0.25)]"
+              />
+              <div className="text-left">
+                <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  {FEATURED_INSURER}
+                </p>
+                <p className="mt-1 text-sm text-white/75">
+                  Nuestra principal compañía con la que trabajamos
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3 md:gap-4">
