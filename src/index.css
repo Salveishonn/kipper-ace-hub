@@ -1,5 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+@font-face {
+  font-family: 'LP Horizont Caps';
+  src:
+    url('./assets/fonts/LPHorizontCaps.otf') format('opentype'),
+    url('./assets/fonts/LPHorizontCaps.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

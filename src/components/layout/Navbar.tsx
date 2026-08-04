@@ -102,29 +102,29 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
       className="fixed top-0 left-0 right-0 z-50 bg-[hsl(var(--kipper-header))] text-primary-foreground shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]"
       aria-label="Principal"
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[4.25rem] sm:h-[4.75rem]">
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 sm:gap-3 group shrink-0 min-w-0"
-            aria-label="Organización Kipper — Inicio"
-          >
-            <img
-              src={kipperMarkK}
-              alt=""
-              aria-hidden
-              className="h-12 sm:h-14 w-auto object-contain mix-blend-screen transition-transform duration-300 group-hover:scale-[1.02]"
-            />
-            <div className="flex flex-col leading-none text-white">
-              <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
-                Organización
-              </span>
-              <span className="text-xl sm:text-2xl font-extrabold tracking-wide uppercase">
-                Kipper
-              </span>
-            </div>
-          </Link>
+      <div className="flex items-center h-[4.25rem] sm:h-[4.75rem] w-full">
+        <Link
+          to="/"
+          className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0"
+          aria-label="Organización Kipper — Inicio"
+        >
+          <img
+            src={kipperMarkK}
+            alt=""
+            aria-hidden
+            className="h-12 sm:h-14 w-auto object-contain object-left mix-blend-screen transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+          <div className="flex flex-col justify-center leading-none text-white pr-2">
+            <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
+              Organización
+            </span>
+            <span className="font-kipper text-[1.35rem] sm:text-[1.65rem] font-normal tracking-[0.04em] uppercase leading-none mt-0.5">
+              Kipper
+            </span>
+          </div>
+        </Link>
 
+        <div className="ml-auto flex items-center gap-4 lg:gap-6 xl:gap-7 pr-3 sm:pr-6 lg:pr-8">
           <div className="hidden lg:flex items-center gap-6 xl:gap-7">
             {navLinks.map((link) => (
               <Link
