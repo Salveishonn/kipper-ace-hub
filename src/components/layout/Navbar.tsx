@@ -116,10 +116,10 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
             className="block h-full w-auto object-cover object-left mix-blend-screen"
           />
           <div className="flex flex-col justify-center leading-none text-white pr-2">
-            <span className="text-[11px] sm:text-xs font-medium tracking-[0.28em] uppercase opacity-95">
+            <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
               Organización
             </span>
-            <span className="font-kipper text-2xl sm:text-3xl font-normal tracking-[0.04em] uppercase leading-none mt-0.5">
+            <span className="font-kipper text-[1.85rem] sm:text-[2.35rem] font-normal tracking-[0.04em] uppercase leading-none mt-0.5">
               Kipper
             </span>
           </div>
