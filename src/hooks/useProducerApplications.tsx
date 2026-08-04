@@ -119,28 +119,57 @@ export function useMyProducerApplication() {
   });
 }
 
+export type ProducerApplicationUpdate = {
+  id: string;
+  status?: string;
+  admin_notes?: string | null;
+  full_name?: string;
+  phone?: string | null;
+  matricula_ssn?: string | null;
+  city?: string | null;
+  province?: string | null;
+  years_experience?: number | null;
+  current_companies?: string | null;
+  message?: string | null;
+  email?: string;
+};
+
 export function useUpdateProducerApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      admin_notes,
-    }: {
-      id: string;
-      status?: string;
-      admin_notes?: string;
-    }) => {
+    mutationFn: async (input: ProducerApplicationUpdate) => {
+      const { id, ...fields } = input;
+      const payload: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) payload[key] = value;
+      }
       const { data, error } = await supabase
         .from("producer_applications")
-        .update({ status, admin_notes })
+        .update(payload)
         .eq("id", id)
         .select()
         .single();
       if (error) throw error;
+
+      // Keep profile name in sync when application has a linked Auth user.
+      if (data?.user_id && typeof fields.full_name === "string") {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fields.full_name,
+            phone: fields.phone ?? undefined,
+            city: fields.city ?? undefined,
+            province: fields.province ?? undefined,
+          })
+          .eq("user_id", data.user_id);
+      }
+
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["producer_applications"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["producer_applications"] });
+      qc.invalidateQueries({ queryKey: ["producers"] });
+    },
   });
 }
 

@@ -1,13 +1,26 @@
-import { useState } from "react";
-import { Mail, CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Mail,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
+  AlertTriangle,
+  Edit,
+  Ban,
+  Save,
+  X,
+} from "lucide-react";
 import {
   useProducerApplications,
   useUpdateProducerApplication,
   useApprovePasProducer,
   useInvitePasProducer,
 } from "@/hooks/useProducerApplications";
+import { useRevokePasProducer } from "@/hooks/useProducers";
 import {
   PRODUCER_APPLICATION_STATUS,
+  PENDING_APPLICATION_STATUSES,
   isLegacyInviteFlow,
   isSelfRegistrationPending,
 } from "@/lib/producerApplicationStatus";
@@ -25,13 +38,75 @@ const statusLabel: Record<string, string> = {
   aprobado: "Pendiente de aprobación",
 };
 
+type FilterTab = "pendientes" | "activos" | "rechazados" | "todos";
+
+type AppRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  matricula_ssn: string | null;
+  city: string | null;
+  province: string | null;
+  years_experience: number | null;
+  current_companies: string | null;
+  message: string | null;
+  status: string;
+  user_id: string | null;
+  admin_notes: string | null;
+  approved_at: string | null;
+};
+
 const AdminPasSolicitudes = () => {
   const { data, isLoading, error } = useProducerApplications();
   const updateApp = useUpdateProducerApplication();
   const approve = useApprovePasProducer();
   const invite = useInvitePasProducer();
+  const revoke = useRevokePasProducer();
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterTab>("todos");
+  const [editing, setEditing] = useState<AppRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone: "",
+    matricula_ssn: "",
+    city: "",
+    province: "",
+    years_experience: "",
+    current_companies: "",
+    message: "",
+    email: "",
+  });
+
+  const filtered = useMemo(() => {
+    const rows = (data || []) as AppRow[];
+    return rows.filter((app) => {
+      if (filter === "pendientes") {
+        return (
+          PENDING_APPLICATION_STATUSES.includes(app.status) ||
+          app.status === PRODUCER_APPLICATION_STATUS.INVITADO
+        );
+      }
+      if (filter === "activos") return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO;
+      if (filter === "rechazados") return app.status === PRODUCER_APPLICATION_STATUS.RECHAZADO;
+      return true;
+    });
+  }, [data, filter]);
+
+  const counts = useMemo(() => {
+    const rows = (data || []) as AppRow[];
+    return {
+      pendientes: rows.filter(
+        (a) =>
+          PENDING_APPLICATION_STATUSES.includes(a.status) ||
+          a.status === PRODUCER_APPLICATION_STATUS.INVITADO,
+      ).length,
+      activos: rows.filter((a) => a.status === PRODUCER_APPLICATION_STATUS.ACTIVO).length,
+      rechazados: rows.filter((a) => a.status === PRODUCER_APPLICATION_STATUS.RECHAZADO).length,
+      todos: rows.length,
+    };
+  }, [data]);
 
   const handleReject = async (id: string) => {
     try {
@@ -43,6 +118,18 @@ const AdminPasSolicitudes = () => {
       toast.success("Solicitud rechazada");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Error");
+    }
+  };
+
+  const handleSaveNotes = async (id: string) => {
+    try {
+      await updateApp.mutateAsync({
+        id,
+        admin_notes: notesDraft[id] ?? "",
+      });
+      toast.success("Notas guardadas");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al guardar notas");
     }
   };
 
@@ -74,6 +161,63 @@ const AdminPasSolicitudes = () => {
     }
   };
 
+  const handleRevoke = async (app: AppRow) => {
+    if (!app.user_id) return;
+    if (!confirm(`¿Suspender el acceso de ${app.full_name}?`)) return;
+    try {
+      await revoke.mutateAsync(app.user_id);
+      toast.success("Acceso suspendido. El productor ya no puede entrar al portal.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo suspender");
+    }
+  };
+
+  const openEdit = (app: AppRow) => {
+    setEditing(app);
+    setEditForm({
+      full_name: app.full_name || "",
+      phone: app.phone || "",
+      matricula_ssn: app.matricula_ssn || "",
+      city: app.city || "",
+      province: app.province || "",
+      years_experience: app.years_experience?.toString() ?? "",
+      current_companies: app.current_companies || "",
+      message: app.message || "",
+      email: app.email || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editForm.full_name.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+    try {
+      const years =
+        editForm.years_experience.trim() === ""
+          ? null
+          : Number.parseInt(editForm.years_experience, 10);
+      await updateApp.mutateAsync({
+        id: editing.id,
+        full_name: editForm.full_name.trim(),
+        phone: editForm.phone.trim() || null,
+        matricula_ssn: editForm.matricula_ssn.trim() || null,
+        city: editForm.city.trim() || null,
+        province: editForm.province.trim() || null,
+        years_experience: Number.isFinite(years as number) ? years : null,
+        current_companies: editForm.current_companies.trim() || null,
+        message: editForm.message.trim() || null,
+        // Only allow email edit when there is no Auth user linked.
+        ...(editing.user_id ? {} : { email: editForm.email.trim() }),
+      });
+      toast.success("Solicitud actualizada");
+      setEditing(null);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
+    }
+  };
+
   if (isLoading) return <LoadingState text="Cargando solicitudes..." />;
   if (error) return <ErrorState title="Error" message="No se pudieron cargar las solicitudes" />;
 
@@ -82,16 +226,39 @@ const AdminPasSolicitudes = () => {
       <div>
         <h1 className="text-2xl font-bold">Solicitudes PAS</h1>
         <p className="text-muted-foreground">
-          Aprobá el acceso de productores que ya crearon su cuenta. No se envían invitaciones de
-          Supabase en el flujo nuevo.
+          Aprobá, editá datos, guardá notas o suspendé el acceso de productores activos.
         </p>
       </div>
 
-      {!data?.length ? (
-        <EmptyState title="Sin solicitudes" description="Las postulaciones desde Sumate aparecerán acá." />
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["pendientes", `Pendientes (${counts.pendientes})`],
+            ["activos", `Activos (${counts.activos})`],
+            ["rechazados", `Rechazados (${counts.rechazados})`],
+            ["todos", `Todos (${counts.todos})`],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setFilter(key)}
+            className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
+              filter === key
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {!filtered.length ? (
+        <EmptyState title="Sin solicitudes" description="No hay solicitudes en este filtro." />
       ) : (
         <div className="space-y-4">
-          {data.map((app) => {
+          {filtered.map((app) => {
             const selfRegPending = isSelfRegistrationPending(app);
             const legacy = isLegacyInviteFlow(app);
             const isApproving = approvingId === app.id && approve.isPending;
@@ -105,8 +272,10 @@ const AdminPasSolicitudes = () => {
                       <Mail size={14} /> {app.email}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {app.province}{app.city ? ` · ${app.city}` : ""}
+                      {app.province}
+                      {app.city ? ` · ${app.city}` : ""}
                       {app.matricula_ssn ? ` · Mat. ${app.matricula_ssn}` : ""}
+                      {app.phone ? ` · ${app.phone}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {app.user_id
@@ -154,6 +323,18 @@ const AdminPasSolicitudes = () => {
                   onChange={(e) => setNotesDraft((s) => ({ ...s, [app.id]: e.target.value }))}
                 />
                 <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(app)}>
+                    <Edit size={16} className="mr-2" /> Editar datos
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleSaveNotes(app.id)}
+                    disabled={updateApp.isPending}
+                  >
+                    <Save size={16} className="mr-2" /> Guardar notas
+                  </Button>
+
                   {selfRegPending && (
                     <>
                       <Button
@@ -174,6 +355,22 @@ const AdminPasSolicitudes = () => {
                         <XCircle size={16} className="mr-2" /> Rechazar
                       </Button>
                     </>
+                  )}
+
+                  {app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.user_id && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleRevoke(app)}
+                      disabled={revoke.isPending}
+                    >
+                      {revoke.isPending ? (
+                        <Loader2 className="animate-spin mr-2" size={16} />
+                      ) : (
+                        <Ban size={16} className="mr-2" />
+                      )}
+                      Suspender acceso
+                    </Button>
                   )}
 
                   {legacy && app.status !== PRODUCER_APPLICATION_STATUS.INVITADO && (
@@ -211,6 +408,82 @@ const AdminPasSolicitudes = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {editing && (
+        <div
+          className="fixed inset-0 bg-foreground/20 z-50 flex items-center justify-center p-4"
+          onClick={() => setEditing(null)}
+        >
+          <div
+            className="bg-card rounded-2xl shadow-elevated max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl font-bold">Editar solicitud</h2>
+              <button type="button" onClick={() => setEditing(null)}>
+                <X size={20} className="text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              <div>
+                <label className="text-sm font-medium">Nombre y apellido *</label>
+                <input
+                  className="input-kipper mt-1"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <input
+                  className="input-kipper mt-1"
+                  value={editForm.email}
+                  disabled={Boolean(editing.user_id)}
+                  onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                />
+                {editing.user_id && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email de Auth vinculado: no se edita desde acá.
+                  </p>
+                )}
+              </div>
+              {(
+                [
+                  ["phone", "Teléfono"],
+                  ["matricula_ssn", "Matrícula SSN"],
+                  ["city", "Ciudad"],
+                  ["province", "Provincia"],
+                  ["years_experience", "Años de experiencia"],
+                  ["current_companies", "Compañías"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key}>
+                  <label className="text-sm font-medium">{label}</label>
+                  <input
+                    className="input-kipper mt-1"
+                    value={editForm[key]}
+                    onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-sm font-medium">Mensaje</label>
+                <textarea
+                  className="input-kipper mt-1 min-h-[80px]"
+                  value={editForm.message}
+                  onChange={(e) => setEditForm((f) => ({ ...f, message: e.target.value }))}
+                />
+              </div>
+              <Button className="w-full" onClick={saveEdit} disabled={updateApp.isPending}>
+                {updateApp.isPending ? (
+                  <Loader2 className="animate-spin mr-2" size={16} />
+                ) : null}
+                Guardar cambios
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1212,6 +1212,14 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_cliente: { Args: never; Returns: boolean }
       is_productor: { Args: never; Returns: boolean }
+      restore_pas_producer: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      revoke_pas_producer: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "productor" | "cliente"
