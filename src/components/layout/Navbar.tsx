@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { createTimeline, stagger } from "animejs";
 import { useAuth } from "@/hooks/useAuth";
-import logoKipper from "@/assets/logo-kipper.png";
+import kipperMarkK from "@/assets/kipper-mark-k.png";
 import { CotizarButton, PortalPasLink } from "@/components/ui/KipperCta";
 import { siteConfig } from "@/lib/siteConfig";
 import { motion } from "@/lib/motion/tokens";
@@ -19,14 +19,14 @@ const navLinks = [
 ];
 
 type NavbarProps = {
+  /** @deprecated Brand bar is always solid; kept for MainLayout compat. */
   overlay?: boolean;
 };
 
-export function Navbar({ overlay = false }: NavbarProps) {
+export function Navbar({ overlay: _overlay = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [solid, setSolid] = useState(!overlay);
   const location = useLocation();
-  const { user, isAdmin, isProductor, loading, rolesLoaded, getDefaultDashboard } = useAuth();
+  const { user, isAdmin, loading, rolesLoaded, getDefaultDashboard } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
   const menuPanelRef = useRef<HTMLDivElement>(null);
   const firstFocusRef = useRef<HTMLAnchorElement>(null);
@@ -46,19 +46,6 @@ export function Navbar({ overlay = false }: NavbarProps) {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!overlay) {
-      setSolid(true);
-      return;
-    }
-    const onScroll = () => {
-      setSolid(window.scrollY > 48);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [overlay]);
-
-  useEffect(() => {
     if (!isOpen) return;
 
     const panel = menuPanelRef.current;
@@ -71,25 +58,27 @@ export function Navbar({ overlay = false }: NavbarProps) {
         opacity: [0, 1],
         translateY: [-8, 0],
         duration: motion.duration.nav,
-      }).add(
-        links,
-        {
-          opacity: [0, 1],
-          translateX: [-12, 0],
-          duration: motion.duration.standard,
-          delay: stagger(motion.stagger.tight),
-        },
-        "-=120",
-      ).add(
-        ctas,
-        {
-          opacity: [0, 1],
-          translateY: [8, 0],
-          duration: motion.duration.standard,
-          delay: stagger(motion.stagger.tight),
-        },
-        "-=280",
-      );
+      })
+        .add(
+          links,
+          {
+            opacity: [0, 1],
+            translateX: [-12, 0],
+            duration: motion.duration.standard,
+            delay: stagger(motion.stagger.tight),
+          },
+          "-=120",
+        )
+        .add(
+          ctas,
+          {
+            opacity: [0, 1],
+            translateY: [8, 0],
+            duration: motion.duration.standard,
+            delay: stagger(motion.stagger.tight),
+          },
+          "-=280",
+        );
     }
 
     firstFocusRef.current?.focus();
@@ -108,42 +97,42 @@ export function Navbar({ overlay = false }: NavbarProps) {
 
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
-  const navSurface = solid || isOpen;
-
   return (
     <nav
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300",
-        navSurface
-          ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-soft"
-          : "bg-transparent border-b border-transparent",
-      )}
+      className="fixed top-0 left-0 right-0 z-50 bg-[hsl(var(--kipper-header))] text-primary-foreground shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]"
       aria-label="Principal"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={cn("flex items-center justify-between transition-[height] duration-300", navSurface ? "h-16" : "h-20")}>
-          <Link to="/" className="flex items-center gap-3 group shrink-0">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-[4.25rem] sm:h-[4.75rem]">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 sm:gap-3 group shrink-0 min-w-0"
+            aria-label="Organización Kipper — Inicio"
+          >
             <img
-              src={logoKipper}
-              alt="Kipper Seguros"
-              className="h-11 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
+              src={kipperMarkK}
+              alt=""
+              aria-hidden
+              className="h-12 sm:h-14 w-auto object-contain mix-blend-screen transition-transform duration-300 group-hover:scale-[1.02]"
             />
-            <div className="flex flex-col leading-none">
-              <span className={cn("text-lg font-bold", navSurface ? "text-primary" : "text-primary")}>KIPPER</span>
-              <span className={cn("text-[10px] tracking-wider", navSurface ? "text-muted-foreground" : "text-foreground/70")}>
-                SEGUROS
+            <div className="flex flex-col leading-none text-white">
+              <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
+                Organización
+              </span>
+              <span className="text-xl sm:text-2xl font-extrabold tracking-wide uppercase">
+                Kipper
               </span>
             </div>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-7">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "nav-link text-sm",
-                  location.pathname === link.href && "nav-link-active",
+                  "nav-link-brand text-sm",
+                  location.pathname === link.href && "nav-link-brand-active",
                 )}
               >
                 {link.label}
@@ -157,14 +146,19 @@ export function Navbar({ overlay = false }: NavbarProps) {
               label={portalLabel}
               mobileLabel={portalMobileLabel}
               showSecondary={!isAdmin}
+              variant="onBrand"
             />
-            <CotizarButton size="sm" label="Cotizar ahora" className="shadow-elevated" />
+            <CotizarButton
+              size="sm"
+              label="Cotizar ahora"
+              variant="onBrand"
+            />
           </div>
 
           <button
             type="button"
             onClick={() => setIsOpen((v) => !v)}
-            className="md:hidden p-2.5 rounded-lg text-foreground hover:bg-muted/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="md:hidden p-2.5 rounded-lg text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             aria-expanded={isOpen}
             aria-controls="mobile-nav-panel"
           >
@@ -178,20 +172,20 @@ export function Navbar({ overlay = false }: NavbarProps) {
         <div
           id="mobile-nav-panel"
           ref={menuRef}
-          className="md:hidden fixed inset-0 top-16 z-40"
+          className="md:hidden fixed inset-0 top-[4.25rem] z-40"
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
         >
           <button
             type="button"
-            className="absolute inset-0 bg-foreground/20 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
             aria-label="Cerrar menú"
             onClick={closeMenu}
           />
           <div
             ref={menuPanelRef}
-            className="relative bg-background border-t border-border shadow-elevated max-h-[calc(100svh-4rem)] overflow-y-auto"
+            className="relative bg-[hsl(var(--kipper-header))] border-t border-white/10 shadow-elevated max-h-[calc(100svh-4.25rem)] overflow-y-auto"
           >
             <div className="px-4 py-5 space-y-1">
               {navLinks.map((link, i) => (
@@ -204,16 +198,21 @@ export function Navbar({ overlay = false }: NavbarProps) {
                   className={cn(
                     "block py-3 px-3 rounded-lg text-base font-medium transition-colors",
                     location.pathname === link.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground hover:bg-muted",
+                      ? "bg-white/15 text-white"
+                      : "text-white/85 hover:bg-white/10 hover:text-white",
                   )}
                 >
                   {link.label}
                 </Link>
               ))}
-              <div className="pt-5 mt-3 border-t border-border flex flex-col gap-3">
+              <div className="pt-5 mt-3 border-t border-white/15 flex flex-col gap-3">
                 <div data-mobile-nav-cta>
-                  <CotizarButton size="sm" label="Cotizar ahora" className="w-full justify-center" />
+                  <CotizarButton
+                    size="sm"
+                    label="Cotizar ahora"
+                    variant="onBrand"
+                    className="w-full justify-center"
+                  />
                 </div>
                 <div data-mobile-nav-cta>
                   <PortalPasLink
@@ -221,6 +220,7 @@ export function Navbar({ overlay = false }: NavbarProps) {
                     label={portalLabel}
                     mobileLabel={portalMobileLabel}
                     showSecondary={false}
+                    variant="onBrand"
                     className="w-full justify-center"
                   />
                 </div>
@@ -228,7 +228,7 @@ export function Navbar({ overlay = false }: NavbarProps) {
                   <Link
                     to="/sumate"
                     onClick={closeMenu}
-                    className="sumate-pas-link w-full justify-center"
+                    className="sumate-pas-link-brand w-full justify-center"
                   >
                     Sumate como PAS
                   </Link>
@@ -239,7 +239,7 @@ export function Navbar({ overlay = false }: NavbarProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={closeMenu}
-                    className="block py-3 px-3 rounded-lg text-base font-medium text-foreground hover:bg-muted"
+                    className="block py-3 px-3 rounded-lg text-base font-medium text-white/85 hover:bg-white/10"
                   >
                     WhatsApp
                   </a>

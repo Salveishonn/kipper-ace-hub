@@ -4,12 +4,12 @@ import { animate } from "animejs";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { KipperAssistant } from "@/components/assistant/KipperAssistant";
-import { cn } from "@/lib/utils";
 import { motion } from "@/lib/motion/tokens";
 
 interface MainLayoutProps {
   children: React.ReactNode;
   showFooter?: boolean;
+  /** @deprecated Brand bar is always fixed; prop kept for call-site compatibility. */
   overlayNav?: boolean;
 }
 
@@ -17,7 +17,7 @@ function isDashboardPath(path: string) {
   return path.startsWith("/admin") || path.startsWith("/productor");
 }
 
-export function MainLayout({ children, showFooter = true, overlayNav = false }: MainLayoutProps) {
+export function MainLayout({ children, showFooter = true }: MainLayoutProps) {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -38,8 +38,8 @@ export function MainLayout({ children, showFooter = true, overlayNav = false }: 
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
-      <Navbar overlay={overlayNav} />
-      <main ref={mainRef} className={cn("flex-1", overlayNav ? "pt-0" : "pt-20")}>
+      <Navbar />
+      <main ref={mainRef} className="flex-1 pt-[4.25rem] sm:pt-[4.75rem]">
         {children}
       </main>
       {showFooter && <Footer />}

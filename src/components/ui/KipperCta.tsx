@@ -8,7 +8,7 @@ type CotizarProps = {
   size?: "sm" | "md" | "lg";
   label?: string;
   /** Dominant quote CTA. Default for public conversion surfaces. */
-  variant?: "quote" | "hero";
+  variant?: "quote" | "hero" | "onBrand";
 };
 
 export function CotizarButton({
@@ -23,12 +23,19 @@ export function CotizarButton({
     lg: "px-10 py-4 text-lg",
   };
 
+  const variantClass =
+    variant === "onBrand"
+      ? "quote-primary-on-brand"
+      : variant === "hero"
+        ? "btn-hero"
+        : "quote-primary";
+
   return (
     <Link
       to="/cotizar"
       data-cta="quote-primary"
       className={cn(
-        variant === "quote" ? "quote-primary" : "btn-hero",
+        variantClass,
         "inline-flex items-center justify-center gap-2 group/kipper-cta",
         sizes[size],
         className,
@@ -90,6 +97,8 @@ type PortalPasProps = {
   /** Compact label for narrow viewports; falls back to label */
   mobileLabel?: string;
   showSecondary?: boolean;
+  /** Light chrome for the maroon brand header */
+  variant?: "default" | "onBrand";
 };
 
 /**
@@ -102,19 +111,26 @@ export function PortalPasLink({
   label = "Acceso productores",
   mobileLabel = "Portal Productores",
   showSecondary = true,
+  variant = "default",
 }: PortalPasProps) {
+  const onBrand = variant === "onBrand";
   return (
     <Link
       to={href}
       data-cta="portal-internal"
-      className={cn("portal-pas-link", className)}
+      className={cn(onBrand ? "portal-pas-link-brand" : "portal-pas-link", className)}
     >
       <Briefcase size={15} className="shrink-0 opacity-80" aria-hidden />
       <span className="flex flex-col items-start leading-tight">
         <span className="hidden sm:inline">{label}</span>
         <span className="sm:hidden">{mobileLabel}</span>
         {showSecondary && (
-          <span className="hidden lg:inline text-[10px] font-normal text-muted-foreground tracking-wide">
+          <span
+            className={cn(
+              "hidden lg:inline text-[10px] font-normal tracking-wide",
+              onBrand ? "text-white/65" : "text-muted-foreground",
+            )}
+          >
             Área interna
           </span>
         )}

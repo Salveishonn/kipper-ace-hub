@@ -43,6 +43,8 @@
     --kipper-bordo: 0 85% 27%;
     --kipper-bordo-dark: 0 85% 20%;
     --kipper-bordo-light: 0 60% 45%;
+    /* Public header bar (HEADER brand asset ~#601410) */
+    --kipper-header: 3 71% 22%;
     --kipper-cream: 35 50% 97%;
     --kipper-warm-gray: 30 10% 50%;
     --kipper-gold: 38 70% 55%;
@@ -223,6 +225,42 @@
 
   .nav-link-active {
     @apply text-primary font-semibold;
+  }
+
+  /* Public brand header (maroon bar) */
+  .nav-link-brand {
+    @apply text-white/80 hover:text-white transition-colors duration-200 font-medium;
+  }
+
+  .nav-link-brand-active {
+    @apply text-white font-semibold underline underline-offset-8 decoration-white/70;
+  }
+
+  .quote-primary-on-brand {
+    @apply bg-white text-[hsl(var(--kipper-header))] px-8 py-4 rounded-xl font-semibold
+           border border-white/90
+           shadow-[0_10px_28px_-12px_rgba(0,0,0,0.45)]
+           transition-[box-shadow,background-color,border-color,transform,color] duration-200
+           hover:bg-[hsl(var(--kipper-cream))] hover:shadow-elevated
+           active:translate-y-px
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           focus-visible:ring-white/70 focus-visible:ring-offset-[hsl(var(--kipper-header))];
+  }
+
+  .portal-pas-link-brand {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg
+           border border-white/30 bg-white/5 px-3 py-2
+           text-xs sm:text-sm font-medium text-white/90
+           transition-[background-color,border-color,color] duration-200
+           hover:bg-white/10 hover:border-white/50 hover:text-white
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
+  }
+
+  .sumate-pas-link-brand {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/30
+           bg-white/5 px-5 py-2.5 text-sm font-semibold text-white
+           transition-colors duration-200 hover:bg-white/10 hover:border-white/50
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
   }
 }
 
