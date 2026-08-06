@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,10 +9,9 @@ import {
   useProfilesByUserIds,
 } from "@/hooks/useSupportTickets";
 import { ConsultaThread } from "@/components/consultas/ConsultaThread";
+import { ConsultaComposer } from "@/components/consultas/ConsultaComposer";
 import { displayName } from "@/components/shared/UserAvatar";
 import { LoadingState, ErrorState } from "@/components/ui/loading-state";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { consultaCategoryLabel, consultaStatusLabel } from "@/lib/consultaCategories";
 
 const ProductorConsultaDetail = () => {
@@ -22,7 +21,6 @@ const ProductorConsultaDetail = () => {
   const ticket = tickets?.find((t) => t.id === id);
   const { data: messages, isLoading, error } = useSupportMessages(id);
   const send = useSendSupportMessage();
-  const [body, setBody] = useState("");
 
   const canReply = ticket && ["abierto", "en_gestion"].includes(ticket.status);
 
@@ -41,16 +39,6 @@ const ProductorConsultaDetail = () => {
     [profiles],
   );
 
-  const handleSend = async () => {
-    if (!body.trim() || !user || !id) return;
-    try {
-      await send.mutateAsync({ ticket_id: id, author_user_id: user.id, body: body.trim() });
-      setBody("");
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error al enviar");
-    }
-  };
-
   if (isLoading) return <LoadingState text="Cargando mensajes..." />;
   if (error) return <ErrorState title="Error" message="No se pudo cargar la conversación" />;
 
@@ -66,13 +54,13 @@ const ProductorConsultaDetail = () => {
         </p>
         {ticket?.status === "resuelto" && ticket.resolved_by && (
           <p className="text-xs text-muted-foreground mt-1">
-            Resuelto por {displayName(profilesById[ticket.resolved_by])}
+            Resuelto por {displayName(profilesById[ticket.resolved_by], "Equipo Kipper")}
             {ticket.resolved_at ? ` · ${new Date(ticket.resolved_at).toLocaleString("es-AR")}` : ""}
           </p>
         )}
         {ticket?.status === "cerrado" && ticket.closed_by && (
           <p className="text-xs text-muted-foreground mt-1">
-            Cerrado por {displayName(profilesById[ticket.closed_by])}
+            Cerrado por {displayName(profilesById[ticket.closed_by], "Equipo Kipper")}
             {ticket.closed_at ? ` · ${new Date(ticket.closed_at).toLocaleString("es-AR")}` : ""}
           </p>
         )}
@@ -84,16 +72,20 @@ const ProductorConsultaDetail = () => {
         profilesById={profilesById}
       />
 
-      {canReply ? (
-        <div className="flex gap-2">
-          <textarea
-            className="input-kipper flex-1 min-h-[80px]"
-            placeholder="Escribí tu mensaje..."
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-          <Button onClick={handleSend} disabled={send.isPending}>Enviar</Button>
-        </div>
+      {canReply && id && user ? (
+        <ConsultaComposer
+          placeholder="Escribí tu mensaje..."
+          sending={send.isPending}
+          ticketId={id}
+          userId={user.id}
+          onSend={async (payload) => {
+            await send.mutateAsync({
+              ticket_id: id,
+              author_user_id: user.id,
+              ...payload,
+            });
+          }}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">Este caso está cerrado o resuelto.</p>
       )}

@@ -49,5 +49,7 @@ export function UserAvatar({
 }
 
 export function displayName(profile?: ProfileSnippet | null, fallback = "Usuario") {
-  return profile?.full_name?.trim() || profile?.email || fallback;
+  const name = profile?.full_name?.trim();
+  if (name) return name;
+  return fallback;
 }

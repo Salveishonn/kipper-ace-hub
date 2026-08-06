@@ -12,11 +12,21 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  Upload,
+  Image,
+  FileSpreadsheet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
+import {
+  academyFileAccept,
+  isAcademyFileType,
+  isValidAcademyFile,
+  MAX_ACADEMY_BYTES,
+  uploadAcademyFile,
+} from "@/lib/fileUploads";
 
 type LessonRow = {
   id: string;
@@ -27,6 +37,8 @@ type LessonRow = {
   video_url: string | null;
   content_text: string | null;
   file_path: string | null;
+  file_name: string | null;
+  mime_type: string | null;
   published: boolean;
   sort_order: number;
 };
@@ -48,6 +60,8 @@ const emptyLessonForm = {
   video_url: "",
   content_text: "",
   file_path: "",
+  file_name: "",
+  mime_type: "",
   published: false,
 };
 
@@ -65,7 +79,14 @@ function useAcademyModules() {
   });
 }
 
-const typeIcon = { video: Video, chat: MessageSquare, pdf: FileText };
+const typeIcon = {
+  video: Video,
+  chat: MessageSquare,
+  pdf: FileText,
+  word: FileText,
+  excel: FileSpreadsheet,
+  image: Image,
+};
 
 const AdminAcademy = () => {
   const queryClient = useQueryClient();
@@ -75,6 +96,8 @@ const AdminAcademy = () => {
   const [editingModule, setEditingModule] = useState<ModuleRow | null>(null);
   const [editingLesson, setEditingLesson] = useState<LessonRow | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const [lessonFile, setLessonFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [moduleForm, setModuleForm] = useState({
     title: "",
@@ -94,6 +117,7 @@ const AdminAcademy = () => {
 
   const resetLessonForm = () => {
     setLessonForm(emptyLessonForm);
+    setLessonFile(null);
     setEditingLesson(null);
     setShowLessonForm(null);
   };
@@ -150,6 +174,7 @@ const AdminAcademy = () => {
   const openLessonCreate = (moduleId: string) => {
     setEditingLesson(null);
     setLessonForm(emptyLessonForm);
+    setLessonFile(null);
     setShowLessonForm(moduleId);
   };
 
@@ -162,8 +187,11 @@ const AdminAcademy = () => {
       video_url: lesson.video_url || "",
       content_text: lesson.content_text || "",
       file_path: lesson.file_path || "",
+      file_name: lesson.file_name || "",
+      mime_type: lesson.mime_type || "",
       published: lesson.published,
     });
+    setLessonFile(null);
     setShowLessonForm(lesson.module_id);
     setExpandedModule(lesson.module_id);
   };
@@ -173,19 +201,51 @@ const AdminAcademy = () => {
       toast.error("El título es obligatorio");
       return;
     }
+    const needsFile = isAcademyFileType(lessonForm.type);
+    if (needsFile && !editingLesson && !lessonFile && !lessonForm.file_path) {
+      toast.error("Subí un archivo para esta lección");
+      return;
+    }
+    if (lessonFile) {
+      if (!isValidAcademyFile(lessonForm.type, lessonFile)) {
+        toast.error("El archivo no coincide con el tipo seleccionado");
+        return;
+      }
+      if (lessonFile.size > MAX_ACADEMY_BYTES) {
+        toast.error("El archivo supera el máximo de 50 MB");
+        return;
+      }
+    }
+
     const slug =
       lessonForm.slug || lessonForm.title.toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, "-");
-    const payload = {
-      module_id: moduleId,
-      title: lessonForm.title,
-      slug,
-      type: lessonForm.type,
-      video_url: lessonForm.type === "video" ? lessonForm.video_url || null : null,
-      content_text: lessonForm.type === "chat" ? lessonForm.content_text || null : null,
-      file_path: lessonForm.type === "pdf" ? lessonForm.file_path || null : null,
-      published: lessonForm.published,
-    };
+
     try {
+      setUploading(true);
+      let file_path = needsFile ? lessonForm.file_path || null : null;
+      let file_name = needsFile ? lessonForm.file_name || null : null;
+      let mime_type = needsFile ? lessonForm.mime_type || null : null;
+
+      if (lessonFile && needsFile) {
+        const key = editingLesson?.id || `${moduleId}-${Date.now()}`;
+        file_path = await uploadAcademyFile(lessonFile, key);
+        file_name = lessonFile.name;
+        mime_type = lessonFile.type || null;
+      }
+
+      const payload = {
+        module_id: moduleId,
+        title: lessonForm.title,
+        slug,
+        type: lessonForm.type,
+        video_url: lessonForm.type === "video" ? lessonForm.video_url || null : null,
+        content_text: lessonForm.type === "chat" ? lessonForm.content_text || null : null,
+        file_path,
+        file_name,
+        mime_type,
+        published: lessonForm.published,
+      };
+
       if (editingLesson) {
         const { error: err } = await supabase
           .from("academy_lessons")
@@ -210,6 +270,8 @@ const AdminAcademy = () => {
       resetLessonForm();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Error al guardar lección");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -526,13 +588,17 @@ const AdminAcademy = () => {
                             <select
                               className="input-kipper mt-1"
                               value={lessonForm.type}
-                              onChange={(e) =>
-                                setLessonForm({ ...lessonForm, type: e.target.value })
-                              }
+                              onChange={(e) => {
+                                setLessonForm({ ...lessonForm, type: e.target.value });
+                                setLessonFile(null);
+                              }}
                             >
                               <option value="video">Video</option>
                               <option value="chat">Chat / Texto</option>
                               <option value="pdf">PDF</option>
+                              <option value="word">Word</option>
+                              <option value="excel">Excel</option>
+                              <option value="image">Imagen / Foto</option>
                             </select>
                           </div>
                         </div>
@@ -561,17 +627,25 @@ const AdminAcademy = () => {
                             />
                           </div>
                         )}
-                        {lessonForm.type === "pdf" && (
-                          <div>
-                            <label className="text-sm font-medium">URL / path del PDF</label>
-                            <input
-                              className="input-kipper mt-1"
-                              value={lessonForm.file_path}
-                              onChange={(e) =>
-                                setLessonForm({ ...lessonForm, file_path: e.target.value })
-                              }
-                              placeholder="https://... o path de storage"
-                            />
+                        {isAcademyFileType(lessonForm.type) && (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Archivo</label>
+                            {lessonForm.file_name || lessonForm.file_path ? (
+                              <p className="text-xs text-muted-foreground">
+                                Actual: {lessonForm.file_name || lessonForm.file_path}
+                              </p>
+                            ) : null}
+                            <label className="flex items-center gap-2 cursor-pointer text-sm w-fit">
+                              <Upload size={16} aria-hidden />
+                              {lessonFile?.name ??
+                                (editingLesson ? "Reemplazar archivo (opcional)" : "Subir archivo")}
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept={academyFileAccept(lessonForm.type)}
+                                onChange={(e) => setLessonFile(e.target.files?.[0] ?? null)}
+                              />
+                            </label>
                           </div>
                         )}
                         <label className="flex items-center gap-2 text-sm">
@@ -588,9 +662,14 @@ const AdminAcademy = () => {
                           <button
                             type="button"
                             onClick={() => saveLesson(mod.id)}
-                            className="btn-hero text-sm px-4 py-2"
+                            disabled={uploading}
+                            className="btn-hero text-sm px-4 py-2 disabled:opacity-60"
                           >
-                            {editingLesson ? "Actualizar lección" : "Guardar lección"}
+                            {uploading
+                              ? "Subiendo..."
+                              : editingLesson
+                                ? "Actualizar lección"
+                                : "Guardar lección"}
                           </button>
                           <button
                             type="button"

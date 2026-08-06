@@ -18,8 +18,10 @@ export type Database = {
         Row: {
           content_text: string | null
           created_at: string
+          file_name: string | null
           file_path: string | null
           id: string
+          mime_type: string | null
           module_id: string
           published: boolean
           slug: string
@@ -32,8 +34,10 @@ export type Database = {
         Insert: {
           content_text?: string | null
           created_at?: string
+          file_name?: string | null
           file_path?: string | null
           id?: string
+          mime_type?: string | null
           module_id: string
           published?: boolean
           slug: string
@@ -46,8 +50,10 @@ export type Database = {
         Update: {
           content_text?: string | null
           created_at?: string
+          file_name?: string | null
           file_path?: string | null
           id?: string
+          mime_type?: string | null
           module_id?: string
           published?: boolean
           slug?: string
@@ -1006,6 +1012,9 @@ export type Database = {
       }
       support_messages: {
         Row: {
+          attachment_mime: string | null
+          attachment_name: string | null
+          attachment_path: string | null
           author_user_id: string
           body: string
           created_at: string
@@ -1013,13 +1022,19 @@ export type Database = {
           ticket_id: string
         }
         Insert: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           author_user_id: string
-          body: string
+          body?: string
           created_at?: string
           id?: string
           ticket_id: string
         }
         Update: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           author_user_id?: string
           body?: string
           created_at?: string

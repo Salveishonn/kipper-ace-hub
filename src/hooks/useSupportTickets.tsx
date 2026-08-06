@@ -147,14 +147,31 @@ export function useSendSupportMessage() {
       ticket_id,
       author_user_id,
       body,
+      attachment_path,
+      attachment_name,
+      attachment_mime,
     }: {
       ticket_id: string;
       author_user_id: string;
       body: string;
+      attachment_path?: string | null;
+      attachment_name?: string | null;
+      attachment_mime?: string | null;
     }) => {
+      const trimmed = body.trim();
+      if (!trimmed && !attachment_path) {
+        throw new Error("Escribí un mensaje o adjuntá un archivo");
+      }
       const { data, error } = await supabase
         .from("support_messages")
-        .insert({ ticket_id, author_user_id, body })
+        .insert({
+          ticket_id,
+          author_user_id,
+          body: trimmed,
+          attachment_path: attachment_path ?? null,
+          attachment_name: attachment_name ?? null,
+          attachment_mime: attachment_mime ?? null,
+        })
         .select()
         .single();
       if (error) throw error;

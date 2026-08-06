@@ -1,10 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Shield, Loader2, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleReviews, useRefreshGoogleReviews } from "@/hooks/useGoogleReviews";
 import { AvatarUpload } from "@/components/shared/AvatarUpload";
+import { Button } from "@/components/ui/button";
+
+function AdminDisplayNameEditor() {
+  const { profile, refreshProfile } = useAuth();
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(profile?.full_name ?? "");
+  }, [profile?.full_name]);
+
+  const handleSave = async () => {
+    if (!profile?.user_id) return;
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("Ingresá tu nombre para mostrarlo en consultas");
+      return;
+    }
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: trimmed })
+        .eq("user_id", profile.user_id);
+      if (error) throw error;
+      await refreshProfile();
+      toast.success("Nombre actualizado");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar el nombre");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-end">
+      <div className="flex-1">
+        <label className="text-sm font-medium" htmlFor="admin-display-name">
+          Nombre visible en consultas
+        </label>
+        <input
+          id="admin-display-name"
+          className="input-kipper mt-1"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ej. María Kipper"
+        />
+      </div>
+      <Button onClick={handleSave} disabled={saving}>
+        {saving ? "Guardando..." : "Guardar nombre"}
+      </Button>
+    </div>
+  );
+}
 
 const AdminConfig = () => {
   const { isAdmin } = useAuth();
@@ -108,9 +162,10 @@ const AdminConfig = () => {
           <User size={20} className="text-primary" /> Mi perfil
         </h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Tu foto aparece en el Portal Consultas cuando respondés a productores.
+          Tu nombre y foto aparecen en el Portal Consultas cuando respondés a productores.
         </p>
         <AvatarUpload />
+        <AdminDisplayNameEditor />
       </div>
 
       {isAdmin && (

@@ -1,11 +1,33 @@
 import { Link } from "react-router-dom";
-import { Video, MessageSquare, FileText, ChevronRight, BookOpen } from "lucide-react";
+import {
+  Video,
+  MessageSquare,
+  FileText,
+  ChevronRight,
+  BookOpen,
+  Image,
+  FileSpreadsheet,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState, EmptyState } from "@/components/ui/loading-state";
 
-const typeIcon = { video: Video, chat: MessageSquare, pdf: FileText };
-const typeLabel = { video: "Video", chat: "Texto", pdf: "PDF" };
+const typeIcon = {
+  video: Video,
+  chat: MessageSquare,
+  pdf: FileText,
+  word: FileText,
+  excel: FileSpreadsheet,
+  image: Image,
+};
+const typeLabel = {
+  video: "Video",
+  chat: "Texto",
+  pdf: "PDF",
+  word: "Word",
+  excel: "Excel",
+  image: "Imagen",
+};
 
 /** Internal Academy library. Rendered inside ProductorLayout at /productor/academy. */
 const AcademyContenido = () => {
