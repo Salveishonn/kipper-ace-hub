@@ -3,8 +3,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
 import { Clock, MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 const CotizarPage = () => {
+  const waMessage = "Hola Kipper, quiero cotizar mi seguro";
+  const waUrl = buildWhatsAppUrl(waMessage);
   return (
     <MainLayout>
       <Seo
@@ -44,9 +47,10 @@ const CotizarPage = () => {
 
           <div className="text-center">
             <a
-              href={`${siteConfig.whatsappUrl}?text=Hola%20Kipper%2C%20quiero%20cotizar%20mi%20seguro`}
+              href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => whatsappCtaClickHandler(e, { message: waMessage })}
               className="quote-primary inline-flex items-center justify-center gap-2 text-lg"
             >
               <MessageCircle size={20} aria-hidden /> Cotizar por WhatsApp

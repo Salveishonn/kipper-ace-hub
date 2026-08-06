@@ -5,7 +5,7 @@ import { createTimeline, stagger } from "animejs";
 import { useAuth } from "@/hooks/useAuth";
 import kipperMarkK from "@/assets/kipper-mark-k.png";
 import { CotizarButton, PortalPasLink } from "@/components/ui/KipperCta";
-import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 import { motion } from "@/lib/motion/tokens";
 import { cn } from "@/lib/utils";
 
@@ -238,10 +238,13 @@ export function Navbar({ overlay: _overlay = false }: NavbarProps) {
                 </div>
                 <div data-mobile-nav-cta>
                   <a
-                    href={siteConfig.whatsappUrl}
+                    href={buildWhatsAppUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={closeMenu}
+                    onClick={(e) => {
+                      closeMenu();
+                      whatsappCtaClickHandler(e);
+                    }}
                     className="block py-3 px-3 rounded-lg text-base font-medium text-white/85 hover:bg-white/10"
                   >
                     WhatsApp

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, Instagram, Facebook, Linkedin } from "lucide-react";
 import logoKipper from "@/assets/logo-kipper.png";
 import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 export function Footer() {
   return (
@@ -77,9 +78,10 @@ export function Footer() {
             </ul>
             <div className="mt-4">
               <a
-                href={siteConfig.whatsappUrl}
+                href={buildWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => whatsappCtaClickHandler(e)}
                 className="inline-flex items-center gap-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 
                            px-4 py-2 rounded-lg text-sm transition-colors"
               >

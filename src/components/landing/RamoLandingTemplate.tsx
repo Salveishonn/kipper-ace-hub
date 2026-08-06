@@ -10,7 +10,7 @@ import {
 import { Check, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
-import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 export type RamoId =
   | "auto"
@@ -41,9 +41,8 @@ export function RamoLandingTemplate({
   faqs,
   whatsappMsg,
 }: RamoLandingProps) {
-  const waUrl = `${siteConfig.whatsappUrl}?text=${encodeURIComponent(
-    whatsappMsg ?? `Hola Kipper, quiero información sobre ${title}.`
-  )}`;
+  const waMsg = whatsappMsg ?? `Hola Kipper, quiero información sobre ${title}.`;
+  const waUrl = buildWhatsAppUrl(waMsg);
 
   return (
     <MainLayout>
@@ -64,9 +63,16 @@ export function RamoLandingTemplate({
                 size="lg"
                 variant="outline"
                 className="bg-transparent border-white text-white hover:bg-white/10"
-                onClick={() => trackEvent("whatsapp_click", { ramo })}
               >
-                <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    trackEvent("whatsapp_click", { ramo });
+                    whatsappCtaClickHandler(e, { message: waMsg });
+                  }}
+                >
                   <MessageCircle size={18} className="mr-2" aria-hidden /> WhatsApp
                 </a>
               </Button>
@@ -116,7 +122,10 @@ export function RamoLandingTemplate({
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackEvent("whatsapp_click", { ramo, placement: "landing_cotizar" })}
+              onClick={(e) => {
+                trackEvent("whatsapp_click", { ramo, placement: "landing_cotizar" });
+                whatsappCtaClickHandler(e, { message: waMsg });
+              }}
               className="btn-hero w-full inline-flex items-center justify-center gap-2 mb-3"
             >
               <MessageCircle size={18} aria-hidden /> Cotizar por WhatsApp

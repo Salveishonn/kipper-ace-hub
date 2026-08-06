@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Briefcase } from "lucide-react";
-import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 import { cn } from "@/lib/utils";
 
 type CotizarProps = {
@@ -64,9 +64,7 @@ export function WhatsAppButton({
   label = "WhatsApp",
   message,
 }: WhatsAppProps) {
-  const href = message
-    ? `${siteConfig.whatsappUrl}?text=${encodeURIComponent(message)}`
-    : siteConfig.whatsappUrl;
+  const href = buildWhatsAppUrl(message);
 
   const sizes = {
     sm: "text-sm px-5 py-2.5",
@@ -79,6 +77,7 @@ export function WhatsAppButton({
       target="_blank"
       rel="noopener noreferrer"
       data-cta="whatsapp"
+      onClick={(e) => whatsappCtaClickHandler(e, { message })}
       className={cn("btn-whatsapp inline-flex items-center justify-center gap-2", sizes[size], className)}
     >
       <svg viewBox="0 0 24 24" className="w-[1.1em] h-[1.1em] fill-current shrink-0" aria-hidden>

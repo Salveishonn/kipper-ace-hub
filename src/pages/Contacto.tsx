@@ -3,17 +3,21 @@ import { Seo } from "@/components/Seo";
 import { Phone, Mail, MapPin, Clock, MessageCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { siteConfig } from "@/lib/siteConfig";
+import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 const ContactoPage = () => {
+  const waMessage = "Hola Kipper, quiero hacer una consulta.";
   const directActions = [
     {
       icon: MessageCircle,
       title: "WhatsApp",
       description: "La forma más rápida: te respondemos en minutos en horario de atención.",
       cta: "Escribinos por WhatsApp",
-      href: `${siteConfig.whatsappUrl}?text=${encodeURIComponent("Hola Kipper, quiero hacer una consulta.")}`,
+      href: buildWhatsAppUrl(waMessage),
+      message: waMessage,
       external: true,
       primary: true,
+      whatsapp: true,
     },
     {
       icon: Phone,
@@ -23,6 +27,7 @@ const ContactoPage = () => {
       href: `tel:${siteConfig.whatsappNumber}`,
       external: false,
       primary: false,
+      whatsapp: false,
     },
     {
       icon: Mail,
@@ -32,6 +37,7 @@ const ContactoPage = () => {
       href: `mailto:${siteConfig.contactEmail}`,
       external: false,
       primary: false,
+      whatsapp: false,
     },
   ];
 
@@ -70,6 +76,11 @@ const ContactoPage = () => {
                 <a
                   href={a.href}
                   {...(a.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  onClick={
+                    a.whatsapp
+                      ? (e) => whatsappCtaClickHandler(e, { message: a.message })
+                      : undefined
+                  }
                   className={
                     a.primary
                       ? "btn-hero inline-flex items-center justify-center gap-2 text-sm"
