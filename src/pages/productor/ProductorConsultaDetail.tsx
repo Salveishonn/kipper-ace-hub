@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -5,11 +6,14 @@ import {
   useSupportMessages,
   useSendSupportMessage,
   useSupportTickets,
+  useProfilesByUserIds,
 } from "@/hooks/useSupportTickets";
+import { ConsultaThread } from "@/components/consultas/ConsultaThread";
+import { displayName } from "@/components/shared/UserAvatar";
 import { LoadingState, ErrorState } from "@/components/ui/loading-state";
-import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { consultaCategoryLabel, consultaStatusLabel } from "@/lib/consultaCategories";
 
 const ProductorConsultaDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +25,21 @@ const ProductorConsultaDetail = () => {
   const [body, setBody] = useState("");
 
   const canReply = ticket && ["abierto", "en_gestion"].includes(ticket.status);
+
+  const profileIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (ticket?.producer_id) ids.add(ticket.producer_id);
+    if (ticket?.resolved_by) ids.add(ticket.resolved_by);
+    if (ticket?.closed_by) ids.add(ticket.closed_by);
+    for (const m of messages ?? []) ids.add(m.author_user_id);
+    return Array.from(ids);
+  }, [ticket, messages]);
+
+  const { data: profiles } = useProfilesByUserIds(profileIds);
+  const profilesById = useMemo(
+    () => Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p])),
+    [profiles],
+  );
 
   const handleSend = async () => {
     if (!body.trim() || !user || !id) return;
@@ -42,23 +61,29 @@ const ProductorConsultaDetail = () => {
       </Link>
       <div>
         <h1 className="text-2xl font-bold">{ticket?.subject ?? "Consulta"}</h1>
-        <p className="text-sm text-muted-foreground capitalize">{ticket?.category} · {ticket?.status}</p>
+        <p className="text-sm text-muted-foreground">
+          {ticket ? consultaCategoryLabel(ticket.category) : ""} · {ticket ? consultaStatusLabel(ticket.status) : ""}
+        </p>
+        {ticket?.status === "resuelto" && ticket.resolved_by && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Resuelto por {displayName(profilesById[ticket.resolved_by])}
+            {ticket.resolved_at ? ` · ${new Date(ticket.resolved_at).toLocaleString("es-AR")}` : ""}
+          </p>
+        )}
+        {ticket?.status === "cerrado" && ticket.closed_by && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Cerrado por {displayName(profilesById[ticket.closed_by])}
+            {ticket.closed_at ? ` · ${new Date(ticket.closed_at).toLocaleString("es-AR")}` : ""}
+          </p>
+        )}
       </div>
-      <div className="bg-card rounded-2xl p-4 space-y-3 min-h-[200px]">
-        {messages?.map((m) => (
-          <div
-            key={m.id}
-            className={`p-3 rounded-xl text-sm max-w-[85%] ${
-              m.author_user_id === user?.id ? "bg-primary/10 ml-auto" : "bg-muted"
-            }`}
-          >
-            <p>{m.body}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              {new Date(m.created_at).toLocaleString("es-AR")}
-            </p>
-          </div>
-        ))}
-      </div>
+
+      <ConsultaThread
+        messages={messages ?? []}
+        currentUserId={user?.id}
+        profilesById={profilesById}
+      />
+
       {canReply ? (
         <div className="flex gap-2">
           <textarea

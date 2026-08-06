@@ -102,7 +102,7 @@ export function HeroSection() {
           <div data-hero-part style={{ opacity: 0 }}>
             <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
               <Shield size={16} aria-hidden />
-              +25 años protegiendo a familias argentinas
+              +20 años protegiendo a familias argentinas
             </span>
           </div>
 

@@ -7,7 +7,7 @@ import fedpatLogo from "@/assets/fedpat-logo.png";
 
 const stats = [
   { icon: Users, value: "15+", label: "Productores especializados" },
-  { icon: Award, value: "25+", label: "Años de experiencia" },
+  { icon: Award, value: "20+", label: "Años de experiencia" },
   { icon: Building, value: "20+", label: "Compañías asociadas" },
   { icon: Headphones, value: "24hs", label: "Tiempo de respuesta" },
 ];

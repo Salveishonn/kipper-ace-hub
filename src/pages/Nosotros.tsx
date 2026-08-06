@@ -15,7 +15,7 @@ const values = [
   {
     icon: Users,
     title: "Familia",
-    description: "Somos un equipo familiar que trabaja unido hace más de 25 años.",
+    description: "Somos un equipo familiar que trabaja unido hace más de 20 años.",
   },
   {
     icon: Award,
@@ -25,10 +25,10 @@ const values = [
 ];
 
 const team = [
-  { name: "Roberto Kipper", role: "Director", initials: "RK" },
-  { name: "María Kipper", role: "Gerente Comercial", initials: "MK" },
-  { name: "Juan Kipper", role: "Productor Senior", initials: "JK" },
-  { name: "Carolina Sánchez", role: "Atención al Cliente", initials: "CS" },
+  { name: "Cristina Kipper", initials: "CK" },
+  { name: "Maria Marin", initials: "MM" },
+  { name: "Carmela Marin", initials: "CM" },
+  { name: "Felipe Belloso", initials: "FB" },
 ];
 
 const NosotrosPage = () => {
@@ -50,20 +50,20 @@ const NosotrosPage = () => {
           <div className="prose prose-lg max-w-none text-center">
             <h2 className="text-3xl font-bold text-foreground mb-6">Nuestra Historia</h2>
             <p className="text-muted-foreground mb-6">
-              Kipper Seguros nació en 1998 como un sueño familiar: acercar el mundo de los 
-              seguros a las personas de manera simple, honesta y transparente. Lo que comenzó 
-              como una pequeña oficina en Buenos Aires, hoy es una organización de productores 
-              con más de 15 profesionales especializados.
+              Kipper Seguros nació hace más de 20 años de la mano de su fundadora, Cristina Kipper:
+              acercar el mundo de los seguros a las personas de manera simple, honesta y transparente.
+              Lo que comenzó como una pequeña oficina, hoy es una organización de productores
+              con un equipo especializado.
             </p>
             <p className="text-muted-foreground mb-6">
-              A lo largo de estos más de 25 años, hemos acompañado a miles de familias y 
-              empresas argentinas, asesorándolos para encontrar la protección que realmente 
+              A lo largo de estos más de 20 años, hemos acompañado a miles de familias y
+              empresas argentinas, asesorándolos para encontrar la protección que realmente
               necesitan. Creemos que un buen seguro es aquel que se adapta a vos, no al revés.
             </p>
             <p className="text-muted-foreground">
-              Trabajamos con las principales compañías aseguradoras del mercado argentino, 
-              lo que nos permite comparar y ofrecerte siempre la mejor opción. Pero más allá 
-              de los números, lo que nos diferencia es el trato personal: conocemos a cada 
+              Trabajamos con las principales compañías aseguradoras del mercado argentino,
+              lo que nos permite comparar y ofrecerte siempre la mejor opción. Pero más allá
+              de los números, lo que nos diferencia es el trato personal: conocemos a cada
               cliente por su nombre y estamos cuando más nos necesitan.
             </p>
           </div>
@@ -103,7 +103,6 @@ const NosotrosPage = () => {
                   {member.initials}
                 </div>
                 <h3 className="font-semibold text-foreground">{member.name}</h3>
-                <p className="text-sm text-muted-foreground">{member.role}</p>
               </div>
             ))}
           </div>
@@ -115,7 +114,7 @@ const NosotrosPage = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">25+</div>
+              <div className="text-4xl font-bold mb-2">20+</div>
               <div className="text-sm opacity-80">Años de experiencia</div>
             </div>
             <div>

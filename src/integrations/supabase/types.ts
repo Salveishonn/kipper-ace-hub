@@ -607,8 +607,10 @@ export type Database = {
           created_at: string
           description: string | null
           external_url: string | null
+          file_name: string | null
           file_path: string | null
           id: string
+          mime_type: string | null
           published: boolean
           published_at: string | null
           resource_type: string
@@ -621,8 +623,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           external_url?: string | null
+          file_name?: string | null
           file_path?: string | null
           id?: string
+          mime_type?: string | null
           published?: boolean
           published_at?: string | null
           resource_type: string
@@ -635,8 +639,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           external_url?: string | null
+          file_name?: string | null
           file_path?: string | null
           id?: string
+          mime_type?: string | null
           published?: boolean
           published_at?: string | null
           resource_type?: string
@@ -1033,27 +1039,39 @@ export type Database = {
       support_tickets: {
         Row: {
           category: string
+          closed_at: string | null
+          closed_by: string | null
           created_at: string
           id: string
           producer_id: string
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           subject: string
           updated_at: string
         }
         Insert: {
           category?: string
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           id?: string
           producer_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           subject: string
           updated_at?: string
         }
         Update: {
           category?: string
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           id?: string
           producer_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           subject?: string
           updated_at?: string

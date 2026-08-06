@@ -21,7 +21,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm opacity-80 leading-relaxed">
-              Organización PAS. Seguros con cercanía, portal para productores e atención digital por WhatsApp.
+              Organización PAS. Seguros con cercanía, portal para productores y atención digital por WhatsApp.
             </p>
             <div className="flex gap-4">
               <a href={siteConfig.instagramUrl} target="_blank" rel="noopener noreferrer" className="opacity-80 hover:opacity-100 transition-opacity" aria-label="Instagram">
@@ -71,8 +71,8 @@ export function Footer() {
                 <span>{siteConfig.contactEmail}</span>
               </li>
               <li className="flex items-start gap-2 opacity-80">
-                <MapPin size={16} className="mt-0.5" />
-                <span>Buenos Aires, Argentina</span>
+                <MapPin size={16} className="mt-0.5 shrink-0" />
+                <span>{siteConfig.address}</span>
               </li>
             </ul>
             <div className="mt-4">

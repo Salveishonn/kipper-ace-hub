@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Save, Loader2 } from "lucide-react";
+import { User, Phone, MapPin, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { AvatarUpload } from "@/components/shared/AvatarUpload";
 import { toast } from "sonner";
 
 const ProductorPerfil = () => {
@@ -67,19 +68,11 @@ const ProductorPerfil = () => {
 
       {/* Profile Card */}
       <div className="bg-card rounded-2xl shadow-soft p-6">
-        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold text-2xl">
-            {formData.full_name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "PR"}
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">
-              {formData.full_name || "Productor"}
-            </h2>
-            <p className="text-muted-foreground">{profile?.email}</p>
-            <span className="inline-block mt-1 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-              Productor
-            </span>
-          </div>
+        <div className="mb-6 pb-6 border-b border-border space-y-3">
+          <AvatarUpload />
+          <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+            Productor
+          </span>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

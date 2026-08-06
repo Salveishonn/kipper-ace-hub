@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Search, Shield, Loader2, Star } from "lucide-react";
+import { Search, Shield, Loader2, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleReviews, useRefreshGoogleReviews } from "@/hooks/useGoogleReviews";
+import { AvatarUpload } from "@/components/shared/AvatarUpload";
 
 const AdminConfig = () => {
   const { isAdmin } = useAuth();
@@ -100,6 +101,16 @@ const AdminConfig = () => {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configuración del sitio</h1>
         <p className="text-muted-foreground">Gestión de accesos y ajustes generales</p>
+      </div>
+
+      <div className="bg-card rounded-2xl shadow-soft p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <User size={20} className="text-primary" /> Mi perfil
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Tu foto aparece en el Portal Consultas cuando respondés a productores.
+        </p>
+        <AvatarUpload />
       </div>
 
       {isAdmin && (

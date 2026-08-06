@@ -90,7 +90,7 @@ const ContactoPage = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Dirección</h3>
-                <p className="text-muted-foreground">Buenos Aires, Argentina</p>
+                <p className="text-muted-foreground">{siteConfig.address}</p>
               </div>
             </div>
             <div className="flex items-start gap-4">

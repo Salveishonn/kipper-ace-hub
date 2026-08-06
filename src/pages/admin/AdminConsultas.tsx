@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useSupportTickets, useUpdateSupportTicketStatus } from "@/hooks/useSupportTickets";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useSupportTickets,
+  useUpdateSupportTicketStatus,
+  useProfilesByUserIds,
+} from "@/hooks/useSupportTickets";
+import { displayName } from "@/components/shared/UserAvatar";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
 import {
@@ -13,34 +17,33 @@ import {
 } from "@/lib/consultaCategories";
 
 const AdminConsultas = () => {
+  const { user } = useAuth();
   const { data, isLoading, error } = useSupportTickets({ admin: true });
   const updateStatus = useUpdateSupportTicketStatus();
   const [statusFilter, setStatusFilter] = useState("todos");
   const [categoryFilter, setCategoryFilter] = useState("todos");
   const [producerFilter, setProducerFilter] = useState("todos");
 
+  const relatedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of data ?? []) {
+      ids.add(t.producer_id);
+      if (t.resolved_by) ids.add(t.resolved_by);
+      if (t.closed_by) ids.add(t.closed_by);
+    }
+    return Array.from(ids);
+  }, [data]);
+
+  const { data: profiles } = useProfilesByUserIds(relatedIds);
+  const profilesById = useMemo(
+    () => Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p])),
+    [profiles],
+  );
+
   const producerIds = useMemo(
     () => Array.from(new Set((data ?? []).map((t) => t.producer_id))),
     [data],
   );
-
-  const { data: producerProfiles } = useQuery({
-    queryKey: ["consulta_producer_profiles", producerIds],
-    queryFn: async () => {
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", producerIds);
-      if (pErr) throw pErr;
-      return profiles;
-    },
-    enabled: producerIds.length > 0,
-  });
-
-  const producerName = (id: string) => {
-    const p = producerProfiles?.find((x) => x.user_id === id);
-    return p?.full_name || p?.email || "Productor";
-  };
 
   const filtered = (data ?? []).filter((t) => {
     if (statusFilter !== "todos" && t.status !== statusFilter) return false;
@@ -95,7 +98,7 @@ const AdminConsultas = () => {
           <option value="todos">Todos los productores</option>
           {producerIds.map((id) => (
             <option key={id} value={id}>
-              {producerName(id)}
+              {displayName(profilesById[id], "Productor")}
             </option>
           ))}
         </select>
@@ -122,20 +125,31 @@ const AdminConsultas = () => {
                   {t.subject}
                 </Link>
                 <p className="text-xs text-muted-foreground">
-                  {producerName(t.producer_id)} · {consultaCategoryLabel(t.category)} ·{" "}
+                  {displayName(profilesById[t.producer_id], "Productor")} · {consultaCategoryLabel(t.category)} ·{" "}
                   {consultaStatusLabel(t.status)} ·{" "}
                   {new Date(t.updated_at).toLocaleDateString("es-AR")}
                 </p>
+                {t.status === "resuelto" && t.resolved_by && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Resuelto por {displayName(profilesById[t.resolved_by])}
+                  </p>
+                )}
+                {t.status === "cerrado" && t.closed_by && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Cerrado por {displayName(profilesById[t.closed_by])}
+                  </p>
+                )}
               </div>
               <select
                 className="input-kipper w-auto text-sm py-2"
                 value={t.status}
-                onChange={(e) =>
+                onChange={(e) => {
+                  if (!user) return;
                   updateStatus.mutate(
-                    { id: t.id, status: e.target.value },
+                    { id: t.id, status: e.target.value, actorUserId: user.id },
                     { onSuccess: () => toast.success("Estado actualizado") },
-                  )
-                }
+                  );
+                }}
                 aria-label={`Estado de ${t.subject}`}
               >
                 {CONSULTA_STATUSES.map((s) => (

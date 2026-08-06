@@ -43,6 +43,15 @@ const Index = () => {
           name: "Kipper Seguros",
           url: "https://kipperseguros.com",
           areaServed: "AR",
+          telephone: "+5491151615276",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "Colectora Este Ramal Escobar 959",
+            addressLocality: "Ingeniero Maschwitz",
+            postalCode: "1623",
+            addressRegion: "Buenos Aires",
+            addressCountry: "AR",
+          },
         }}
       />
       <HeroSection />

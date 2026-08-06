@@ -5,6 +5,8 @@ import {
   useSavePasResource,
   useDeletePasResource,
   uploadPasResourceFile,
+  pasResourceAccept,
+  isValidPasResourceFile,
   type PasResourceType,
 } from "@/hooks/usePasResources";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
@@ -58,6 +60,7 @@ const AdminNovedades = () => {
       week_label: r.week_label ?? "",
       published: r.published,
     });
+    setFile(null);
     setShowForm(true);
   };
 
@@ -70,12 +73,24 @@ const AdminNovedades = () => {
       toast.error("Ingresá la URL del enlace");
       return;
     }
+    if (!editingId && form.resource_type !== "link" && !file) {
+      toast.error("Subí un archivo");
+      return;
+    }
+    if (file && form.resource_type !== "link" && !isValidPasResourceFile(form.resource_type, file)) {
+      toast.error("El archivo no coincide con el tipo seleccionado");
+      return;
+    }
     try {
       setUploading(true);
       let file_path: string | undefined;
+      let file_name: string | undefined;
+      let mime_type: string | undefined;
       if (file && form.resource_type !== "link") {
         const ext = file.name.split(".").pop();
         file_path = `uploads/${Date.now()}-${form.title.slice(0, 20).replace(/\W/g, "_")}.${ext}`;
+        file_name = file.name;
+        mime_type = file.type || undefined;
         await uploadPasResourceFile(file, file_path);
       }
       await save.mutateAsync({
@@ -83,7 +98,7 @@ const AdminNovedades = () => {
         title: form.title,
         description: form.description || null,
         resource_type: form.resource_type,
-        ...(file_path ? { file_path } : {}),
+        ...(file_path ? { file_path, file_name, mime_type } : {}),
         external_url: form.resource_type === "link" ? form.external_url || null : null,
         week_label: form.week_label || null,
         published: form.published,
@@ -113,7 +128,7 @@ const AdminNovedades = () => {
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Novedades</h1>
-          <p className="text-muted-foreground">Texto, PDF, video, imagen o enlace para productores</p>
+          <p className="text-muted-foreground">PDF, Word, Excel, imagen, video o enlace para productores</p>
         </div>
         <Button onClick={() => { reset(); setShowForm(true); }}>
           <Plus size={18} className="mr-2" aria-hidden /> Nueva novedad
@@ -148,11 +163,16 @@ const AdminNovedades = () => {
             className="input-kipper"
             aria-label="Tipo de contenido"
             value={form.resource_type}
-            onChange={(e) => setForm({ ...form, resource_type: e.target.value as PasResourceType })}
+            onChange={(e) => {
+              setForm({ ...form, resource_type: e.target.value as PasResourceType });
+              setFile(null);
+            }}
           >
             <option value="pdf">PDF</option>
-            <option value="video">Video</option>
+            <option value="word">Word</option>
+            <option value="excel">Excel</option>
             <option value="image">Imagen</option>
+            <option value="video">Video</option>
             <option value="link">Enlace externo</option>
           </select>
           {form.resource_type === "link" ? (
@@ -166,7 +186,12 @@ const AdminNovedades = () => {
           ) : (
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <Upload size={16} aria-hidden /> {file?.name ?? (editingId ? "Reemplazar archivo (opcional)" : "Subir archivo")}
-              <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <input
+                type="file"
+                className="hidden"
+                accept={pasResourceAccept(form.resource_type)}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
             </label>
           )}
           <label className="flex items-center gap-2 text-sm">

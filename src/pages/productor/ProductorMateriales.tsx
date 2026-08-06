@@ -1,6 +1,7 @@
-import { FolderOpen, Download, Image, FileText, Video, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
-import { usePasResources, getPasResourceDownloadUrl } from "@/hooks/usePasResources";
+import { useState } from "react";
+import { FolderOpen, Eye, Image, FileText, Video, ExternalLink, FileSpreadsheet } from "lucide-react";
+import { usePasResources } from "@/hooks/usePasResources";
+import { PasResourceViewer } from "@/components/shared/PasResourceViewer";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { siteConfig } from "@/lib/siteConfig";
 
@@ -9,7 +10,10 @@ const getIcon = (type: string) => {
     case "video":
       return Video;
     case "pdf":
+    case "word":
       return FileText;
+    case "excel":
+      return FileSpreadsheet;
     case "link":
       return ExternalLink;
     default:
@@ -19,23 +23,7 @@ const getIcon = (type: string) => {
 
 const ProductorMateriales = () => {
   const { data: resources, isLoading, error } = usePasResources();
-
-  const handleOpen = async (resource: NonNullable<typeof resources>[0]) => {
-    try {
-      if (resource.resource_type === "link" && resource.external_url) {
-        window.open(resource.external_url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      if (resource.file_path) {
-        const url = await getPasResourceDownloadUrl(resource.file_path);
-        window.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      toast.error("Recurso sin archivo disponible");
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "No se pudo abrir el recurso");
-    }
-  };
+  const [selected, setSelected] = useState<NonNullable<typeof resources>[0] | null>(null);
 
   if (isLoading) return <LoadingState text="Cargando recursos..." />;
   if (error) return <ErrorState title="Error" message="No se pudieron cargar los materiales" />;
@@ -57,7 +45,7 @@ const ProductorMateriales = () => {
       {!resources?.length ? (
         <EmptyState
           title="Sin novedades publicadas"
-          description="Pronto verás PDFs, videos e imágenes de la semana acá."
+          description="Pronto verás PDFs, Word, Excel, videos e imágenes acá."
         />
       ) : (
         Object.entries(grouped).map(([week, items]) => (
@@ -72,7 +60,13 @@ const ProductorMateriales = () => {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => handleOpen(item)}
+                    onClick={() => {
+                      if (item.resource_type === "link" && item.external_url) {
+                        window.open(item.external_url, "_blank", "noopener,noreferrer");
+                        return;
+                      }
+                      setSelected(item);
+                    }}
                     className="bg-card rounded-xl p-4 text-left shadow-soft hover:shadow-md transition-shadow flex gap-3 items-start"
                   >
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -84,7 +78,7 @@ const ProductorMateriales = () => {
                         <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
                       )}
                     </div>
-                    <Download size={16} className="text-muted-foreground shrink-0 mt-1" />
+                    <Eye size={16} className="text-muted-foreground shrink-0 mt-1" aria-hidden />
                   </button>
                 );
               })}
@@ -99,6 +93,8 @@ const ProductorMateriales = () => {
           Escribinos por WhatsApp
         </a>
       </p>
+
+      <PasResourceViewer resource={selected} open={!!selected} onClose={() => setSelected(null)} />
     </div>
   );
 };

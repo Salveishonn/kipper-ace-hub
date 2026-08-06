@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import logoKipper from "@/assets/logo-kipper.png";
 
 const adminLinks = [
@@ -33,10 +34,6 @@ const AdminLayout = () => {
     await signOut();
     navigate('/admin/login');
   };
-
-  const initials = profile?.full_name
-    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : 'AD';
 
   const renderLink = (link: { href: string; label: string; icon: typeof Mail }) => {
     const isActive = location.pathname === link.href ||
@@ -87,9 +84,14 @@ const AdminLayout = () => {
 
           <div className="p-4 border-t border-primary-foreground/20">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
-                {initials}
-              </div>
+              <UserAvatar
+                profile={
+                  profile
+                    ? { full_name: profile.full_name, email: profile.email, avatar_url: profile.avatar_url }
+                    : null
+                }
+                className="h-10 w-10"
+              />
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{profile?.full_name || 'Admin'}</p>
                 <p className="text-xs opacity-80 truncate">{profile?.email}</p>
