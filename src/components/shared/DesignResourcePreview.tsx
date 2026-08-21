@@ -7,10 +7,12 @@ export function DesignResourcePreview({
   previewPath,
   alt,
   className,
+  fit = "cover",
 }: {
   previewPath: string | null;
   alt: string;
   className?: string;
+  fit?: "cover" | "contain";
 }) {
   const { data: url } = useQuery({
     queryKey: ["design_resource_preview", previewPath],
@@ -30,5 +32,12 @@ export function DesignResourcePreview({
     );
   }
 
-  return <img src={url} alt={alt} loading="lazy" className={`object-cover ${className ?? ""}`} />;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      className={`${fit === "contain" ? "object-contain bg-muted" : "object-cover"} ${className ?? ""}`}
+    />
+  );
 }

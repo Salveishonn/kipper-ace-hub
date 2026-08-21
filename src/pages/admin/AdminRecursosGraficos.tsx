@@ -316,7 +316,8 @@ const AdminRecursosGraficos = () => {
               <DesignResourcePreview
                 previewPath={preview.preview_path}
                 alt={`Vista previa: ${preview.title}`}
-                className="w-full aspect-[4/3] rounded-lg"
+                fit="contain"
+                className="w-full max-h-[70vh] rounded-lg"
               />
               {preview.description && (
                 <p className="text-sm text-muted-foreground">{preview.description}</p>

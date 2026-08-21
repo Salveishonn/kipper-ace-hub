@@ -10,12 +10,20 @@ import {
 import { DesignResourcePreview } from "@/components/shared/DesignResourcePreview";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const ProductorRecursos = () => {
   const { data: resources, isLoading, error } = useDesignResources();
   const [category, setCategory] = useState<string>("todos");
   const [search, setSearch] = useState("");
+  const [preview, setPreview] = useState<NonNullable<typeof resources>[0] | null>(null);
 
   const filtered = useMemo(() => {
     let list = resources ?? [];
@@ -48,7 +56,7 @@ const ProductorRecursos = () => {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Recursos gráficos</h1>
         <p className="text-muted-foreground">
-          Plantillas con la marca Kipper listas para personalizar y publicar en tus redes.
+          Plantillas con la marca Kipper listas para personalizar y publicar en tus redes · clic para ver
         </p>
       </div>
 
@@ -104,17 +112,32 @@ const ProductorRecursos = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((r) => (
             <div key={r.id} className="bg-card rounded-xl border border-border/70 shadow-soft overflow-hidden flex flex-col">
-              <DesignResourcePreview
-                previewPath={r.preview_path}
-                alt={`Vista previa: ${r.title}`}
-                className="w-full aspect-[4/3]"
-              />
+              <button
+                type="button"
+                className="text-left"
+                onClick={() => setPreview(r)}
+                aria-label={`Vista previa de ${r.title}`}
+              >
+                <DesignResourcePreview
+                  previewPath={r.preview_path}
+                  alt={`Vista previa: ${r.title}`}
+                  className="w-full aspect-[4/3]"
+                />
+              </button>
               <div className="p-4 flex flex-col flex-1">
                 <span className="text-xs font-medium text-primary mb-1">{designCategoryLabel(r.category)}</span>
-                <h2 className="font-semibold text-foreground">{r.title}</h2>
-                {r.description && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
-                )}
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => setPreview(r)}
+                  aria-label={`Ver ${r.title}`}
+                >
+                  <h2 className="font-semibold text-foreground">{r.title}</h2>
+                  {r.description && (
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">clic para ver</p>
+                </button>
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap gap-2">
                   {r.editable_url && (
                     <Button asChild size="sm">
@@ -134,6 +157,42 @@ const ProductorRecursos = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          {preview && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{preview.title}</DialogTitle>
+                <DialogDescription>{designCategoryLabel(preview.category)}</DialogDescription>
+              </DialogHeader>
+              <DesignResourcePreview
+                previewPath={preview.preview_path}
+                alt={`Vista previa: ${preview.title}`}
+                fit="contain"
+                className="w-full max-h-[70vh] rounded-lg"
+              />
+              {preview.description && (
+                <p className="text-sm text-muted-foreground">{preview.description}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {preview.editable_url && (
+                  <Button asChild>
+                    <a href={preview.editable_url} target="_blank" rel="noopener noreferrer">
+                      Editar plantilla <ExternalLink size={14} className="ml-1" aria-hidden />
+                    </a>
+                  </Button>
+                )}
+                {preview.download_path && (
+                  <Button variant="outline" onClick={() => handleDownload(preview.download_path!)}>
+                    <Download size={14} className="mr-1" aria-hidden /> Descargar
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
