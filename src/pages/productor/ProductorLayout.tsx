@@ -31,7 +31,7 @@ const ProductorLayout = () => {
   return (
     <div className="min-h-screen bg-muted/30 flex">
       <aside
-        className={`kipper-header-bar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`kipper-header-bar fixed inset-y-0 left-0 z-50 w-64 overflow-x-hidden transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Navegación del portal"
