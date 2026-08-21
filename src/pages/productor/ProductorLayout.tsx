@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserAvatar } from "@/components/shared/UserAvatar";
-import logoKipper from "@/assets/logo-kipper.png";
+import { KipperBrandLockup } from "@/components/layout/KipperBrandLockup";
 
 const productorLinks = [
   { href: "/productor", label: "Inicio", icon: Home },
@@ -37,15 +37,7 @@ const ProductorLayout = () => {
         aria-label="Navegación del portal"
       >
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-primary-foreground/20">
-            <Link to="/" className="flex items-center gap-3">
-              <img src={logoKipper} alt="Kipper" className="h-10 brightness-0 invert" />
-              <div>
-                <span className="font-bold">KIPPER</span>
-                <span className="text-xs opacity-80 block">Portal Productores</span>
-              </div>
-            </Link>
-          </div>
+          <KipperBrandLockup className="border-b border-primary-foreground/20" />
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {productorLinks.map((link) => {
