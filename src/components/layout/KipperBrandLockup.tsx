@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import kipperMarkK from "@/assets/kipper-mark-k.png";
 import { cn } from "@/lib/utils";
 
-/** Same Organización / Kipper lockup as the public header, sized for a sidebar. */
+/** Public-header lockup, scaled to fit the 16rem admin/PAS sidebar. */
 export function KipperBrandLockup({
   href = "/",
   className,
@@ -13,20 +13,20 @@ export function KipperBrandLockup({
   return (
     <Link
       to={href}
-      className={cn("flex items-stretch h-[4.75rem] min-w-0 group", className)}
+      className={cn("flex items-stretch h-[4.5rem] min-w-0 overflow-hidden", className)}
       aria-label="Organización Kipper — Inicio"
     >
       <img
         src={kipperMarkK}
         alt=""
         aria-hidden
-        className="block h-full w-auto object-cover object-left mix-blend-screen shrink-0"
+        className="block h-full w-14 object-cover object-left mix-blend-screen shrink-0"
       />
-      <div className="flex flex-col justify-center leading-none text-white pr-3 min-w-0">
-        <span className="text-[9px] sm:text-[10px] font-medium tracking-[0.28em] uppercase opacity-95">
+      <div className="flex min-w-0 flex-1 flex-col justify-center leading-none text-white px-2.5">
+        <span className="text-[8px] font-medium tracking-[0.16em] uppercase opacity-95 truncate">
           Organización
         </span>
-        <span className="font-kipper text-[1.85rem] font-normal tracking-[0.04em] uppercase leading-none mt-0.5">
+        <span className="font-kipper text-[1.4rem] font-normal tracking-[0.02em] uppercase leading-none mt-0.5 truncate">
           Kipper
         </span>
       </div>
