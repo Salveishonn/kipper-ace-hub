@@ -12,6 +12,7 @@ import {
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PasResourceViewer } from "@/components/shared/PasResourceViewer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ const AdminNovedades = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<NonNullable<typeof data>[0] | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -128,7 +130,7 @@ const AdminNovedades = () => {
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Novedades</h1>
-          <p className="text-muted-foreground">PDF, Word, Excel, imagen, video o enlace para productores</p>
+          <p className="text-muted-foreground">PDF, Word, Excel, imagen, video o enlace para productores · clic para ver</p>
         </div>
         <Button onClick={() => { reset(); setShowForm(true); }}>
           <Plus size={18} className="mr-2" aria-hidden /> Nueva novedad
@@ -217,14 +219,19 @@ const AdminNovedades = () => {
         <ul className="space-y-3">
           {data.map((r) => (
             <li key={r.id} className="bg-card rounded-xl p-4 border border-border/60 flex justify-between items-start gap-4 flex-wrap">
-              <div className="min-w-0">
+              <button
+                type="button"
+                className="min-w-0 text-left flex-1"
+                onClick={() => setPreview(r)}
+                aria-label={`Ver ${r.title}`}
+              >
                 <p className="font-medium">{r.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  {[r.week_label, r.resource_type, r.published ? "Publicada" : "Borrador"]
+                  {[r.week_label, r.resource_type, r.published ? "Publicada" : "Borrador", "clic para ver"]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
-              </div>
+              </button>
               <div className="flex gap-1">
                 <Button size="sm" variant="ghost" onClick={() => togglePublished(r)} aria-label={r.published ? "Despublicar" : "Publicar"}>
                   {r.published ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
@@ -240,6 +247,12 @@ const AdminNovedades = () => {
           ))}
         </ul>
       )}
+
+      <PasResourceViewer
+        resource={preview}
+        open={!!preview}
+        onClose={() => setPreview(null)}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

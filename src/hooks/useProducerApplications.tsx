@@ -98,19 +98,29 @@ export function useProducerApplications() {
         ...new Set(rows.map((row) => row.user_id).filter((id): id is string => Boolean(id))),
       ];
       if (!userIds.length) {
-        return rows.map((row) => ({ ...row, account_status: null as string | null }));
+        return rows.map((row) => ({
+          ...row,
+          account_status: null as string | null,
+          dni: null as string | null,
+          address: null as string | null,
+          postal_code: null as string | null,
+        }));
       }
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, account_status")
+        .select("user_id, account_status, dni, address, postal_code")
         .in("user_id", userIds);
-      const statusByUser = new Map(
-        (profiles || []).map((profile) => [profile.user_id, profile.account_status]),
-      );
-      return rows.map((row) => ({
-        ...row,
-        account_status: row.user_id ? (statusByUser.get(row.user_id) ?? null) : null,
-      }));
+      const profileByUser = new Map((profiles || []).map((profile) => [profile.user_id, profile]));
+      return rows.map((row) => {
+        const profile = row.user_id ? profileByUser.get(row.user_id) : undefined;
+        return {
+          ...row,
+          account_status: profile?.account_status ?? null,
+          dni: profile?.dni ?? null,
+          address: profile?.address ?? null,
+          postal_code: profile?.postal_code ?? null,
+        };
+      });
     },
   });
 }
@@ -217,6 +227,49 @@ export function useApprovePasProducer() {
         email_notification_sent?: boolean;
         email_verified?: boolean;
         idempotent?: boolean;
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["producer_applications"] });
+      qc.invalidateQueries({ queryKey: ["producers"] });
+    },
+  });
+}
+
+export type CreatePasProducerInput = {
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  matricula_ssn?: string | null;
+  city?: string | null;
+  province?: string | null;
+};
+
+export function useCreatePasProducer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreatePasProducerInput) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sesión requerida");
+
+      const res = await fetch(getSupabaseFunctionUrl("create-pas-producer"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(input),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "Error al crear el productor");
+      return body as {
+        ok: boolean;
+        message?: string;
+        warning?: string | null;
+        email_sent?: boolean;
       };
     },
     onSuccess: () => {

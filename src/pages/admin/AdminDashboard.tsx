@@ -5,9 +5,12 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProducerApplications } from "@/hooks/useProducerApplications";
-import { PENDING_APPLICATION_STATUSES } from "@/lib/producerApplicationStatus";
+import {
+  PENDING_APPLICATION_STATUSES,
+  isPasAccessDeleted,
+  PRODUCER_APPLICATION_STATUS,
+} from "@/lib/producerApplicationStatus";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { useProducers } from "@/hooks/useProducers";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { consultaCategoryLabel } from "@/lib/consultaCategories";
 
@@ -35,7 +38,6 @@ function usePublishedCounts() {
 const AdminDashboard = () => {
   const { data: applications } = useProducerApplications();
   const { data: tickets } = useSupportTickets({ admin: true });
-  const { data: producers } = useProducers();
   const { data: admins } = useAdminUsers();
   const { data: counts } = usePublishedCounts();
 
@@ -43,11 +45,13 @@ const AdminDashboard = () => {
     PENDING_APPLICATION_STATUSES.includes(a.status as (typeof PENDING_APPLICATION_STATUSES)[number])
   ).length ?? 0;
   const activeProducers =
-    producers?.filter((p) => p.profile?.account_status !== "suspended").length ?? 0;
+    applications?.filter(
+      (a) => a.status === PRODUCER_APPLICATION_STATUS.ACTIVO && !isPasAccessDeleted(a),
+    ).length ?? 0;
   const openTickets = tickets?.filter((t) => ["abierto", "en_gestion"].includes(t.status)).length ?? 0;
 
   const cards = [
-    { label: "Solicitudes PAS pendientes", value: pendingApps, href: "/admin/solicitudes-pas", icon: Mail },
+    { label: "Solicitudes pendientes", value: pendingApps, href: "/admin/productores", icon: Mail },
     { label: "Productores activos", value: activeProducers, href: "/admin/productores", icon: UserCheck },
     { label: "Administradores", value: admins?.length ?? 0, href: "/admin/administradores", icon: Shield },
     { label: "Academy publicados", value: counts?.academy ?? 0, href: "/admin/academy", icon: BookOpen },
@@ -84,14 +88,14 @@ const AdminDashboard = () => {
         <div className="bg-card rounded-xl p-6 shadow-soft border border-border/60">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold flex items-center gap-2">
-              <Mail size={18} aria-hidden /> Últimas solicitudes PAS
+              <Mail size={18} aria-hidden />               Últimos productores
             </h2>
-            <Link to="/admin/solicitudes-pas" className="text-sm text-primary hover:underline">
+            <Link to="/admin/productores" className="text-sm text-primary hover:underline">
               Ver todas
             </Link>
           </div>
           {!recentApplications.length ? (
-            <p className="text-sm text-muted-foreground">No hay solicitudes registradas.</p>
+            <p className="text-sm text-muted-foreground">No hay productores registrados.</p>
           ) : (
             <ul className="space-y-2">
               {recentApplications.map((a) => (

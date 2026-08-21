@@ -4,6 +4,10 @@ import {
   isSelfRegistrationPending,
   isLegacyInviteFlow,
   isPasAccessSuspended,
+  isPasAccessDeleted,
+  matchesPasAdminFilter,
+  countPasAdminFilters,
+  defaultPasAdminFilter,
 } from "@/lib/producerApplicationStatus";
 
 describe("admin PAS management routing", () => {
@@ -45,5 +49,39 @@ describe("admin PAS management routing", () => {
     expect(isPasAccessSuspended({ status: "activo", account_status: "suspended" })).toBe(true);
     expect(isPasAccessSuspended({ status: "activo", account_status: "active" })).toBe(false);
     expect(isPasAccessSuspended({ status: "pending", account_status: "suspended" })).toBe(false);
+    expect(isPasAccessDeleted({ status: "activo", account_status: "suspended" })).toBe(true);
+  });
+});
+
+describe("merged PAS admin list filters", () => {
+  const sumatePending = { status: "pending", account_status: "pending" };
+  const adminCreated = { status: "activo", account_status: "active" };
+  const deleted = { status: "activo", account_status: "suspended" };
+  const rejected = { status: "rechazado", account_status: "pending" };
+
+  it("hides soft-deleted producers from Activos", () => {
+    expect(matchesPasAdminFilter(adminCreated, "activos")).toBe(true);
+    expect(matchesPasAdminFilter(deleted, "activos")).toBe(false);
+    expect(matchesPasAdminFilter(deleted, "eliminados")).toBe(true);
+    expect(matchesPasAdminFilter(sumatePending, "activos")).toBe(false);
+  });
+
+  it("keeps Sumate requests in Pendientes and admin-created accounts in Activos", () => {
+    expect(matchesPasAdminFilter(sumatePending, "pendientes")).toBe(true);
+    expect(matchesPasAdminFilter(adminCreated, "pendientes")).toBe(false);
+    expect(matchesPasAdminFilter(adminCreated, "activos")).toBe(true);
+  });
+
+  it("defaults to Pendientes when there are open requests, otherwise Activos", () => {
+    expect(defaultPasAdminFilter([sumatePending, adminCreated])).toBe("pendientes");
+    expect(defaultPasAdminFilter([adminCreated, deleted])).toBe("activos");
+    const counts = countPasAdminFilters([sumatePending, adminCreated, deleted, rejected]);
+    expect(counts).toEqual({
+      pendientes: 1,
+      activos: 1,
+      rechazados: 1,
+      eliminados: 1,
+      todos: 4,
+    });
   });
 });

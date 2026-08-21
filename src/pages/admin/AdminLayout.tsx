@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Settings, LogOut,
-  Menu, X, UserCheck, MessageSquare, Mail,
+  Menu, X, UserCheck, MessageSquare,
   FileText, BookOpen, Palette, Newspaper, Shield,
 } from "lucide-react";
 import { useState } from "react";
@@ -11,7 +11,6 @@ import logoKipper from "@/assets/logo-kipper.png";
 
 const adminLinks = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
-  { href: "/admin/solicitudes-pas", label: "Solicitudes PAS", icon: Mail },
   { href: "/admin/productores", label: "Productores", icon: UserCheck },
   { href: "/admin/administradores", label: "Administradores", icon: Shield },
   { href: "/admin/academy", label: "Academy", icon: BookOpen },
@@ -36,7 +35,7 @@ const AdminLayout = () => {
     navigate("/login");
   };
 
-  const renderLink = (link: { href: string; label: string; icon: typeof Mail }) => {
+  const renderLink = (link: { href: string; label: string; icon: typeof UserCheck }) => {
     const isActive = location.pathname === link.href ||
       (link.href !== '/admin' && location.pathname.startsWith(link.href));
     return (

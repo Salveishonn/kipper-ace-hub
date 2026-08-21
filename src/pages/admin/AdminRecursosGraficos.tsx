@@ -5,6 +5,7 @@ import {
   useSaveDesignResource,
   useDeleteDesignResource,
   uploadDesignResourceFile,
+  getDesignResourceSignedUrl,
   designCategoryLabel,
   DESIGN_CATEGORIES,
   type DesignCategory,
@@ -13,6 +14,13 @@ import { DesignResourcePreview } from "@/components/shared/DesignResourcePreview
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +54,7 @@ const AdminRecursosGraficos = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [downloadFile, setDownloadFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<NonNullable<typeof data>[0] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
@@ -115,6 +124,15 @@ const AdminRecursosGraficos = () => {
     }
   };
 
+  const handleDownload = async (path: string) => {
+    try {
+      const url = await getDesignResourceSignedUrl(path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo descargar el archivo");
+    }
+  };
+
   const togglePublished = (r: NonNullable<typeof data>[0]) => {
     save.mutate(
       { id: r.id, title: r.title, category: r.category as DesignCategory, published: !r.published },
@@ -131,7 +149,7 @@ const AdminRecursosGraficos = () => {
         <div>
           <h1 className="text-2xl font-bold">Recursos gráficos</h1>
           <p className="text-muted-foreground">
-            Plantillas de marca (Canva u otros) para que los productores personalicen y publiquen
+            Plantillas de marca (Canva u otros) para que los productores personalicen y publiquen · clic para ver
           </p>
         </div>
         <Button onClick={() => { reset(); setShowForm(true); }}>
@@ -232,19 +250,34 @@ const AdminRecursosGraficos = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {data.map((r) => (
             <div key={r.id} className="bg-card rounded-xl border border-border/70 shadow-soft overflow-hidden flex flex-col">
-              <DesignResourcePreview
-                previewPath={r.preview_path}
-                alt={`Vista previa: ${r.title}`}
-                className="w-full aspect-[4/3]"
-              />
+              <button
+                type="button"
+                className="text-left"
+                onClick={() => setPreview(r)}
+                aria-label={`Vista previa de ${r.title}`}
+              >
+                <DesignResourcePreview
+                  previewPath={r.preview_path}
+                  alt={`Vista previa: ${r.title}`}
+                  className="w-full aspect-[4/3]"
+                />
+              </button>
               <div className="p-4 flex flex-col flex-1">
                 <span className="text-xs font-medium text-primary mb-1">
                   {designCategoryLabel(r.category)} · {r.published ? "Publicado" : "Borrador"}
                 </span>
-                <h2 className="font-semibold">{r.title}</h2>
-                {r.description && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
-                )}
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => setPreview(r)}
+                  aria-label={`Ver ${r.title}`}
+                >
+                  <h2 className="font-semibold">{r.title}</h2>
+                  {r.description && (
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">clic para ver</p>
+                </button>
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center gap-1">
                   {r.editable_url && (
                     <Button asChild size="sm" variant="outline">
@@ -268,6 +301,47 @@ const AdminRecursosGraficos = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          {preview && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{preview.title}</DialogTitle>
+                <DialogDescription>
+                  {designCategoryLabel(preview.category)}
+                  {preview.published ? " · Publicado" : " · Borrador"}
+                </DialogDescription>
+              </DialogHeader>
+              <DesignResourcePreview
+                previewPath={preview.preview_path}
+                alt={`Vista previa: ${preview.title}`}
+                className="w-full aspect-[4/3] rounded-lg"
+              />
+              {preview.description && (
+                <p className="text-sm text-muted-foreground">{preview.description}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {preview.editable_url && (
+                  <Button asChild>
+                    <a href={preview.editable_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={14} className="mr-1" aria-hidden /> Plantilla
+                    </a>
+                  </Button>
+                )}
+                {preview.download_path && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleDownload(preview.download_path!)}
+                  >
+                    Descargar
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

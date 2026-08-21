@@ -60,3 +60,55 @@ export function isPasAccessSuspended(app: {
 }): boolean {
   return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.account_status === "suspended";
 }
+
+/** Soft-deleted PAS account (same backend as suspended; admin UI says Eliminado). */
+export function isPasAccessDeleted(app: {
+  status: string;
+  account_status?: string | null;
+}): boolean {
+  return isPasAccessSuspended(app);
+}
+
+export type PasAdminFilter =
+  | "pendientes"
+  | "activos"
+  | "rechazados"
+  | "eliminados"
+  | "todos";
+
+export type PasAdminListRow = {
+  status: string;
+  account_status?: string | null;
+};
+
+export function matchesPasAdminFilter(
+  app: PasAdminListRow,
+  filter: PasAdminFilter,
+): boolean {
+  if (filter === "pendientes") {
+    return (
+      PENDING_APPLICATION_STATUSES.includes(app.status) ||
+      app.status === PRODUCER_APPLICATION_STATUS.INVITADO
+    );
+  }
+  if (filter === "activos") {
+    return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && !isPasAccessDeleted(app);
+  }
+  if (filter === "eliminados") return isPasAccessDeleted(app);
+  if (filter === "rechazados") return app.status === PRODUCER_APPLICATION_STATUS.RECHAZADO;
+  return true;
+}
+
+export function countPasAdminFilters(rows: PasAdminListRow[]) {
+  return {
+    pendientes: rows.filter((a) => matchesPasAdminFilter(a, "pendientes")).length,
+    activos: rows.filter((a) => matchesPasAdminFilter(a, "activos")).length,
+    rechazados: rows.filter((a) => matchesPasAdminFilter(a, "rechazados")).length,
+    eliminados: rows.filter((a) => matchesPasAdminFilter(a, "eliminados")).length,
+    todos: rows.length,
+  };
+}
+
+export function defaultPasAdminFilter(rows: PasAdminListRow[]): PasAdminFilter {
+  return countPasAdminFilters(rows).pendientes > 0 ? "pendientes" : "activos";
+}
