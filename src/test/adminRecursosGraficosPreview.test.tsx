@@ -28,6 +28,8 @@ vi.mock("@/hooks/useDesignResources", () => ({
   useDeleteDesignResource: () => ({ mutate: vi.fn(), isPending: false }),
   uploadDesignResourceFile: vi.fn(),
   getDesignResourceSignedUrl: async () => "https://example.com/preview.png",
+  designResourcePreviewPath: (r: { preview_path?: string | null; download_path?: string | null }) =>
+    r.preview_path || r.download_path || null,
 }));
 
 function wrap() {

@@ -5,6 +5,7 @@ import {
   useDesignResources,
   getDesignResourceSignedUrl,
   designCategoryLabel,
+  designResourcePreviewPath,
   DESIGN_CATEGORIES,
 } from "@/hooks/useDesignResources";
 import { DesignResourcePreview } from "@/components/shared/DesignResourcePreview";
@@ -119,7 +120,7 @@ const ProductorRecursos = () => {
                 aria-label={`Vista previa de ${r.title}`}
               >
                 <DesignResourcePreview
-                  previewPath={r.preview_path}
+                  previewPath={designResourcePreviewPath(r)}
                   alt={`Vista previa: ${r.title}`}
                   className="w-full aspect-[4/3]"
                 />
@@ -167,7 +168,7 @@ const ProductorRecursos = () => {
                 <DialogDescription>{designCategoryLabel(preview.category)}</DialogDescription>
               </DialogHeader>
               <DesignResourcePreview
-                previewPath={preview.preview_path}
+                previewPath={designResourcePreviewPath(preview)}
                 alt={`Vista previa: ${preview.title}`}
                 fit="contain"
                 className="w-full max-h-[70vh] rounded-lg"

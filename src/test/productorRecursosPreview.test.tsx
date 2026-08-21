@@ -25,6 +25,8 @@ vi.mock("@/hooks/useDesignResources", () => ({
   designCategoryLabel: (value: string) => (value === "flyer" ? "Flyer" : value),
   useDesignResources: () => ({ data: designState.items, isLoading: false, error: null }),
   getDesignResourceSignedUrl: async () => "https://example.com/preview.png",
+  designResourcePreviewPath: (r: { preview_path?: string | null; download_path?: string | null }) =>
+    r.preview_path || r.download_path || null,
 }));
 
 function wrap() {

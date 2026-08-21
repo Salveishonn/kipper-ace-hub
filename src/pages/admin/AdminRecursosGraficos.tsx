@@ -7,6 +7,7 @@ import {
   uploadDesignResourceFile,
   getDesignResourceSignedUrl,
   designCategoryLabel,
+  designResourcePreviewPath,
   DESIGN_CATEGORIES,
   type DesignCategory,
 } from "@/hooks/useDesignResources";
@@ -102,6 +103,9 @@ const AdminRecursosGraficos = () => {
         const ext = downloadFile.name.split(".").pop();
         download_path = `files/${Date.now()}-${sanitizeName(form.title)}.${ext}`;
         await uploadDesignResourceFile(downloadFile, download_path);
+      }
+      if (!preview_path && download_path) {
+        preview_path = designResourcePreviewPath({ preview_path: null, download_path }) ?? undefined;
       }
 
       await save.mutateAsync({
@@ -257,7 +261,7 @@ const AdminRecursosGraficos = () => {
                 aria-label={`Vista previa de ${r.title}`}
               >
                 <DesignResourcePreview
-                  previewPath={r.preview_path}
+                  previewPath={designResourcePreviewPath(r)}
                   alt={`Vista previa: ${r.title}`}
                   className="w-full aspect-[4/3]"
                 />
@@ -314,7 +318,7 @@ const AdminRecursosGraficos = () => {
                 </DialogDescription>
               </DialogHeader>
               <DesignResourcePreview
-                previewPath={preview.preview_path}
+                previewPath={designResourcePreviewPath(preview)}
                 alt={`Vista previa: ${preview.title}`}
                 fit="contain"
                 className="w-full max-h-[70vh] rounded-lg"

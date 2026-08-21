@@ -16,6 +16,20 @@ export function designCategoryLabel(value: string) {
   return DESIGN_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 
+const IMAGE_PATH = /\.(jpe?g|png|gif|webp|svg)$/i;
+
+/** Preview image for cards/dialogs: dedicated preview, or the download file when it is itself an image. */
+export function designResourcePreviewPath(resource: {
+  preview_path?: string | null;
+  download_path?: string | null;
+}): string | null {
+  if (resource.preview_path) return resource.preview_path;
+  if (resource.download_path && IMAGE_PATH.test(resource.download_path)) {
+    return resource.download_path;
+  }
+  return null;
+}
+
 export function useDesignResources(options?: { admin?: boolean }) {
   return useQuery({
     queryKey: ["design_resources", options?.admin ?? false],
