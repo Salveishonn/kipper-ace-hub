@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState, EmptyState } from "@/components/ui/loading-state";
+import { useAuth } from "@/hooks/useAuth";
 
 const typeIcon = {
   video: Video,
@@ -31,14 +32,18 @@ const typeLabel = {
 
 /** Internal Academy library. Rendered inside ProductorLayout at /productor/academy. */
 const AcademyContenido = () => {
+  const { isAdmin } = useAuth();
   const { data: modules, isLoading } = useQuery({
-    queryKey: ["academy_modules_published"],
+    queryKey: ["academy_modules_library", isAdmin],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("academy_modules")
         .select("*, academy_lessons(*)")
-        .eq("published", true)
         .order("sort_order", { ascending: true });
+      if (!isAdmin) {
+        query = query.eq("published", true);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -47,7 +52,7 @@ const AcademyContenido = () => {
   const visibleModules = (modules || [])
     .map((mod) => {
       const lessons = [...(mod.academy_lessons || [])]
-        .filter((l) => l.published)
+        .filter((l) => isAdmin || l.published)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
       return { ...mod, lessons };
     })
@@ -66,6 +71,12 @@ const AcademyContenido = () => {
               Tu biblioteca de capacitación profesional. Avanzá módulo por módulo con videos, guías y
               material descargable.
             </p>
+            {isAdmin && (
+              <p className="text-sm text-primary mt-2">
+                Vista previa de administrador: ves los módulos y lecciones como en el portal, incluidos
+                borradores.
+              </p>
+            )}
             {!isLoading && (
               <p className="text-sm text-muted-foreground mt-3">
                 {visibleModules.length}{" "}
@@ -101,7 +112,14 @@ const AcademyContenido = () => {
                 className="bg-card rounded-2xl border border-border/60 shadow-soft overflow-hidden"
               >
                 <div className="p-5 sm:p-6 border-b border-border bg-muted/20">
-                  <h2 className="text-lg sm:text-xl font-bold text-foreground">{mod.title}</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">{mod.title}</h2>
+                    {isAdmin && !mod.published && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">
+                        Borrador
+                      </span>
+                    )}
+                  </div>
                   {mod.description && (
                     <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
                       {mod.description}
@@ -141,6 +159,7 @@ const AcademyContenido = () => {
                           <p className="font-medium text-foreground truncate">{lesson.title}</p>
                           <p className="text-xs text-muted-foreground capitalize">
                             {typeLabel[lesson.type as keyof typeof typeLabel] || lesson.type}
+                            {isAdmin && !lesson.published ? " · borrador" : ""}
                           </p>
                         </div>
                         <ChevronRight size={18} className="text-muted-foreground" aria-hidden />

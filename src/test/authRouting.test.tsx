@@ -16,6 +16,12 @@ const mockState = vi.hoisted(() => ({
   profileError: null as { message: string } | null,
   roles: { data: [] as Array<{ role: string }> | null, error: null as { message: string } | null },
   application: null as Record<string, unknown> | null,
+  adminMfaVerified: false,
+}));
+
+vi.mock("@/lib/adminMfa", () => ({
+  requestAdminMfaCode: async () => ({ ok: true, email: "test@example.com" }),
+  verifyAdminMfaCode: async () => ({ ok: true }),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({
@@ -36,6 +42,9 @@ vi.mock("@/integrations/supabase/client", () => ({
     rpc: async (name: string) => {
       if (name === "get_my_producer_application") {
         return { data: mockState.application ? [mockState.application] : [], error: null };
+      }
+      if (name === "admin_mfa_is_verified") {
+        return { data: mockState.adminMfaVerified, error: null };
       }
       return { data: null, error: null };
     },
@@ -111,6 +120,7 @@ beforeEach(() => {
   mockState.profileError = null;
   mockState.roles = { data: [], error: null };
   mockState.application = null;
+  mockState.adminMfaVerified = false;
 });
 
 describe("resolvePostAuthDestination", () => {
@@ -124,14 +134,36 @@ describe("resolvePostAuthDestination", () => {
     ).toBe("/productor/solicitud-pendiente");
   });
 
-  it("routes rejected applicants to acceso-no-disponible", () => {
+  it("routes admin without MFA to login for the email code", () => {
     expect(
       resolvePostAuthDestination({
         user: { id: "1" } as never,
-        roles: [],
-        application: { status: "rechazado", email: "a@b.com" },
+        roles: ["admin"],
+        application: null,
+        adminMfaVerified: false,
       }),
-    ).toBe("/productor/acceso-no-disponible");
+    ).toBe("/login");
+  });
+
+  it("routes MFA-verified admin to /admin", () => {
+    expect(
+      resolvePostAuthDestination({
+        user: { id: "1" } as never,
+        roles: ["admin"],
+        application: null,
+        adminMfaVerified: true,
+      }),
+    ).toBe("/admin");
+  });
+
+  it("routes productor ahead of pending application", () => {
+    expect(
+      resolvePostAuthDestination({
+        user: { id: "1" } as never,
+        roles: ["productor"],
+        application: { status: "pending", email: "a@b.com" },
+      }),
+    ).toBe("/productor");
   });
 });
 
@@ -140,7 +172,7 @@ describe("auth routing", () => {
     renderAt("/login");
 
     expect(
-      await screen.findByRole("heading", { name: /portal productores/i }),
+      await screen.findByRole("heading", { name: /^ingresar$/i }),
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("tu@email.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
@@ -150,19 +182,33 @@ describe("auth routing", () => {
     );
   });
 
-  it("anonymous user opens /admin/login: the admin login renders", async () => {
+  it("anonymous user opens /admin/login: redirects to the unified login", async () => {
     renderAt("/admin/login");
 
     expect(
-      await screen.findByRole("heading", { name: /administración kipper/i }),
+      await screen.findByRole("heading", { name: /^ingresar$/i }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("tu@email.com")).toBeInTheDocument();
   });
 
-  it("authenticated admin opens /login: redirects to /admin", async () => {
+  it("authenticated admin without MFA stays on login for the email code", async () => {
     mockState.session = makeSession();
     mockState.profile = makeProfile();
     mockState.roles = { data: [{ role: "admin" }], error: null };
+    mockState.adminMfaVerified = false;
+
+    renderAt("/login");
+
+    expect(
+      await screen.findByRole("heading", { name: /verificá tu identidad/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("authenticated admin with MFA opens /login: redirects to /admin", async () => {
+    mockState.session = makeSession();
+    mockState.profile = makeProfile();
+    mockState.roles = { data: [{ role: "admin" }], error: null };
+    mockState.adminMfaVerified = true;
 
     renderAt("/login");
 

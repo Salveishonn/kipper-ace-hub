@@ -1243,9 +1243,19 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_session: { Args: never; Returns: boolean }
+      admin_mfa_is_verified: { Args: never; Returns: boolean }
       is_cliente: { Args: never; Returns: boolean }
       is_productor: { Args: never; Returns: boolean }
       restore_pas_producer: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      grant_admin_role: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      revoke_admin_role: {
         Args: { p_user_id: string }
         Returns: Json
       }

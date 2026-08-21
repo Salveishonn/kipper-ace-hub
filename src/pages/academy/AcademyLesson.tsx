@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { getAcademyFileSignedUrl, isAcademyFileType } from "@/lib/fileUploads";
+import { useAuth } from "@/hooks/useAuth";
 
 function officeEmbedUrl(signedUrl: string) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signedUrl)}`;
@@ -13,24 +14,30 @@ function officeEmbedUrl(signedUrl: string) {
 /** Internal Academy lesson. Rendered inside ProductorLayout at /productor/academy/:moduleSlug/:lessonSlug. */
 const AcademyLesson = () => {
   const { moduleSlug, lessonSlug } = useParams();
+  const { isAdmin } = useAuth();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["academy_lesson", moduleSlug, lessonSlug],
+    queryKey: ["academy_lesson", moduleSlug, lessonSlug, isAdmin],
     queryFn: async () => {
-      const { data: mod } = await supabase
+      let moduleQuery = supabase
         .from("academy_modules")
-        .select("id, title, slug")
-        .eq("slug", moduleSlug!)
-        .eq("published", true)
-        .single();
+        .select("id, title, slug, published")
+        .eq("slug", moduleSlug!);
+      if (!isAdmin) {
+        moduleQuery = moduleQuery.eq("published", true);
+      }
+      const { data: mod } = await moduleQuery.maybeSingle();
       if (!mod) return null;
 
-      const { data: lessons, error } = await supabase
+      let lessonsQuery = supabase
         .from("academy_lessons")
         .select("*")
         .eq("module_id", mod.id)
-        .eq("published", true)
         .order("sort_order", { ascending: true });
+      if (!isAdmin) {
+        lessonsQuery = lessonsQuery.eq("published", true);
+      }
+      const { data: lessons, error } = await lessonsQuery;
       if (error || !lessons?.length) return null;
 
       const index = lessons.findIndex((l) => l.slug === lessonSlug);
@@ -124,6 +131,11 @@ const AcademyLesson = () => {
           Lección {position} de {total}
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{current.title}</h1>
+        {isAdmin && (!mod.published || !current.published) && (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+            Borrador: los productores no ven este contenido hasta que lo publiques.
+          </p>
+        )}
       </div>
 
       {current.type === "video" && current.video_url && (

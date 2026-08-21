@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { resolvePostAuthDestination } from '@/lib/authRouting';
+import { requestAdminMfaCode, verifyAdminMfaCode } from '@/lib/adminMfa';
 
 type AppRole = 'admin' | 'productor';
 
@@ -50,6 +51,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   getDefaultDashboard: () => string;
+  adminMfaVerified: boolean;
+  requestAdminMfa: () => Promise<{ ok: boolean; email?: string; error?: string; retryAfterSeconds?: number }>;
+  verifyAdminMfa: (code: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [adminMfaVerified, setAdminMfaVerified] = useState(false);
 
   /** Throws on query errors; a missing profile resolves to null (it must not block the UI). */
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
@@ -145,11 +150,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(profileData);
       setRoles(rolesData);
       setProducerApplication(applicationData);
+
+      if (rolesData.includes('admin')) {
+        const { data: mfaOk, error: mfaErr } = await supabase.rpc('admin_mfa_is_verified');
+        if (mfaErr) {
+          console.warn('admin MFA lookup:', mfaErr.message);
+          setAdminMfaVerified(false);
+        } else {
+          setAdminMfaVerified(mfaOk === true);
+        }
+      } else {
+        setAdminMfaVerified(false);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
       setProfile(null);
       setRoles([]);
       setProducerApplication(null);
+      setAdminMfaVerified(false);
       setAuthError(AUTH_ERROR_MESSAGE);
     } finally {
       // rolesLoaded means "the role lookup finished", not "the user has a role".
@@ -165,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setRoles([]);
     setProducerApplication(null);
+    setAdminMfaVerified(false);
     setAuthError(null);
     setRolesLoaded(true);
     setLoading(false);
@@ -181,6 +200,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(profileData);
       setRoles(rolesData);
       setProducerApplication(applicationData);
+      if (rolesData.includes('admin')) {
+        const { data: mfaOk } = await supabase.rpc('admin_mfa_is_verified');
+        setAdminMfaVerified(mfaOk === true);
+      } else {
+        setAdminMfaVerified(false);
+      }
     } catch (error) {
       console.error('Error refreshing profile:', error);
     }
@@ -194,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       application: producerApplication
         ? { status: producerApplication.status, email: producerApplication.email }
         : null,
+      adminMfaVerified,
     });
   };
 
@@ -291,6 +317,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applySignedOutState();
   };
 
+  const requestAdminMfa = async () => {
+    return requestAdminMfaCode();
+  };
+
+  const verifyAdminMfa = async (code: string) => {
+    const result = await verifyAdminMfaCode(code);
+    if (result.ok) {
+      setAdminMfaVerified(true);
+    }
+    return result;
+  };
+
   const isAdmin = roles.includes('admin');
   const isProductor = roles.includes('productor');
   const isAccountActive = profile?.account_status === 'active' || isAdmin;
@@ -323,7 +361,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeInvitePassword,
       signOut,
       refreshProfile,
-      getDefaultDashboard
+      getDefaultDashboard,
+      adminMfaVerified,
+      requestAdminMfa,
+      verifyAdminMfa,
     }}>
       {children}
     </AuthContext.Provider>

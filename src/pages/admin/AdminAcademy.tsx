@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Plus,
   Edit,
@@ -15,6 +16,7 @@ import {
   Upload,
   Image,
   FileSpreadsheet,
+  ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -361,15 +363,24 @@ const AdminAcademy = () => {
             Gestión de módulos y lecciones — crear, editar, publicar y reordenar
           </p>
         </div>
-        <button
-          onClick={() => {
-            resetModuleForm();
-            setShowModuleForm(true);
-          }}
-          className="btn-hero text-sm px-4 py-2 inline-flex items-center gap-2"
-        >
-          <Plus size={16} /> Nuevo Módulo
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/productor/academy"
+            className="btn-hero-outline text-sm px-4 py-2 inline-flex items-center gap-2"
+          >
+            <ExternalLink size={16} aria-hidden />
+            Ver como productor
+          </Link>
+          <button
+            onClick={() => {
+              resetModuleForm();
+              setShowModuleForm(true);
+            }}
+            className="btn-hero text-sm px-4 py-2 inline-flex items-center gap-2"
+          >
+            <Plus size={16} /> Nuevo Módulo
+          </button>
+        </div>
       </div>
 
       {!modules?.length ? (
@@ -488,6 +499,14 @@ const AdminAcademy = () => {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
+                                <Link
+                                  to={`/productor/academy/${mod.slug}/${lesson.slug}`}
+                                  title="Ver como productor"
+                                  className="p-1.5 hover:bg-muted rounded"
+                                  aria-label={`Ver ${lesson.title} como productor`}
+                                >
+                                  <ExternalLink size={14} className="text-primary" />
+                                </Link>
                                 <button
                                   type="button"
                                   title="Subir"

@@ -25,6 +25,7 @@ export const ProtectedRoute = ({
     isPendingApplicant,
     isRejectedApplicant,
     profile,
+    adminMfaVerified,
   } = useAuth();
   const location = useLocation();
 
@@ -42,12 +43,17 @@ export const ProtectedRoute = ({
   }
 
   if (!user) {
-    const loginPath = location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
-    return <Navigate to={loginPath} state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (isAdmin && !adminMfaVerified && location.pathname.startsWith("/admin")) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (allowApplicantStatus) {
-    if (isAdmin) return <Navigate to="/admin" replace />;
+    if (isAdmin) {
+      return <Navigate to={adminMfaVerified ? "/admin" : "/login"} replace />;
+    }
     if (isProductor && isAccountActive) return <Navigate to="/productor" replace />;
     return <>{children}</>;
   }
@@ -62,7 +68,7 @@ export const ProtectedRoute = ({
       if (isRejectedApplicant) {
         return <Navigate to="/productor/acceso-no-disponible" replace />;
       }
-      const loginPath = location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
+      const loginPath = "/login";
       return <Navigate to={loginPath} replace />;
     }
   }

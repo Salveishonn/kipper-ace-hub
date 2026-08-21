@@ -44,6 +44,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProductores = lazy(() => import("./pages/admin/AdminProductores"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
+const AdminAdministradores = lazy(() => import("./pages/admin/AdminAdministradores"));
 const AdminAcademy = lazy(() => import("./pages/admin/AdminAcademy"));
 const AdminPasSolicitudes = lazy(() => import("./pages/admin/AdminPasSolicitudes"));
 const AdminNovedades = lazy(() => import("./pages/admin/AdminNovedades"));
@@ -156,6 +157,7 @@ const App = () => (
                 <Route index element={<AdminDashboard />} />
                 <Route path="solicitudes-pas" element={<AdminPasSolicitudes />} />
                 <Route path="productores" element={<AdminProductores />} />
+                <Route path="administradores" element={<AdminAdministradores />} />
                 <Route path="academy" element={<AdminAcademy />} />
                 <Route path="recursos-graficos" element={<AdminRecursosGraficos />} />
                 <Route path="novedades" element={<AdminNovedades />} />

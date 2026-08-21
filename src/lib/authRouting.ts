@@ -11,6 +11,8 @@ export type AuthDestinationInput = {
   roles: string[];
   accountStatus?: string | null;
   application: ProducerApplicationSnapshot;
+  /** Admins must verify an email code before entering /admin. */
+  adminMfaVerified?: boolean;
 };
 
 /**
@@ -18,10 +20,13 @@ export type AuthDestinationInput = {
  * Does not expose whether an email exists — only routes an authenticated session.
  */
 export function resolvePostAuthDestination(input: AuthDestinationInput): string {
-  const { user, roles, accountStatus, application } = input;
+  const { user, roles, accountStatus, application, adminMfaVerified = false } = input;
   if (!user) return "/login";
 
-  if (roles.includes("admin")) return "/admin";
+  if (roles.includes("admin")) {
+    if (!adminMfaVerified) return "/login";
+    return "/admin";
+  }
 
   if (roles.includes("productor")) {
     if (accountStatus && accountStatus !== "active" && accountStatus !== undefined) {

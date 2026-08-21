@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Settings, LogOut,
   Menu, X, UserCheck, MessageSquare, Mail,
-  FileText, BookOpen, Palette, Newspaper,
+  FileText, BookOpen, Palette, Newspaper, Shield,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ const adminLinks = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
   { href: "/admin/solicitudes-pas", label: "Solicitudes PAS", icon: Mail },
   { href: "/admin/productores", label: "Productores", icon: UserCheck },
+  { href: "/admin/administradores", label: "Administradores", icon: Shield },
   { href: "/admin/academy", label: "Academy", icon: BookOpen },
   { href: "/admin/recursos-graficos", label: "Recursos gráficos", icon: Palette },
   { href: "/admin/novedades", label: "Novedades", icon: Newspaper },
@@ -32,7 +33,7 @@ const AdminLayout = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/admin/login');
+    navigate("/login");
   };
 
   const renderLink = (link: { href: string; label: string; icon: typeof Mail }) => {

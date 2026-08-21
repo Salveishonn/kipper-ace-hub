@@ -21,7 +21,7 @@ const ProductorLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAdmin } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -122,6 +122,17 @@ const ProductorLayout = () => {
           </div>
         </header>
         <main className="p-6 lg:p-8 max-w-6xl mx-auto">
+          {isAdmin && (
+            <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <p>
+                Estás viendo el portal como lo ven los productores, incluidos videos y documentos de
+                Academy.
+              </p>
+              <Link to="/admin/academy" className="text-primary font-medium hover:underline shrink-0">
+                Volver a administrar Academy
+              </Link>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

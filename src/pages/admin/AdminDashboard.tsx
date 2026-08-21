@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Mail, MessageSquare, UserCheck, BookOpen, Palette, Newspaper,
+  Mail, MessageSquare, UserCheck, BookOpen, Palette, Newspaper, Shield,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { useProducerApplications } from "@/hooks/useProducerApplications";
 import { PENDING_APPLICATION_STATUSES } from "@/lib/producerApplicationStatus";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { useProducers } from "@/hooks/useProducers";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { consultaCategoryLabel } from "@/lib/consultaCategories";
 
 /** Real published-content counts, fetched head-only (no rows). */
@@ -35,6 +36,7 @@ const AdminDashboard = () => {
   const { data: applications } = useProducerApplications();
   const { data: tickets } = useSupportTickets({ admin: true });
   const { data: producers } = useProducers();
+  const { data: admins } = useAdminUsers();
   const { data: counts } = usePublishedCounts();
 
   const pendingApps = applications?.filter((a) =>
@@ -47,6 +49,7 @@ const AdminDashboard = () => {
   const cards = [
     { label: "Solicitudes PAS pendientes", value: pendingApps, href: "/admin/solicitudes-pas", icon: Mail },
     { label: "Productores activos", value: activeProducers, href: "/admin/productores", icon: UserCheck },
+    { label: "Administradores", value: admins?.length ?? 0, href: "/admin/administradores", icon: Shield },
     { label: "Academy publicados", value: counts?.academy ?? 0, href: "/admin/academy", icon: BookOpen },
     { label: "Recursos gráficos publicados", value: counts?.design ?? 0, href: "/admin/recursos-graficos", icon: Palette },
     { label: "Novedades publicadas", value: counts?.novedades ?? 0, href: "/admin/novedades", icon: Newspaper },
