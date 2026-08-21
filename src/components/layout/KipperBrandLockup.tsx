@@ -23,7 +23,7 @@ export function KipperBrandLockup({
         src={kipperMarkK}
         alt=""
         aria-hidden
-        className="block h-full w-auto max-w-[5.5rem] object-contain object-left mix-blend-screen shrink-0"
+        className="block h-full w-auto object-cover object-left mix-blend-screen shrink-0"
       />
       <div className="flex min-w-0 flex-col justify-center leading-none text-white pl-1.5 pr-3">
         <span className="text-[8px] font-medium tracking-[0.22em] uppercase opacity-95">
