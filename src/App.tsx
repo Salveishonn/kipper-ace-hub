@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { KipperAssistant } from "@/components/assistant/KipperAssistant";
 
 // Public
 const Index = lazy(() => import("./pages/Index"));
@@ -46,6 +47,8 @@ const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
 const AdminAdministradores = lazy(() => import("./pages/admin/AdminAdministradores"));
 const AdminAcademy = lazy(() => import("./pages/admin/AdminAcademy"));
+const AdminAcademyModule = lazy(() => import("./pages/admin/AdminAcademyModule"));
+const AdminAcademyLesson = lazy(() => import("./pages/admin/AdminAcademyLesson"));
 const AdminPasSolicitudes = lazy(() => import("./pages/admin/AdminPasSolicitudes"));
 const AdminNovedades = lazy(() => import("./pages/admin/AdminNovedades"));
 const AdminRecursosGraficos = lazy(() => import("./pages/admin/AdminRecursosGraficos"));
@@ -82,6 +85,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <KipperAssistant />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -159,6 +163,8 @@ const App = () => (
                 <Route path="productores" element={<AdminProductores />} />
                 <Route path="administradores" element={<AdminAdministradores />} />
                 <Route path="academy" element={<AdminAcademy />} />
+                <Route path="academy/:moduleSlug" element={<AdminAcademyModule />} />
+                <Route path="academy/:moduleSlug/:lessonSlug" element={<AdminAcademyLesson />} />
                 <Route path="recursos-graficos" element={<AdminRecursosGraficos />} />
                 <Route path="novedades" element={<AdminNovedades />} />
                 <Route path="recursos" element={<Navigate to="/admin/novedades" replace />} />

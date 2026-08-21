@@ -330,3 +330,15 @@
   .delay-300 { animation-delay: 300ms; }
   .delay-400 { animation-delay: 400ms; }
 }
+
+/* Hide leftover Botmaker launchers on admin, productor, and auth routes */
+body.kipper-no-assistant iframe[src*="botmaker"],
+body.kipper-no-assistant iframe[src*="go.botmaker.com"],
+body.kipper-no-assistant [id*="botmaker" i],
+body.kipper-no-assistant [class*="botmaker" i],
+body.kipper-no-assistant [id^="bm-webchat"],
+body.kipper-no-assistant [class*="bm-webchat"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

@@ -35,6 +35,8 @@ export function getBotmakerWebchatConfig(): BotmakerWebchatConfig {
   };
 }
 
+export const PUBLIC_ASSISTANT_BODY_CLASS = "kipper-no-assistant";
+
 /** Paths where the floating assistant must never mount. */
 export function shouldMountPublicAssistant(pathname: string): boolean {
   if (pathname.startsWith("/admin")) return false;
@@ -45,6 +47,23 @@ export function shouldMountPublicAssistant(pathname: string): boolean {
   if (pathname === "/recuperar-contrasena" || pathname.startsWith("/recuperar-contrasena/")) return false;
   if (pathname === "/restablecer-contrasena" || pathname.startsWith("/restablecer-contrasena/")) return false;
   return true;
+}
+
+/**
+ * Hide leftover Botmaker DOM when leaving public pages.
+ * The official widget paints onto document.body and survives MainLayout unmount.
+ */
+export function syncPublicAssistant(pathname: string): void {
+  if (typeof document === "undefined") return;
+  const allowed = shouldMountPublicAssistant(pathname);
+  if (allowed) {
+    document.body.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
+    window.bmShow?.();
+    return;
+  }
+  document.body.classList.add(PUBLIC_ASSISTANT_BODY_CLASS);
+  window.bmHide?.();
+  window.bmMinimize?.();
 }
 
 const SCRIPT_ATTR = "data-kipper-botmaker-webchat";

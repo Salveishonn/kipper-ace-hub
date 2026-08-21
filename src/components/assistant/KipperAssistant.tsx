@@ -6,6 +6,7 @@ import { BotmakerWebchat } from "@/components/assistant/BotmakerWebchat";
 import {
   getBotmakerWebchatConfig,
   shouldMountPublicAssistant,
+  syncPublicAssistant,
 } from "@/lib/botmakerWebchat";
 import { siteConfig } from "@/lib/siteConfig";
 import { motion } from "@/lib/motion/tokens";
@@ -15,7 +16,8 @@ const LABEL_KEY = "kipper_assistant_label_seen";
 
 /**
  * Public floating assistant: Botmaker Webchat when configured, otherwise
- * a WhatsApp launcher. Mounted once from MainLayout.
+ * a WhatsApp launcher. Mounted once from App so it can hide leftover widgets
+ * on admin/productor/auth routes.
  */
 export function KipperAssistant() {
   const { pathname } = useLocation();
@@ -28,6 +30,10 @@ export function KipperAssistant() {
   const labelRef = useRef<HTMLSpanElement>(null);
 
   const allowed = shouldMountPublicAssistant(pathname);
+
+  useEffect(() => {
+    syncPublicAssistant(pathname);
+  }, [pathname]);
 
   const handleBotmakerReady = useCallback(() => setMode("botmaker"), []);
   const handleBotmakerFail = useCallback(() => setMode("whatsapp"), []);

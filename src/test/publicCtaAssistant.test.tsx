@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,7 +7,11 @@ import { Navbar } from "@/components/layout/Navbar";
 import { TrustSection } from "@/components/home/TrustSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { siteConfig } from "@/lib/siteConfig";
-import { shouldMountPublicAssistant } from "@/lib/botmakerWebchat";
+import {
+  shouldMountPublicAssistant,
+  syncPublicAssistant,
+  PUBLIC_ASSISTANT_BODY_CLASS,
+} from "@/lib/botmakerWebchat";
 
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
@@ -80,6 +84,13 @@ beforeEach(() => {
   }
 });
 
+afterEach(() => {
+  document.body.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
+  window.bmHide = undefined;
+  window.bmShow = undefined;
+  window.bmMinimize = undefined;
+});
+
 describe("public assistant routing", () => {
   it("allows public routes and blocks admin/productor/auth", () => {
     expect(shouldMountPublicAssistant("/")).toBe(true);
@@ -114,6 +125,32 @@ describe("public assistant routing", () => {
     unmount();
     render(wrap(<KipperAssistant />, "/login"));
     expect(screen.queryByRole("link", { name: /abrir whatsapp/i })).not.toBeInTheDocument();
+  });
+
+  it("hides leftover Botmaker widgets on admin paths", () => {
+    const hide = vi.fn();
+    const minimize = vi.fn();
+    window.bmHide = hide;
+    window.bmMinimize = minimize;
+
+    syncPublicAssistant("/admin/academy");
+    expect(hide).toHaveBeenCalled();
+    expect(minimize).toHaveBeenCalled();
+    expect(document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(true);
+
+    const show = vi.fn();
+    window.bmShow = show;
+    syncPublicAssistant("/");
+    expect(show).toHaveBeenCalled();
+    expect(document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(false);
+  });
+
+  it("calls bmHide when the assistant mounts on an admin route", () => {
+    const hide = vi.fn();
+    window.bmHide = hide;
+    render(wrap(<KipperAssistant />, "/admin"));
+    expect(hide).toHaveBeenCalled();
+    expect(document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(true);
   });
 });
 
