@@ -28,6 +28,37 @@
     />
     <meta name="twitter:image" content="https://kipperseguros.com/og-kipper.png" />
 
+    <style>
+      html.kipper-no-assistant iframe[name="Botmaker"],
+      html.kipper-no-assistant iframe[title="Botmaker"],
+      html.kipper-no-assistant #botmaker-webchat-container {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
+      }
+    </style>
+    <script>
+      (function () {
+        var p = location.pathname || "";
+        if (
+          p.indexOf("/admin") === 0 ||
+          p.indexOf("/productor") === 0 ||
+          p.indexOf("/auth/") === 0 ||
+          p === "/login" ||
+          p.indexOf("/login/") === 0 ||
+          p === "/registro" ||
+          p.indexOf("/registro/") === 0 ||
+          p.indexOf("/recuperar-contrasena") === 0 ||
+          p.indexOf("/restablecer-contrasena") === 0
+        ) {
+          document.documentElement.classList.add("kipper-no-assistant");
+        }
+      })();
+    </script>
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-55QYPQGDF8"></script>
     <script>

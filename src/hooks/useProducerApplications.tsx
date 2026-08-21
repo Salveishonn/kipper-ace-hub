@@ -93,7 +93,24 @@ export function useProducerApplications() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const rows = data || [];
+      const userIds = [
+        ...new Set(rows.map((row) => row.user_id).filter((id): id is string => Boolean(id))),
+      ];
+      if (!userIds.length) {
+        return rows.map((row) => ({ ...row, account_status: null as string | null }));
+      }
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, account_status")
+        .in("user_id", userIds);
+      const statusByUser = new Map(
+        (profiles || []).map((profile) => [profile.user_id, profile.account_status]),
+      );
+      return rows.map((row) => ({
+        ...row,
+        account_status: row.user_id ? (statusByUser.get(row.user_id) ?? null) : null,
+      }));
     },
   });
 }

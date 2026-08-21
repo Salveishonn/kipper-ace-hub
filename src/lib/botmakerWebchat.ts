@@ -124,12 +124,14 @@ export function syncPublicAssistant(pathname: string): void {
   if (typeof document === "undefined") return;
   const allowed = shouldMountPublicAssistant(pathname);
   if (allowed) {
+    document.documentElement.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
     document.body.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
     stopHideLoop();
     restoreHiddenElements();
     window.bmShow?.();
     return;
   }
+  document.documentElement.classList.add(PUBLIC_ASSISTANT_BODY_CLASS);
   document.body.classList.add(PUBLIC_ASSISTANT_BODY_CLASS);
   forceHideBotmakerDom();
   startHideLoop();

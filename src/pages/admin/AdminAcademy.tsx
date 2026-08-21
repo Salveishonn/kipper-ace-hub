@@ -335,6 +335,7 @@ const AdminAcademy = () => {
                                     >
                                       {lesson.published ? "Publicada" : "Borrador"}
                                     </span>
+                                    {" · clic para ver"}
                                   </p>
                                 </div>
                               </button>

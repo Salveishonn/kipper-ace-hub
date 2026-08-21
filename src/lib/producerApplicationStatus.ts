@@ -52,3 +52,11 @@ export function isLegacyInviteFlow(app: {
 export function isActiveProducerApplication(status: string): boolean {
   return status === PRODUCER_APPLICATION_STATUS.ACTIVO;
 }
+
+/** Approved application whose portal access was later revoked. */
+export function isPasAccessSuspended(app: {
+  status: string;
+  account_status?: string | null;
+}): boolean {
+  return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.account_status === "suspended";
+}

@@ -10,6 +10,7 @@ import {
   Ban,
   Save,
   X,
+  RotateCcw,
 } from "lucide-react";
 import {
   useProducerApplications,
@@ -17,11 +18,12 @@ import {
   useApprovePasProducer,
   useInvitePasProducer,
 } from "@/hooks/useProducerApplications";
-import { useRevokePasProducer } from "@/hooks/useProducers";
+import { useRestorePasProducer, useRevokePasProducer } from "@/hooks/useProducers";
 import {
   PRODUCER_APPLICATION_STATUS,
   PENDING_APPLICATION_STATUSES,
   isLegacyInviteFlow,
+  isPasAccessSuspended,
   isSelfRegistrationPending,
 } from "@/lib/producerApplicationStatus";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
@@ -38,7 +40,7 @@ const statusLabel: Record<string, string> = {
   aprobado: "Pendiente de aprobación",
 };
 
-type FilterTab = "pendientes" | "activos" | "rechazados" | "todos";
+type FilterTab = "pendientes" | "activos" | "suspendidos" | "rechazados" | "todos";
 
 type AppRow = {
   id: string;
@@ -55,6 +57,7 @@ type AppRow = {
   user_id: string | null;
   admin_notes: string | null;
   approved_at: string | null;
+  account_status?: string | null;
 };
 
 const AdminPasSolicitudes = () => {
@@ -63,6 +66,7 @@ const AdminPasSolicitudes = () => {
   const approve = useApprovePasProducer();
   const invite = useInvitePasProducer();
   const revoke = useRevokePasProducer();
+  const restore = useRestorePasProducer();
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterTab>("todos");
@@ -88,7 +92,10 @@ const AdminPasSolicitudes = () => {
           app.status === PRODUCER_APPLICATION_STATUS.INVITADO
         );
       }
-      if (filter === "activos") return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO;
+      if (filter === "activos") {
+        return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && !isPasAccessSuspended(app);
+      }
+      if (filter === "suspendidos") return isPasAccessSuspended(app);
       if (filter === "rechazados") return app.status === PRODUCER_APPLICATION_STATUS.RECHAZADO;
       return true;
     });
@@ -102,7 +109,10 @@ const AdminPasSolicitudes = () => {
           PENDING_APPLICATION_STATUSES.includes(a.status) ||
           a.status === PRODUCER_APPLICATION_STATUS.INVITADO,
       ).length,
-      activos: rows.filter((a) => a.status === PRODUCER_APPLICATION_STATUS.ACTIVO).length,
+      activos: rows.filter(
+        (a) => a.status === PRODUCER_APPLICATION_STATUS.ACTIVO && !isPasAccessSuspended(a),
+      ).length,
+      suspendidos: rows.filter((a) => isPasAccessSuspended(a)).length,
       rechazados: rows.filter((a) => a.status === PRODUCER_APPLICATION_STATUS.RECHAZADO).length,
       todos: rows.length,
     };
@@ -161,14 +171,14 @@ const AdminPasSolicitudes = () => {
     }
   };
 
-  const handleRevoke = async (app: AppRow) => {
+  const handleRestore = async (app: AppRow) => {
     if (!app.user_id) return;
-    if (!confirm(`¿Suspender el acceso de ${app.full_name}?`)) return;
+    if (!confirm(`¿Reactivar el acceso de ${app.full_name}?`)) return;
     try {
-      await revoke.mutateAsync(app.user_id);
-      toast.success("Acceso suspendido. El productor ya no puede entrar al portal.");
+      await restore.mutateAsync(app.user_id);
+      toast.success("Acceso reactivado. El productor ya puede entrar al portal.");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "No se pudo suspender");
+      toast.error(e instanceof Error ? e.message : "No se pudo reactivar");
     }
   };
 
@@ -226,7 +236,7 @@ const AdminPasSolicitudes = () => {
       <div>
         <h1 className="text-2xl font-bold">Solicitudes PAS</h1>
         <p className="text-muted-foreground">
-          Aprobá, editá datos, guardá notas o suspendé el acceso de productores activos.
+          Aprobá, editá datos, guardá notas, o suspendé y reactivá el acceso de productores.
         </p>
       </div>
 
@@ -235,6 +245,7 @@ const AdminPasSolicitudes = () => {
           [
             ["pendientes", `Pendientes (${counts.pendientes})`],
             ["activos", `Activos (${counts.activos})`],
+            ["suspendidos", `Suspendidos (${counts.suspendidos})`],
             ["rechazados", `Rechazados (${counts.rechazados})`],
             ["todos", `Todos (${counts.todos})`],
           ] as const
@@ -262,6 +273,9 @@ const AdminPasSolicitudes = () => {
             const selfRegPending = isSelfRegistrationPending(app);
             const legacy = isLegacyInviteFlow(app);
             const isApproving = approvingId === app.id && approve.isPending;
+            const suspended = isPasAccessSuspended(app);
+            const canToggleAccess =
+              app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && Boolean(app.user_id);
 
             return (
               <div key={app.id} className="bg-card rounded-2xl shadow-soft p-6 space-y-4">
@@ -283,18 +297,31 @@ const AdminPasSolicitudes = () => {
                         : "Sin cuenta Auth (flujo legacy)"}
                     </p>
                   </div>
-                  <span className="text-sm font-medium px-3 py-1 rounded-full bg-primary/10 text-primary h-fit">
-                    {statusLabel[app.status] ?? app.status}
+                  <span
+                    className={`text-sm font-medium px-3 py-1 rounded-full h-fit ${
+                      suspended
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {suspended ? "Suspendido" : statusLabel[app.status] ?? app.status}
                   </span>
                 </div>
 
-                {app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && (
+                {app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && !suspended && (
                   <p className="text-sm text-primary flex items-center gap-2">
                     <CheckCircle2 size={16} />
                     El productor ya puede acceder al portal con su email y contraseña.
                     {app.approved_at
                       ? ` Aprobado: ${new Date(app.approved_at).toLocaleString("es-AR")}`
                       : ""}
+                  </p>
+                )}
+
+                {suspended && (
+                  <p className="text-sm text-amber-800 flex items-center gap-2">
+                    <Ban size={16} />
+                    Acceso suspendido. El productor no puede entrar al portal hasta que lo reactives.
                   </p>
                 )}
 
@@ -357,21 +384,35 @@ const AdminPasSolicitudes = () => {
                     </>
                   )}
 
-                  {app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.user_id && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleRevoke(app)}
-                      disabled={revoke.isPending}
-                    >
-                      {revoke.isPending ? (
-                        <Loader2 className="animate-spin mr-2" size={16} />
-                      ) : (
-                        <Ban size={16} className="mr-2" />
-                      )}
-                      Suspender acceso
-                    </Button>
-                  )}
+                  {canToggleAccess &&
+                    (suspended ? (
+                      <Button
+                        size="sm"
+                        onClick={() => handleRestore(app)}
+                        disabled={restore.isPending}
+                      >
+                        {restore.isPending ? (
+                          <Loader2 className="animate-spin mr-2" size={16} />
+                        ) : (
+                          <RotateCcw size={16} className="mr-2" />
+                        )}
+                        Reactivar acceso
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleRevoke(app)}
+                        disabled={revoke.isPending}
+                      >
+                        {revoke.isPending ? (
+                          <Loader2 className="animate-spin mr-2" size={16} />
+                        ) : (
+                          <Ban size={16} className="mr-2" />
+                        )}
+                        Suspender acceso
+                      </Button>
+                    ))}
 
                   {legacy && app.status !== PRODUCER_APPLICATION_STATUS.INVITADO && (
                     <>

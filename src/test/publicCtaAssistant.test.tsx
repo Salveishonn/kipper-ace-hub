@@ -144,6 +144,7 @@ describe("public assistant routing", () => {
     syncPublicAssistant("/");
     expect(show).toHaveBeenCalled();
     expect(document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(false);
+    expect(document.documentElement.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(false);
   });
 
   it("calls bmHide when the assistant mounts on an admin route", () => {
@@ -167,6 +168,7 @@ describe("public assistant routing", () => {
     expect(iframe.getAttribute("data-kipper-hidden")).toBe("1");
     expect(wrapEl.getAttribute("data-kipper-hidden")).toBe("1");
     expect(iframe.style.display).toBe("none");
+    expect(document.documentElement.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(true);
 
     wrapEl.remove();
   });

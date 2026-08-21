@@ -3,6 +3,7 @@ import { resolvePostAuthDestination } from "@/lib/authRouting";
 import {
   isSelfRegistrationPending,
   isLegacyInviteFlow,
+  isPasAccessSuspended,
 } from "@/lib/producerApplicationStatus";
 
 describe("admin PAS management routing", () => {
@@ -38,5 +39,11 @@ describe("admin PAS management routing", () => {
   it("legacy invite is only when no auth user", () => {
     expect(isLegacyInviteFlow({ status: "nuevo", user_id: null })).toBe(true);
     expect(isLegacyInviteFlow({ status: "invitado", user_id: "u1" })).toBe(false);
+  });
+
+  it("treats an activo application with suspended profile as revoked access", () => {
+    expect(isPasAccessSuspended({ status: "activo", account_status: "suspended" })).toBe(true);
+    expect(isPasAccessSuspended({ status: "activo", account_status: "active" })).toBe(false);
+    expect(isPasAccessSuspended({ status: "pending", account_status: "suspended" })).toBe(false);
   });
 });

@@ -332,6 +332,9 @@
 }
 
 /* Hide leftover Botmaker launchers on admin, productor, and auth routes */
+html.kipper-no-assistant iframe[name="Botmaker"],
+html.kipper-no-assistant iframe[title="Botmaker"],
+html.kipper-no-assistant #botmaker-webchat-container,
 body.kipper-no-assistant iframe[name="Botmaker"],
 body.kipper-no-assistant iframe[title="Botmaker"],
 body.kipper-no-assistant #botmaker-webchat-container,
