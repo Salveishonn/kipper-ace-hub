@@ -85,6 +85,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  syncPublicAssistant("/");
   document.body.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
   window.bmHide = undefined;
   window.bmShow = undefined;
@@ -151,6 +152,23 @@ describe("public assistant routing", () => {
     render(wrap(<KipperAssistant />, "/admin"));
     expect(hide).toHaveBeenCalled();
     expect(document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)).toBe(true);
+  });
+
+  it("force-hides Botmaker iframes that have no src", () => {
+    const wrapEl = document.createElement("div");
+    const iframe = document.createElement("iframe");
+    iframe.name = "Botmaker";
+    iframe.title = "Botmaker";
+    wrapEl.appendChild(iframe);
+    document.body.appendChild(wrapEl);
+
+    syncPublicAssistant("/admin/academy");
+
+    expect(iframe.getAttribute("data-kipper-hidden")).toBe("1");
+    expect(wrapEl.getAttribute("data-kipper-hidden")).toBe("1");
+    expect(iframe.style.display).toBe("none");
+
+    wrapEl.remove();
   });
 });
 

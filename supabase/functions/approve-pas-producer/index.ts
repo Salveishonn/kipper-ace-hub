@@ -187,6 +187,9 @@ Deno.serve(async (req: Request) => {
       if (msg.includes("INVALID_STATUS")) {
         return json({ error: "Estado de solicitud no válido para aprobar" }, 400);
       }
+      if (msg.includes("account_status") || msg.includes("FORBIDDEN_ACCOUNT_STATUS")) {
+        return json({ error: "No se pudo actualizar el estado de la cuenta" }, 500);
+      }
       console.error("approve_pas_application", rpcErr);
       return json({ error: "No se pudo aprobar la solicitud" }, 500);
     }

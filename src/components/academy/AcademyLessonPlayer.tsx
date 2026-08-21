@@ -90,6 +90,9 @@ type AcademyLessonPlayerProps = {
   lessonSlug: string;
   libraryHref?: string;
   moduleHref?: string;
+  /** When set, prev/next stay in the current overlay instead of changing the route. */
+  onSelectLesson?: (moduleSlug: string, lessonSlug: string) => void;
+  onBack?: () => void;
 };
 
 export function AcademyLessonPlayer({
@@ -98,6 +101,8 @@ export function AcademyLessonPlayer({
   lessonSlug,
   libraryHref,
   moduleHref,
+  onSelectLesson,
+  onBack,
 }: AcademyLessonPlayerProps) {
   const { isAdmin } = useAuth();
   const backHref = libraryHref ?? basePath;
@@ -235,13 +240,32 @@ export function AcademyLessonPlayer({
 
       <div className="flex flex-col sm:flex-row gap-3 justify-between pt-2 border-t border-border">
         {prev ? (
-          <Link
-            to={`${basePath}/${mod.slug}/${prev.slug}`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
+          onSelectLesson ? (
+            <button
+              type="button"
+              onClick={() => onSelectLesson(mod.slug, prev.slug)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary text-left"
+            >
+              <ArrowLeft size={16} aria-hidden />
+              <span className="truncate max-w-[220px]">{prev.title}</span>
+            </button>
+          ) : (
+            <Link
+              to={`${basePath}/${mod.slug}/${prev.slug}`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
+            >
+              <ArrowLeft size={16} aria-hidden />
+              <span className="truncate max-w-[220px]">{prev.title}</span>
+            </Link>
+          )
+        ) : onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
           >
-            <ArrowLeft size={16} aria-hidden />
-            <span className="truncate max-w-[220px]">{prev.title}</span>
-          </Link>
+            <ArrowLeft size={16} aria-hidden /> Volver a Academy
+          </button>
         ) : (
           <Link
             to={backHref}
@@ -250,15 +274,25 @@ export function AcademyLessonPlayer({
             <ArrowLeft size={16} aria-hidden /> Volver a Academy
           </Link>
         )}
-        {next && (
-          <Link
-            to={`${basePath}/${mod.slug}/${next.slug}`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto"
-          >
-            <span className="truncate max-w-[220px]">{next.title}</span>
-            <ArrowRight size={16} aria-hidden />
-          </Link>
-        )}
+        {next &&
+          (onSelectLesson ? (
+            <button
+              type="button"
+              onClick={() => onSelectLesson(mod.slug, next.slug)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto text-left"
+            >
+              <span className="truncate max-w-[220px]">{next.title}</span>
+              <ArrowRight size={16} aria-hidden />
+            </button>
+          ) : (
+            <Link
+              to={`${basePath}/${mod.slug}/${next.slug}`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto"
+            >
+              <span className="truncate max-w-[220px]">{next.title}</span>
+              <ArrowRight size={16} aria-hidden />
+            </Link>
+          ))}
       </div>
     </div>
   );

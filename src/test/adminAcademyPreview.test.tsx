@@ -29,11 +29,40 @@ const academyState = vi.hoisted(() => ({
   }>,
 }));
 
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({
+    user: { id: "admin-1" },
+    isAdmin: true,
+    isProductor: false,
+    loading: false,
+    rolesLoaded: true,
+  }),
+}));
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: () => ({
       select: () => ({
         order: async () => ({ data: academyState.modules, error: null }),
+        eq: (_col: string, val: string) => ({
+          maybeSingle: async () => {
+            const mod = academyState.modules.find((m) => m.slug === val || m.id === val);
+            return {
+              data: mod
+                ? { id: mod.id, title: mod.title, slug: mod.slug, published: mod.published }
+                : null,
+              error: null,
+            };
+          },
+          order: async () => {
+            const mod = academyState.modules.find((m) => m.id === val) ?? academyState.modules[0];
+            return { data: mod?.academy_lessons ?? [], error: null };
+          },
+          eq: () => ({
+            maybeSingle: async () => ({ data: null, error: null }),
+            order: async () => ({ data: academyState.modules[0]?.academy_lessons ?? [], error: null }),
+          }),
+        }),
       }),
       update: () => ({
         eq: async () => ({ error: null }),
@@ -86,7 +115,7 @@ beforeEach(() => {
 });
 
 describe("admin academy preview links", () => {
-  it("links module and lesson rows to admin preview paths, not the producer portal", async () => {
+  it("opens a maximize dialog for the lesson instead of leaving the admin list", async () => {
     render(wrap());
 
     const moduleLink = await screen.findByRole("link", { name: /producción/i });
@@ -94,14 +123,13 @@ describe("admin academy preview links", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /expandir producción/i }));
 
-    const lessonLink = await screen.findByRole("link", {
-      name: /cotización en self - producto art/i,
-    });
-    expect(lessonLink).toHaveAttribute(
-      "href",
-      "/admin/academy/produccion/cotizacion-self-art",
+    fireEvent.click(
+      screen.getByRole("button", { name: /cotización en self - producto art/i }),
     );
-    expect(lessonLink.getAttribute("href")).not.toContain("/productor/");
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/así la ven los productores/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /cotización en self/i })).not.toBeInTheDocument();
   });
 
   it("keeps edit controls on the list", async () => {

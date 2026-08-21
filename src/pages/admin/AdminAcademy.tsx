@@ -22,7 +22,15 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-st
 import { toast } from "sonner";
 import { AcademyLessonForm } from "@/components/academy/AcademyLessonForm";
 import { AcademyModuleForm } from "@/components/academy/AcademyModuleForm";
+import { AcademyLessonPlayer, useAcademyLesson } from "@/components/academy/AcademyLessonPlayer";
 import { invalidateAcademyQueries } from "@/components/academy/academyQueries";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ADMIN_ACADEMY_BASE,
   PRODUCER_ACADEMY_BASE,
@@ -61,6 +69,11 @@ const AdminAcademy = () => {
   const [editingModule, setEditingModule] = useState<AcademyModuleRow | null>(null);
   const [editingLesson, setEditingLesson] = useState<AcademyLessonRow | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ moduleSlug: string; lessonSlug: string } | null>(
+    null,
+  );
+  const [previewEditing, setPreviewEditing] = useState(false);
+  const { data: previewData } = useAcademyLesson(preview?.moduleSlug, preview?.lessonSlug);
 
   const invalidate = () => invalidateAcademyQueries(queryClient);
 
@@ -300,9 +313,13 @@ const AdminAcademy = () => {
                               key={lesson.id}
                               className="flex items-center justify-between gap-2 p-3 bg-muted/30 rounded-lg"
                             >
-                              <Link
-                                to={`${ADMIN_ACADEMY_BASE}/${mod.slug}/${lesson.slug}`}
-                                className="flex items-center gap-3 min-w-0 flex-1 group"
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreview({ moduleSlug: mod.slug, lessonSlug: lesson.slug });
+                                  setPreviewEditing(false);
+                                }}
+                                className="flex items-center gap-3 min-w-0 flex-1 group text-left"
                               >
                                 <Icon size={16} className="text-primary shrink-0" />
                                 <div className="min-w-0">
@@ -320,7 +337,7 @@ const AdminAcademy = () => {
                                     </span>
                                   </p>
                                 </div>
-                              </Link>
+                              </button>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
                                   type="button"
@@ -413,6 +430,68 @@ const AdminAcademy = () => {
           onSaved={resetModuleForm}
         />
       )}
+
+      <Dialog
+        open={!!preview}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreview(null);
+            setPreviewEditing(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vista de lección</DialogTitle>
+            <DialogDescription>
+              Así la ven los productores. Podés editar sin salir de esta vista.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && previewData?.lesson && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewEditing((open) => !open)}
+                className="btn-hero-outline text-sm px-4 py-2 inline-flex items-center gap-2"
+              >
+                <Edit size={16} aria-hidden />
+                {previewEditing ? "Ocultar editor" : "Editar lección"}
+              </button>
+            </div>
+          )}
+          {previewEditing && previewData?.lesson && (
+            <AcademyLessonForm
+              key={previewData.lesson.id}
+              moduleId={previewData.lesson.module_id}
+              lesson={previewData.lesson}
+              onCancel={() => setPreviewEditing(false)}
+              onSaved={({ slug }) => {
+                setPreviewEditing(false);
+                if (preview && slug !== preview.lessonSlug) {
+                  setPreview({ ...preview, lessonSlug: slug });
+                }
+              }}
+            />
+          )}
+          {preview && (
+            <AcademyLessonPlayer
+              basePath={ADMIN_ACADEMY_BASE}
+              moduleSlug={preview.moduleSlug}
+              lessonSlug={preview.lessonSlug}
+              libraryHref={ADMIN_ACADEMY_BASE}
+              moduleHref={`${ADMIN_ACADEMY_BASE}/${preview.moduleSlug}`}
+              onSelectLesson={(moduleSlug, lessonSlug) => {
+                setPreview({ moduleSlug, lessonSlug });
+                setPreviewEditing(false);
+              }}
+              onBack={() => {
+                setPreview(null);
+                setPreviewEditing(false);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

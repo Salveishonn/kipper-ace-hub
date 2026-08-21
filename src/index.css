@@ -332,6 +332,10 @@
 }
 
 /* Hide leftover Botmaker launchers on admin, productor, and auth routes */
+body.kipper-no-assistant iframe[name="Botmaker"],
+body.kipper-no-assistant iframe[title="Botmaker"],
+body.kipper-no-assistant #botmaker-webchat-container,
+body.kipper-no-assistant [data-kipper-hidden],
 body.kipper-no-assistant iframe[src*="botmaker"],
 body.kipper-no-assistant iframe[src*="go.botmaker.com"],
 body.kipper-no-assistant [id*="botmaker" i],
@@ -341,4 +345,7 @@ body.kipper-no-assistant [class*="bm-webchat"] {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }

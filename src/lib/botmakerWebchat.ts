@@ -37,6 +37,73 @@ export function getBotmakerWebchatConfig(): BotmakerWebchatConfig {
 
 export const PUBLIC_ASSISTANT_BODY_CLASS = "kipper-no-assistant";
 
+const BOTMAKER_SELECTORS = [
+  'iframe[name="Botmaker"]',
+  'iframe[title="Botmaker"]',
+  "#botmaker-webchat-container",
+].join(", ");
+
+const HIDE_RETRY_MS = [0, 500, 1500, 3000];
+
+let hideTimers: number[] = [];
+let hideObserver: MutationObserver | null = null;
+
+function hideElement(el: HTMLElement) {
+  el.setAttribute("data-kipper-hidden", "1");
+  el.style.setProperty("display", "none", "important");
+  el.style.setProperty("visibility", "hidden", "important");
+  el.style.setProperty("pointer-events", "none", "important");
+  el.style.setProperty("opacity", "0", "important");
+}
+
+function restoreHiddenElements() {
+  document.querySelectorAll<HTMLElement>("[data-kipper-hidden]").forEach((el) => {
+    el.removeAttribute("data-kipper-hidden");
+    el.style.removeProperty("display");
+    el.style.removeProperty("visibility");
+    el.style.removeProperty("pointer-events");
+    el.style.removeProperty("opacity");
+  });
+}
+
+/** Hide the official Botmaker launcher (classless wrapper + nameless-src iframe). */
+export function forceHideBotmakerDom(): void {
+  if (typeof document === "undefined") return;
+  window.bmHide?.();
+  window.bmMinimize?.();
+  document.querySelectorAll(BOTMAKER_SELECTORS).forEach((node) => {
+    const el = node as HTMLElement;
+    hideElement(el);
+    const wrap = el.parentElement;
+    if (wrap && wrap !== document.body && wrap !== document.documentElement) {
+      hideElement(wrap);
+    }
+  });
+}
+
+function stopHideLoop() {
+  hideTimers.forEach((id) => window.clearTimeout(id));
+  hideTimers = [];
+  hideObserver?.disconnect();
+  hideObserver = null;
+}
+
+function startHideLoop() {
+  stopHideLoop();
+  const run = () => {
+    if (!document.body.classList.contains(PUBLIC_ASSISTANT_BODY_CLASS)) {
+      stopHideLoop();
+      return;
+    }
+    forceHideBotmakerDom();
+  };
+  hideTimers = HIDE_RETRY_MS.map((ms) => window.setTimeout(run, ms));
+  if (typeof MutationObserver !== "undefined") {
+    hideObserver = new MutationObserver(run);
+    hideObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
 /** Paths where the floating assistant must never mount. */
 export function shouldMountPublicAssistant(pathname: string): boolean {
   if (pathname.startsWith("/admin")) return false;
@@ -58,12 +125,14 @@ export function syncPublicAssistant(pathname: string): void {
   const allowed = shouldMountPublicAssistant(pathname);
   if (allowed) {
     document.body.classList.remove(PUBLIC_ASSISTANT_BODY_CLASS);
+    stopHideLoop();
+    restoreHiddenElements();
     window.bmShow?.();
     return;
   }
   document.body.classList.add(PUBLIC_ASSISTANT_BODY_CLASS);
-  window.bmHide?.();
-  window.bmMinimize?.();
+  forceHideBotmakerDom();
+  startHideLoop();
 }
 
 const SCRIPT_ATTR = "data-kipper-botmaker-webchat";
