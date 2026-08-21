@@ -57,13 +57,13 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-muted/30 flex">
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 overflow-hidden bg-primary text-primary-foreground transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`kipper-header-bar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Navegación de administración"
       >
         <div className="flex flex-col h-full">
-          <KipperBrandLockup className="border-b border-primary-foreground/20" />
+          <KipperBrandLockup />
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {adminLinks.map(renderLink)}
