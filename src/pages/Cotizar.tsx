@@ -21,13 +21,6 @@ const CotizarPage = () => {
       script.async = true;
       document.body.appendChild(script);
     }
-
-    return () => {
-      const mountedScript = document.getElementById(scriptId);
-      if (mountedScript) {
-        mountedScript.remove();
-      }
-    };
   }, []);
 
   return (
@@ -57,8 +50,8 @@ const CotizarPage = () => {
             <p className="text-muted-foreground text-center mb-6">
               Completá los datos para obtener tu cotización online.
             </p>
-            <div className="min-h-[360px]">
-              <fedpat-widget id="44"></fedpat-widget>
+            <div>
+              <fedpat-widget id="44" className="block w-full min-h-[560px]"></fedpat-widget>
             </div>
           </div>
 
