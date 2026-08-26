@@ -1,13 +1,35 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
-import { Clock, MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 const CotizarPage = () => {
   const waMessage = "Hola Kipper, quiero cotizar mi seguro";
   const waUrl = buildWhatsAppUrl(waMessage);
+
+  useEffect(() => {
+    const scriptId = "fedpat-widget-script";
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://online.fedpat.com.ar/widget/fedpat-widget-v1.0.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      const mountedScript = document.getElementById(scriptId);
+      if (mountedScript) {
+        mountedScript.remove();
+      }
+    };
+  }, []);
+
   return (
     <MainLayout>
       <Seo
@@ -23,26 +45,21 @@ const CotizarPage = () => {
             </p>
           </div>
 
-          {/*
-            Reserved container for the Federación Patronal quoting widget.
-            When the official HTML embed is available, mount it inside #fedpat-cotizador.
-          */}
           <div
             id="fedpat-cotizador"
-            className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-10 sm:p-14 text-center mb-10"
+            className="rounded-2xl border border-border bg-card p-6 sm:p-8 mb-10"
             aria-label="Cotizador online de Federación Patronal"
           >
-            <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-5">
-              <Clock size={16} aria-hidden /> Próximamente
-            </span>
             <div className="flex items-center justify-center gap-3 mb-3 text-foreground">
               <ShieldCheck size={26} className="text-primary" aria-hidden />
               <h2 className="text-xl font-semibold">Cotizador online de Federación Patronal</h2>
             </div>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              En esta sección vas a poder cotizar y comparar coberturas de forma directa con el
-              cotizador oficial. Mientras lo integramos, cotizá al instante por WhatsApp.
+            <p className="text-muted-foreground text-center mb-6">
+              Completá los datos para obtener tu cotización online.
             </p>
+            <div className="min-h-[360px]">
+              <fedpat-widget id="44"></fedpat-widget>
+            </div>
           </div>
 
           <div className="text-center">
