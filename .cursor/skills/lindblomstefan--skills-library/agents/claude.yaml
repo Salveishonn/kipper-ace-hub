@@ -1,0 +1,5 @@
+interface:
+  display_name: "Skill Library"
+  short_description: "Guided interview to recommend AI skills for a repo or team"
+  default_prompt: |
+    Read ~/.claude/skills/skills-library/SKILL.md and follow the interview sequence exactly. Use AskUserQuestion for every structured choice. Recommend only after a repo read or concrete answered questions.
