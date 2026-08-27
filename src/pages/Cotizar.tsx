@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
@@ -6,55 +6,22 @@ import { MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-reac
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
+const FEDPAT_WIDGET_SCRIPT_ID = "fedpat-widget-script";
+const FEDPAT_WIDGET_SCRIPT_SRC = "https://online.fedpat.com.ar/widget/fedpat-widget-v1.0.js";
+
 const CotizarPage = () => {
   const waMessage = "Hola Kipper, quiero cotizar mi seguro";
   const waUrl = buildWhatsAppUrl(waMessage);
-  const widgetContainerRef = useRef<HTMLDivElement | null>(null);
-  const [widgetStatus, setWidgetStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    const scriptId = "fedpat-widget-script";
-    const scriptSrc = "https://online.fedpat.com.ar/widget/fedpat-widget-v1.0.js";
-    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
-
-    const mountWidget = () => {
-      const container = widgetContainerRef.current;
-      if (!container) {
-        setWidgetStatus("error");
-        return;
-      }
-
-      container.innerHTML = "";
-      const widget = document.createElement("fedpat-widget");
-      widget.setAttribute("id", "44");
-      widget.className = "block w-full min-h-[560px]";
-      container.appendChild(widget);
-      setWidgetStatus("ready");
-    };
-
-    const waitForDefinitionAndMount = () => {
-      if (!("customElements" in window)) {
-        setWidgetStatus("error");
-        return;
-      }
-
-      window.customElements
-        .whenDefined("fedpat-widget")
-        .then(mountWidget)
-        .catch(() => setWidgetStatus("error"));
-    };
-
-    if (existingScript) {
-      waitForDefinitionAndMount();
+    if (document.getElementById(FEDPAT_WIDGET_SCRIPT_ID)) {
       return;
     }
 
     const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = scriptSrc;
+    script.id = FEDPAT_WIDGET_SCRIPT_ID;
+    script.src = FEDPAT_WIDGET_SCRIPT_SRC;
     script.async = true;
-    script.onload = waitForDefinitionAndMount;
-    script.onerror = () => setWidgetStatus("error");
     document.body.appendChild(script);
   }, []);
 
@@ -62,7 +29,7 @@ const CotizarPage = () => {
     <MainLayout>
       <Seo
         title="Cotizar | Kipper Seguros"
-        description="Cotizá tu seguro con Kipper. Muy pronto con el cotizador online de Federación Patronal; mientras tanto, cotizás al instante por WhatsApp."
+        description="Cotizá tu seguro con Kipper usando el cotizador online de Federación Patronal o escribinos por WhatsApp."
       />
       <section className="section-padding">
         <div className="max-w-4xl mx-auto">
@@ -85,19 +52,7 @@ const CotizarPage = () => {
             <p className="text-muted-foreground text-center mb-6">
               Completá los datos para obtener tu cotización online.
             </p>
-            <div ref={widgetContainerRef} className="min-h-[560px]">
-              {widgetStatus === "loading" && (
-                <p className="text-sm text-muted-foreground text-center pt-6">
-                  Cargando cotizador online...
-                </p>
-              )}
-              {widgetStatus === "error" && (
-                <p className="text-sm text-destructive text-center pt-6">
-                  No pudimos cargar el cotizador online en este momento. Probá recargar la página o
-                  cotizá por WhatsApp.
-                </p>
-              )}
-            </div>
+            <fedpat-widget id="44" className="block w-full min-h-[560px]" />
           </div>
 
           <div className="text-center">
