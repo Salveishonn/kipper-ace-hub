@@ -1,0 +1,26 @@
+[
+  {
+    "query": "Attach a local PDF to a Sendmux email without base64 in context.",
+    "should_trigger": true
+  },
+  {
+    "query": "How should a hosted MCP agent upload a Sendmux attachment with curl?",
+    "should_trigger": true
+  },
+  {
+    "query": "A hosted MCP agent needs to attach a PDF through the Sendmux Sending API without base64.",
+    "should_trigger": true
+  },
+  {
+    "query": "Read a markdown attachment from a Sendmux mailbox message.",
+    "should_trigger": true
+  },
+  {
+    "query": "Search unread Sendmux messages for invoices.",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a Sendmux domain and mailbox key.",
+    "should_trigger": false
+  }
+]

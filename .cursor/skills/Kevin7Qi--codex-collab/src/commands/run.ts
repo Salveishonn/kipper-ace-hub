@@ -1,0 +1,495 @@
+// src/commands/run.ts — run command handler
+
+import { spawn as childSpawn, spawnSync } from "node:child_process";
+import { openSync, closeSync, readFileSync } from "fs";
+import { join, resolve } from "path";
+import { updateThreadStatus, generateRunId, loadRun, updateRun, runLogRelPath } from "../threads";
+import { runTurnWithGoalFollow } from "../turns";
+import { goalNeedsAttention, setThreadGoal, readThreadGoal, pauseThreadGoal, isGoalFeatureUnavailable, GOAL_COLLAB_ASK_NOTE } from "../goals";
+import type { RunGoalState, ThreadGoal } from "../types";
+import { config, loadTemplateWithMeta, interpolateTemplate, type SandboxMode } from "../config";
+import { wrapBrokerBusy, isBrokerBusyError } from "../broker";
+import { shellQuote } from "../approvals";
+import {
+  die,
+  parseOptions,
+  applyUserConfig,
+  withClient,
+  resolveDefaults,
+  startOrResumeThread,
+  createDispatcher,
+  armQuestionChannel,
+  getApprovalHandler,
+  getWorkspacePaths,
+  turnOverrides,
+  recordTerminalRunState,
+  recordRunFailure,
+  hasPendingApproval,
+  tagExitCode,
+  EXIT_CODES,
+  progress,
+  writePidFile,
+  removePidFile,
+  setActiveThreadId,
+  setActiveShortId,
+  setActiveTurnId,
+  setActiveWsPaths,
+  setActiveRunId,
+  consumeInjectedRunId,
+} from "./shared";
+
+/** How long the detach parent waits for the child's turn to start.
+ *  Covers a cold broker spawn + app-server handshake + model/list fetch. */
+const DETACH_HANDSHAKE_TIMEOUT_MS = 60_000;
+
+
+/** Terminate a detached runner and everything it spawned. `detached: true`
+ *  gave the child its own process group (pgid = pid), so a group signal
+ *  reaches its direct-connection app-server too; the shared broker lives in
+ *  a separate group and is untouched. The child's SIGTERM handler interrupts
+ *  an in-flight turn and records the run cancelled. Exported for tests. */
+export function killDetachedRunner(pid: number): void {
+  try {
+    if (process.platform === "win32") {
+      spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore", timeout: 5000, windowsHide: true });
+    } else {
+      process.kill(-pid, "SIGTERM");
+    }
+  } catch { /* already gone */ }
+}
+
+/** Remove the --detach flag (both `--detach` and `--detach=x` spellings —
+ *  the latter would make the child re-enter detachRun forever) from the args
+ *  re-executed by the detached child. Tokens after a `--` terminator are
+ *  prompt text and survive verbatim. Exported for tests. */
+export function stripDetachFlag(args: string[]): string[] {
+  const out: string[] = [];
+  let terminated = false;
+  for (const arg of args) {
+    if (arg === "--") terminated = true;
+    if (!terminated && (arg === "--detach" || arg.startsWith("--detach="))) continue;
+    out.push(arg);
+  }
+  return out;
+}
+
+/**
+ * Hand the turn to a detached runner and return once it's actually running.
+ *
+ * The child is this same CLI re-executed without `--detach`, in its own
+ * process group (a Ctrl-C in the invoking shell must not kill the turn),
+ * with stdout/stderr captured to a per-run file for post-mortems. The
+ * handshake is the run ledger: the parent pre-generates the runId, passes it
+ * via CODEX_COLLAB_RUN_ID, and waits for the record to advance past phase
+ * "starting" — the child bumps the phase when turn/start responds, so
+ * success here means "turn is running", not merely "thread was created".
+ */
+async function detachRun(
+  args: string[],
+  options: ReturnType<typeof parseOptions>["options"],
+  stdinPrompt: string | null,
+): Promise<never> {
+  const ws = getWorkspacePaths(options.dir);
+  const runId = generateRunId();
+  const childArgs = stripDetachFlag(args);
+
+  const detachLog = join(ws.logsDir, `detached-${runId}.log`);
+  const logFd = openSync(detachLog, "a");
+  // A stdin prompt (`run - --detach`) is re-read by the child, whose args
+  // still say "-": pipe the already-consumed text into it. Everything else
+  // gets no stdin — the runner must never block waiting for input.
+  const proc = childSpawn(process.execPath, ["run", process.argv[1], "run", ...childArgs], {
+    stdio: [stdinPrompt === null ? "ignore" : "pipe", logFd, logFd],
+    cwd: process.cwd(),
+    detached: true,
+    windowsHide: true,
+    env: { ...process.env, CODEX_COLLAB_RUN_ID: runId },
+  });
+  closeSync(logFd);
+  if (stdinPrompt !== null && proc.stdin) {
+    // EPIPE if the child dies before reading — the handshake below reports
+    // that failure; don't let the write crash the parent first.
+    proc.stdin.on("error", () => {});
+    proc.stdin.end(stdinPrompt);
+  }
+  proc.unref();
+
+  let childExited = false;
+  proc.once("exit", () => { childExited = true; });
+
+  const logTail = (): string => {
+    try {
+      return readFileSync(detachLog, "utf-8").trim().split("\n").slice(-15).join("\n");
+    } catch {
+      return "";
+    }
+  };
+  const dieWithRunnerOutput: (reason: string) => never = (reason) => {
+    const tail = logTail();
+    die(`${reason}${tail ? `\nRunner output (${detachLog}):\n${tail}` : `\nNo runner output captured (${detachLog}).`}`);
+  };
+
+  const deadline = Date.now() + DETACH_HANDSHAKE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const rec = loadRun(ws.stateDir, runId);
+    if (rec) {
+      // Record exists = thread/start succeeded. Now wait for the turn:
+      // the child bumps phase past "starting" when turn/start responds.
+      if (rec.status === "running" && rec.phase !== "starting") {
+        // Carry -d into every hint. These commands exist to be pasted into a
+        // SECOND terminal, and thread IDs resolve only within their own
+        // workspace — without it the pane that follows a detached run has to
+        // already be in the project directory. `next` does the same.
+        const d = ` -d ${shellQuote(resolve(options.dir))}`;
+        progress(`Detached: thread ${rec.shortId} running${rec.model ? ` (${rec.model})` : ""}`);
+        progress(`  Follow:   codex-collab follow ${rec.shortId}${d}`);
+        progress(`  Output:   codex-collab output ${rec.shortId}${d}`);
+        progress(`  Kill:     codex-collab kill ${rec.shortId}${d}`);
+        process.exit(0);
+      }
+      if (rec.status === "completed") {
+        // Turn finished before we even noticed it start — report done.
+        progress(`Detached run already completed: thread ${rec.shortId}`);
+        progress(`  Output:   codex-collab output ${rec.shortId} -d ${shellQuote(resolve(options.dir))}`);
+        process.exit(0);
+      }
+      if (rec.status === "interrupted") {
+        dieWithRunnerOutput(`Detached run was interrupted before the turn started (thread ${rec.shortId}).`);
+      }
+      // A `failed` record is only definitive once the child has exited:
+      // while the child lives it may still be mid-retry (the broker-busy
+      // fallback no longer records its transient failure, but older runners
+      // and unforeseen paths might) — keep waiting; the 60s deadline + kill
+      // below is the backstop. Reporting failure early would either orphan
+      // a runner that later executes the turn, or require killing a
+      // legitimately-retrying one.
+      if (childExited && rec.status === "failed") {
+        dieWithRunnerOutput(`Detached run failed to start${rec.error ? `: ${rec.error}` : "."}`);
+      }
+      if (childExited && rec.status === "running" && rec.phase === "starting") {
+        // Child died between creating the record and turn/start — the record
+        // will sit in "starting" forever.
+        dieWithRunnerOutput(`Detached runner died before the turn started (thread ${rec.shortId}).`);
+      }
+    } else if (childExited) {
+      // A child that died before creating the record will never hand-shake —
+      // fail fast with its captured output instead of waiting out the timeout.
+      dieWithRunnerOutput("Detached runner exited before the turn started.");
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  // Reporting failure while leaving the runner alive would let the turn
+  // execute (and modify the workspace) after the user was told it failed.
+  // A slow-but-healthy runner is indistinguishable from a stuck one here,
+  // so terminate it — its SIGTERM handler records the run as cancelled.
+  if (!childExited && proc.pid) killDetachedRunner(proc.pid);
+  dieWithRunnerOutput(`Detached runner did not start a turn within ${DETACH_HANDSHAKE_TIMEOUT_MS / 1000}s — terminated it.`);
+}
+
+export async function handleRun(args: string[]): Promise<void> {
+  // Scrub the detach parent's injected runId out of the environment before
+  // anything can spawn (broker, app-server, Codex's shell commands all
+  // inherit it otherwise — and a nested codex-collab inside the turn would
+  // collide with this run's record). The value stays available internally.
+  consumeInjectedRunId();
+
+  const { positional, options } = parseOptions(args);
+  applyUserConfig(options);
+
+  if (positional.length === 0) {
+    die("No prompt provided\nUsage: codex-collab run \"prompt\" [options]");
+  }
+  if (options.budget !== null && options.goal === null) {
+    die("--budget requires --goal");
+  }
+
+  // `run -` reads the prompt from stdin — the safe channel for long,
+  // quote-riddled agent-generated prompts that shell quoting would mangle.
+  let prompt = positional.join(" ");
+  let promptFromStdin = false;
+  if (prompt === "-") {
+    if (process.stdin.isTTY) console.error("[codex] Reading prompt from stdin — end with Ctrl-D.");
+    // Preserve the text byte-for-byte (leading/trailing whitespace can be
+    // significant in heredocs and Markdown) — trim only to detect emptiness.
+    prompt = readFileSync(0, "utf-8");
+    if (!prompt.trim()) die('Empty prompt on stdin\nUsage: echo "prompt" | codex-collab run -');
+    promptFromStdin = true;
+  }
+
+  if (options.detach) {
+    await detachRun(args, options, promptFromStdin ? prompt : null);
+  }
+
+  if (options.template) {
+    const { meta, body } = loadTemplateWithMeta(options.template);
+    prompt = interpolateTemplate(body, { PROMPT: prompt });
+    // Apply template's suggested sandbox if user didn't explicitly set one.
+    // Mark as explicit so it's forwarded on resume too.
+    if (meta.sandbox && !options.explicit.has("sandbox")) {
+      const validSandboxes: readonly string[] = config.sandboxModes;
+      if (!validSandboxes.includes(meta.sandbox)) {
+        die(`Template "${options.template}" has invalid sandbox: ${meta.sandbox}\nValid: ${config.sandboxModes.join(", ")}`);
+      }
+      options.sandbox = meta.sandbox as SandboxMode;
+      options.explicit.add("sandbox");
+    }
+  }
+  const ws = getWorkspacePaths(options.dir);
+
+  const exitCode = await withClient(async (client) => {
+    await resolveDefaults(client, options);
+
+    const { threadId, shortId, runId, effective } = await startOrResumeThread(client, options, ws, undefined, prompt);
+
+    if (options.contentOnly) {
+      console.error(`[codex] Running (thread ${shortId})...`);
+    } else {
+      if (options.resumeId) {
+        progress(`Resumed thread ${shortId} (${effective.model})`);
+      } else {
+        progress(`Thread ${shortId} started (${effective.model}, ${options.sandbox})`);
+      }
+      progress("Turn started");
+    }
+
+    updateThreadStatus(ws.stateDir, threadId, "running");
+    setActiveThreadId(threadId);
+    setActiveShortId(shortId);
+    setActiveWsPaths(ws);
+    setActiveRunId(runId);
+    writePidFile(ws.pidsDir, shortId);
+
+    const dispatcher = createDispatcher(join(ws.stateDir, runLogRelPath(shortId, runId)), options, ws.guardianDir);
+    armQuestionChannel(dispatcher, ws, runId, options.dir);
+
+    // Live mirror of the thread goal onto the run record, so observers
+    // (threads/follow/next) can see a goal-mode run's progress without
+    // owning its stdout. Snapshot kept locally: a goal that COMPLETES is
+    // cleared server-side, and the record's final state is this snapshot
+    // re-labeled "completed".
+    let goalSnapshot: RunGoalState | null = null;
+    const mirrorGoal = (goal: ThreadGoal, continuationTurns: number): void => {
+      goalSnapshot = {
+        objective: goal.objective,
+        status: goal.status,
+        tokenBudget: goal.tokenBudget,
+        tokensUsed: goal.tokensUsed,
+        turns: continuationTurns + 1,
+        updatedAt: new Date().toISOString(),
+      };
+      try {
+        updateRun(ws.stateDir, runId, { goal: goalSnapshot });
+      } catch (e) {
+        console.error(`[codex] Warning: could not mirror goal state: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    };
+
+    // The goal is set once the FIRST TURN IS RUNNING, not before it:
+    // setting an active goal on an idle thread makes the goal runtime start
+    // its own continuation turn immediately, and the prompt's turn/start
+    // never runs (verified live) — mid-turn set is the lifecycle Codex's
+    // own create_goal tool has. Feature availability is still checked
+    // up front so a disabled feature fails before any tokens burn.
+    let goalSetup: Promise<void> | null = null;
+    let goalSetupError: Error | null = null;
+
+    try {
+      let existingGoal: ThreadGoal | null = null;
+      if (options.goal !== null) {
+        try {
+          const res = await client.request<{ goal: ThreadGoal | null }>("thread/goal/get", { threadId });
+          existingGoal = res.goal ?? null;
+        } catch (e) {
+          if (isGoalFeatureUnavailable(e)) {
+            throw new Error("--goal requires Codex's Goal mode — set goals = true in ~/.codex/config.toml");
+          }
+          throw e;
+        }
+      }
+
+      const setGoalOnceRunning = (): void => {
+        if (options.goal === null || goalSetup !== null) return;
+        // The objective is re-injected into every continuation turn — the
+        // durable slot for channel awareness on long goals (the collab
+        // template itself rides only the first prompt).
+        const objective = options.template === "collab"
+          ? `${options.goal}\n\n${GOAL_COLLAB_ASK_NOTE}`
+          : options.goal;
+        goalSetup = (async () => {
+          let lastError: unknown;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt > 0) await new Promise((r) => setTimeout(r, 400));
+            try {
+              const goal = await setThreadGoal(client, threadId, objective, options.budget ?? undefined);
+              const budgetNote = goal.tokenBudget !== null
+                ? ` (budget ${goal.tokenBudget.toLocaleString("en-US")} tokens)`
+                : "";
+              progress(existingGoal !== null ? `Goal objective replaced${budgetNote}` : `Goal set${budgetNote}`);
+              return;
+            } catch (e) {
+              lastError = e;
+            }
+          }
+          goalSetupError = new Error(
+            `--goal could not be set: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+          );
+          progress(`Warning: ${goalSetupError.message}`);
+        })();
+      };
+
+      const result = await runTurnWithGoalFollow(
+        client,
+        threadId,
+        [{ type: "text", text: prompt }],
+        {
+          dispatcher,
+          approvalHandler: getApprovalHandler(effective.approvalPolicy, ws.approvalsDir, {
+            workspaceDir: options.dir,
+            dispatcher,
+            stateDir: ws.stateDir,
+            runId,
+          }),
+          timeoutMs: options.timeout * 1000,
+          killSignalsDir: ws.killSignalsDir,
+          onTurnId: (id) => {
+            setActiveTurnId(id);
+            // Advance past "starting" — the detach parent's signal that the
+            // turn is actually running (turn/start responded), and useful
+            // state for `threads`/`follow` regardless of detach.
+            try {
+              updateRun(ws.stateDir, runId, { phase: "running" });
+            } catch (e) {
+              console.error(`[codex] Warning: could not update run phase: ${e instanceof Error ? e.message : String(e)}`);
+            }
+            setGoalOnceRunning();
+          },
+          onGoalUpdate: mirrorGoal,
+          ...turnOverrides(options),
+        },
+      );
+
+      // A run the user asked to be goal-scoped that silently ran as a plain
+      // turn is a false success — surface the set failure as the run's.
+      if (goalSetup !== null) await goalSetup;
+      if (goalSetupError !== null) throw goalSetupError;
+
+      // Final goal snapshot: a goal that ended non-active keeps its wire
+      // status; a goal that disappeared after being seen was cleared by the
+      // server — record it with the wire's success status.
+      const snapshot = goalSnapshot as RunGoalState | null; // local copy: closure mutation defeats narrowing
+      let finalGoal: RunGoalState | null | undefined = !result.goalSeen || snapshot === null
+        ? undefined
+        : result.goal !== null
+          ? {
+              objective: result.goal.objective,
+              status: result.goal.status,
+              tokenBudget: result.goal.tokenBudget,
+              tokensUsed: result.goal.tokensUsed,
+              turns: result.continuationTurns + 1,
+              updatedAt: new Date().toISOString(),
+            }
+          : { ...snapshot, status: "complete", turns: result.continuationTurns + 1, updatedAt: new Date().toISOString() };
+
+      // A set that landed only AFTER the follow decision (short first turn
+      // plus a retried or slow set) leaves an ACTIVE goal on an idle thread:
+      // the server starts continuation turns headless, with no follower and
+      // no brake, behind a clean exit. Brake it — authoritative read, then
+      // pause; a failed read must not fail open (same rule as the follow
+      // brakes). goalSeen false with a successful set is the tell: a set
+      // that landed in time was seen by the follow decision.
+      let lateGoalRace = false;
+      if (goalSetup !== null && !result.goalSeen) {
+        const { goal: lateGoal, ok } = await readThreadGoal(client, threadId);
+        let latePaused = false;
+        if (lateGoal?.status === "active" || !ok) {
+          lateGoalRace = true;
+          latePaused = await pauseThreadGoal(client, threadId);
+          progress(latePaused
+            ? `Goal was set after the turn ended — paused before it could continue headless. Resume with: codex-collab run --resume ${shortId} "continue"`
+            : `Warning: the goal may be continuing headless — pause failed. Stop it with: codex-collab kill ${shortId}`);
+        }
+        if (lateGoal) {
+          finalGoal = {
+            objective: lateGoal.objective,
+            status: latePaused ? "paused" : lateGoal.status,
+            tokenBudget: lateGoal.tokenBudget,
+            tokensUsed: lateGoal.tokensUsed,
+            turns: 0, // no turn ran under the goal
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
+
+      const exit = recordTerminalRunState(ws, threadId, runId, result, "Turn", options.contentOnly, finalGoal);
+      // A completed run whose goal ended blocked/limited still needs the
+      // user — that outcome outranks the last turn's clean status.
+      if (exit === EXIT_CODES.ok && finalGoal && goalNeedsAttention(finalGoal.status)) {
+        progress(`Goal needs attention (${finalGoal.status}) — steer with: codex-collab run --resume ${shortId} "..."`);
+        return EXIT_CODES.goalBlocked;
+      }
+      // The late-set race is never a clean success: the user asked for a
+      // goal-scoped run and no turn ran under the goal — it needs steering.
+      if (exit === EXIT_CODES.ok && lateGoalRace) return EXIT_CODES.goalBlocked;
+      return exit;
+    } catch (e) {
+      // Settle any in-flight --goal set before this process exits: a set
+      // that lands after the CLI dies (the app-server outlives us via the
+      // broker) would leave an active goal continuing headless. Await the
+      // attempts, then brake. The follow-phase brakes may have already
+      // paused — set re-activates, so re-check AFTER the set settles;
+      // pausing twice is harmless.
+      if (goalSetup !== null) {
+        try {
+          await goalSetup;
+          if (goalSetupError === null) {
+            const { goal: lateGoal, ok } = await readThreadGoal(client, threadId);
+            if (lateGoal?.status === "active" || !ok) {
+              if (!(await pauseThreadGoal(client, threadId))) {
+                progress(`Warning: the goal may be continuing headless — pause failed. Stop it with: codex-collab kill ${shortId}`);
+              }
+            }
+          }
+        } catch (brakeErr) {
+          // Best-effort brake — the turn's own error stays the run's error.
+          console.error(`[codex] Warning: could not brake --goal on failure: ${brakeErr instanceof Error ? brakeErr.message : String(brakeErr)}`);
+        }
+      }
+      e = wrapBrokerBusy(e);
+      // A broker-busy error here is about to be retried by withClient over a
+      // direct connection, re-creating this SAME record (sticky runId).
+      // Persisting the transient failure would flash `running → failed →
+      // running` at observers: a `follow --watch` attached in that window
+      // renders the failure, marks the runId seen, and never shows the real
+      // execution. If the retry also fails, its (non-busy) error lands here
+      // again and is recorded; if the process dies in between, the record
+      // parks in "starting" where the detach parent and pruneRuns handle it.
+      if (!isBrokerBusyError(e)) {
+        // Snapshot before recordRunFailure clears it: a turn that died with
+        // an approval still pending (classically: --timeout while blocked on
+        // approval) exits with its own code so callers know to answer the
+        // approval rather than treat this as a turn failure.
+        if (hasPendingApproval(ws.stateDir, runId)) {
+          tagExitCode(e, EXIT_CODES.approvalPending);
+        }
+        recordRunFailure(ws, threadId, runId, e);
+      }
+      throw e;
+    } finally {
+      // Disarm the ask channel BEFORE the run record goes terminal — its
+      // watchers are unref'd timers that survive the turn, and a late
+      // callback would stamp pendingQuestion onto a terminal record (the
+      // broker-busy retry path would even aim the old dispatcher's timers
+      // at this same sticky runId).
+      dispatcher.setQuestionContext(null);
+      setActiveThreadId(undefined);
+      setActiveShortId(undefined);
+      setActiveTurnId(undefined);
+      setActiveWsPaths(undefined);
+      setActiveRunId(undefined);
+      removePidFile(ws.pidsDir, shortId);
+    }
+  }, options.dir, true);
+
+  process.exit(exitCode);
+}

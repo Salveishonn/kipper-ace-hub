@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "protectedPaths": [
+    "examples/reference/**",
+    "vendor/**"
+  ],
+  "blockUnresolvedWrites": false,
+  "blockOutsideWrites": false,
+  "checks": [
+    {
+      "name": "project tests",
+      "whenChanged": [
+        "src/**",
+        "tests/**"
+      ],
+      "run": [
+        "npm",
+        "test"
+      ],
+      "cwd": ".",
+      "timeoutSeconds": 120
+    }
+  ]
+}

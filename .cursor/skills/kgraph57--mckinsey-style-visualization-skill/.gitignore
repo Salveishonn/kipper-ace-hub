@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+__pycache__/
+*.pyc
+
+# Generated proof assets
+outputs/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Landing site OGP image (committed intentionally)
+!docs/site/og.png
