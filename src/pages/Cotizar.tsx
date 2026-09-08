@@ -1,29 +1,15 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHero } from "@/components/layout/PageHero";
 import { Seo } from "@/components/Seo";
 import { MessageCircle, Phone, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
-
-const FEDPAT_WIDGET_SCRIPT_ID = "fedpat-widget-script";
-const FEDPAT_WIDGET_SCRIPT_SRC = "https://online.fedpat.com.ar/widget/fedpat-widget-v1.0.js";
+import { FedpatWidgetFrame } from "@/components/cotizar/FedpatWidgetFrame";
 
 const CotizarPage = () => {
   const waMessage = "Hola Kipper, quiero cotizar mi seguro";
   const waUrl = buildWhatsAppUrl(waMessage);
-
-  useEffect(() => {
-    if (document.getElementById(FEDPAT_WIDGET_SCRIPT_ID)) {
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = FEDPAT_WIDGET_SCRIPT_ID;
-    script.src = FEDPAT_WIDGET_SCRIPT_SRC;
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
 
   return (
     <MainLayout>
@@ -31,18 +17,15 @@ const CotizarPage = () => {
         title="Cotizar | Kipper Seguros"
         description="Cotizá tu seguro con Kipper usando el cotizador online de Federación Patronal o escribinos por WhatsApp."
       />
+      <PageHero
+        title="Cotizá tu seguro"
+        subtitle="Te asesoramos en minutos y comparamos opciones de las compañías con las que trabajamos."
+      />
       <section className="section-padding">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Cotizá tu seguro</h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Te asesoramos en minutos y comparamos opciones de las mejores compañías.
-            </p>
-          </div>
-
+        <div className="page-wrap max-w-4xl">
           <div
             id="fedpat-cotizador"
-            className="rounded-2xl border border-border bg-card p-6 sm:p-8 mb-10"
+            className="rounded-xl border border-border bg-card p-4 sm:p-8 mb-10"
             aria-label="Cotizador online de Federación Patronal"
           >
             <div className="flex items-center justify-center gap-3 mb-3 text-foreground">
@@ -52,7 +35,7 @@ const CotizarPage = () => {
             <p className="text-muted-foreground text-center mb-6">
               Completá los datos para obtener tu cotización online.
             </p>
-            <fedpat-widget id="44" className="block w-full min-h-[560px]" />
+            <FedpatWidgetFrame />
           </div>
 
           <div className="text-center">
