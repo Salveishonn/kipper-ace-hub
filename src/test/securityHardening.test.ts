@@ -64,3 +64,31 @@ describe("MFA and token lockdown", () => {
     expect(mfaLockdown).toContain('DROP POLICY IF EXISTS "Productores read payment proofs" ON storage.objects');
   });
 });
+
+const storageLimits = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260908155027_storage_bucket_upload_limits.sql"),
+  "utf8",
+);
+
+describe("storage bucket upload limits", () => {
+  it("sets private-bucket size and MIME allowlists", () => {
+    expect(storageLimits).toContain("file_size_limit = 2 * 1024 * 1024");
+    expect(storageLimits).toContain("WHERE id = 'design-resources'");
+    expect(storageLimits).toContain("WHERE id = 'avatars'");
+    expect(storageLimits).toContain("image/jpeg");
+    expect(storageLimits).toContain("application/pdf");
+  });
+});
+
+const outboxFix = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260908161000_fix_outbox_event_type_ambiguity.sql"),
+  "utf8",
+);
+
+describe("outbox trigger ambiguity fix", () => {
+  it("renames the plpgsql event_type variable", () => {
+    expect(outboxFix).toContain("v_event_type text");
+    expect(outboxFix).toContain("VALUES (\n    v_event_type,");
+    expect(outboxFix).not.toMatch(/DECLARE[\s\S]*\bevent_type text;/);
+  });
+});
