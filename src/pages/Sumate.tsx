@@ -321,7 +321,7 @@ const SumatePage = () => {
                         id="insurers"
                         value={formData.insurers}
                         onChange={(e) => setFormData((prev) => ({ ...prev, insurers: e.target.value }))}
-                        placeholder="Ej: La Segunda, Sancor..."
+                        placeholder="Ej: Federación Patronal, La Caja..."
                       />
                     </div>
                   </div>
