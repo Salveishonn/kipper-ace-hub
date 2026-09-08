@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+async function kickSupportNotificationOutbox() {
+  try {
+    await supabase.functions.invoke("process-support-notifications", {
+      body: { source: "client" },
+    });
+  } catch {
+    /* Outbox remains retryable; never fail the case/message write. */
+  }
+}
+
 export type ProfileSnippet = {
   user_id: string;
   full_name: string | null;
@@ -13,8 +23,8 @@ export function useSupportTickets(options?: { admin?: boolean; producerId?: stri
     queryKey: ["support_tickets", options?.admin, options?.producerId],
     queryFn: async () => {
       let q = supabase.from("support_tickets").select("*").order("updated_at", { ascending: false });
-      if (!options?.admin) {
-        q = q.eq("producer_id", options?.producerId!);
+      if (!options?.admin && options?.producerId) {
+        q = q.eq("producer_id", options.producerId);
       }
       const { data, error } = await q;
       if (error) throw error;
@@ -50,6 +60,7 @@ export function useCreateSupportTicket() {
         body: input.initial_message,
       });
       if (mErr) throw mErr;
+      void kickSupportNotificationOutbox();
       return ticket;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["support_tickets"] }),
@@ -176,6 +187,7 @@ export function useSendSupportMessage() {
         .single();
       if (error) throw error;
       await supabase.from("support_tickets").update({ updated_at: new Date().toISOString() }).eq("id", ticket_id);
+      void kickSupportNotificationOutbox();
       return data;
     },
     onSuccess: (_, vars) => {
