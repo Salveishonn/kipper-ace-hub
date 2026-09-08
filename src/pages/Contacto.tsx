@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHero } from "@/components/layout/PageHero";
 import { Seo } from "@/components/Seo";
 import { Phone, Mail, MapPin, Clock, MessageCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -47,24 +48,19 @@ const ContactoPage = () => {
         title="Contacto | Kipper Seguros"
         description="Contactanos por WhatsApp, teléfono o email. Te respondemos en menos de 24 horas."
       />
-      {/* Hero */}
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Contacto</h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Estamos para ayudarte. Elegí el canal que prefieras y te respondemos en menos de 24 horas.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Contacto"
+        subtitle="Estamos para ayudarte. Elegí el canal que prefieras y te respondemos en menos de 24 horas."
+      />
 
       <section className="section-padding">
-        <div className="max-w-5xl mx-auto">
+        <div className="page-wrap max-w-5xl">
           {/* Direct actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {directActions.map((a) => (
               <div
                 key={a.title}
-                className={`bg-card rounded-2xl p-6 border shadow-soft flex flex-col ${
+                className={`bg-card rounded-xl p-6 border shadow-soft flex flex-col ${
                   a.primary ? "border-primary/40" : "border-border/70"
                 }`}
               >

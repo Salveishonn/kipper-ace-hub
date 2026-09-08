@@ -50,7 +50,7 @@ export function RamoLandingTemplate({
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground py-20">
-        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+        <div className="page-wrap grid md:grid-cols-2 gap-10 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{title}</h1>
             <p className="text-lg opacity-90 mb-6">{intro}</p>

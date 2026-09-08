@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHero } from "@/components/layout/PageHero";
 import { Link } from "react-router-dom";
 import { Car, Home, Heart, UserCheck, Building2, Truck, ArrowRight, Check } from "lucide-react";
 
@@ -92,20 +93,14 @@ const services = [
 const ServiciosPage = () => {
   return (
     <MainLayout>
-      {/* Hero */}
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nuestros Servicios</h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Trabajamos con las mejores compañías aseguradoras de Argentina para 
-            ofrecerte la cobertura ideal al mejor precio.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Nuestros Servicios"
+        subtitle="Trabajamos con compañías aseguradoras de primer nivel para ofrecerte la cobertura ideal."
+      />
 
       {/* Services */}
       <section className="section-padding">
-        <div className="max-w-7xl mx-auto space-y-24">
+        <div className="page-wrap space-y-24">
           {services.map((service, index) => (
             <div
               key={service.id}
@@ -115,7 +110,7 @@ const ServiciosPage = () => {
               } items-center gap-12`}
             >
               <div className="flex-1">
-                <div className="inline-flex p-4 bg-primary/10 rounded-2xl text-primary mb-6">
+                <div className="inline-flex p-4 bg-primary/10 rounded-xl text-primary mb-6">
                   <service.icon size={40} />
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-4">{service.title}</h2>
@@ -137,7 +132,7 @@ const ServiciosPage = () => {
                 </Link>
               </div>
               <div className="flex-1">
-                <div className="bg-muted rounded-3xl p-12 flex items-center justify-center">
+                <div className="bg-muted rounded-xl p-12 flex items-center justify-center">
                   <service.icon size={160} className="text-primary/20" />
                 </div>
               </div>
