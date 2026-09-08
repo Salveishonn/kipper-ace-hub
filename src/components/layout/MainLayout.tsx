@@ -27,16 +27,18 @@ export function MainLayout({ children, showFooter = true }: MainLayoutProps) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) return;
 
-    animate(el, {
+    const anim = animate(el, {
       opacity: [0.94, 1],
-      translateY: [6, 0],
       duration: motion.duration.route,
       ease: motion.easing.out,
+    });
+    void Promise.resolve(anim).then(() => {
+      el.style.removeProperty("transform");
     });
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
+    <div className="min-h-screen flex flex-col overflow-x-clip">
       <Navbar />
       <main ref={mainRef} className="flex-1 pt-[4.25rem] sm:pt-[4.75rem]">
         {children}

@@ -223,20 +223,28 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
-  .scroll-story [data-scroll-track] {
-    min-height: auto;
-  }
-
+  /* Desktop pin range: sticky viewport + ~1 extra screen of scrub. Never an empty red tail. */
   @media (min-width: 1024px) {
-    .scroll-story [data-scroll-track] {
-      min-height: 800vh;
+    .scroll-story {
+      height: 220svh;
+    }
+
+    .scroll-story .hero-moment-stack {
+      display: none;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .scroll-story [data-scroll-track] {
-      min-height: auto !important;
+    .scroll-story {
       height: auto !important;
+    }
+
+    .scroll-story .hero-moment-pin-only {
+      display: none !important;
+    }
+
+    .scroll-story .hero-moment-stack {
+      display: block;
     }
   }
 
