@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink, FileSpreadsheet, FileText, Image, Video, X } from "lucide-react";
 import { getPasResourceDownloadUrl, type PasResourceType } from "@/hooks/usePasResources";
+import { useBlobObjectUrl } from "@/hooks/useBlobObjectUrl";
+import { officeEmbedUrl } from "@/lib/videoEmbed";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
 
@@ -28,10 +30,6 @@ function getIcon(type: string) {
   }
 }
 
-function officeEmbedUrl(signedUrl: string) {
-  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signedUrl)}`;
-}
-
 export function PasResourceViewer({
   resource,
   open,
@@ -49,6 +47,7 @@ export function PasResourceViewer({
     queryFn: () => getPasResourceDownloadUrl(filePath!),
     enabled: open && !!filePath && type !== "link",
   });
+  const pdfObjectUrl = useBlobObjectUrl(signedUrl ?? undefined, open && type === "pdf" && !!signedUrl);
 
   if (!open || !resource) return null;
 
@@ -114,7 +113,11 @@ export function PasResourceViewer({
           ) : type === "video" ? (
             <video src={signedUrl} controls className="w-full max-h-[70vh] rounded-lg bg-black" />
           ) : type === "pdf" ? (
-            <iframe title={resource.title} src={signedUrl} className="w-full h-[70vh] rounded-lg bg-white" />
+            pdfObjectUrl ? (
+              <iframe title={resource.title} src={pdfObjectUrl} className="w-full h-[70vh] rounded-lg bg-white" />
+            ) : (
+              <LoadingState text="Cargando vista previa..." />
+            )
           ) : type === "word" || type === "excel" ? (
             <iframe
               title={resource.title}
