@@ -5,32 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { getAcademyFileSignedUrl, isAcademyFileType } from "@/lib/fileUploads";
+import { getVideoEmbedUrl, officeEmbedUrl } from "@/lib/videoEmbed";
+import { useBlobObjectUrl } from "@/hooks/useBlobObjectUrl";
 import { useAuth } from "@/hooks/useAuth";
 import type { AcademyLessonRow } from "@/components/academy/types";
-
-function officeEmbedUrl(signedUrl: string) {
-  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signedUrl)}`;
-}
-
-function getVideoEmbedUrl(url: string) {
-  try {
-    if (url.includes("youtube.com/watch")) {
-      const id = new URL(url).searchParams.get("v");
-      return `https://www.youtube.com/embed/${id}`;
-    }
-    if (url.includes("youtu.be/")) {
-      const id = url.split("youtu.be/")[1]?.split("?")[0];
-      return `https://www.youtube.com/embed/${id}`;
-    }
-    if (url.includes("vimeo.com/")) {
-      const id = url.split("vimeo.com/")[1]?.split("?")[0];
-      return `https://player.vimeo.com/video/${id}`;
-    }
-  } catch {
-    /* keep raw url */
-  }
-  return url;
-}
 
 export type AcademyLessonPayload = {
   lesson: AcademyLessonRow;
@@ -118,6 +96,7 @@ export function AcademyLessonPlayer({
     enabled: isFileLesson && !!filePath,
     staleTime: 30 * 60 * 1000,
   });
+  const pdfObjectUrl = useBlobObjectUrl(signedUrl ?? undefined, lesson?.type === "pdf" && !!signedUrl);
 
   if (isLoading) return <LoadingState text="Cargando lección..." />;
 
@@ -222,11 +201,15 @@ export function AcademyLessonPlayer({
                 className="max-w-full max-h-[70vh] mx-auto object-contain rounded-lg"
               />
             ) : current.type === "pdf" ? (
-              <iframe
-                title={current.title}
-                src={signedUrl}
-                className="w-full h-[70vh] rounded-lg bg-white"
-              />
+              pdfObjectUrl ? (
+                <iframe
+                  title={current.title}
+                  src={pdfObjectUrl}
+                  className="w-full h-[70vh] rounded-lg bg-white"
+                />
+              ) : (
+                <LoadingState text="Cargando archivo..." />
+              )
             ) : current.type === "word" || current.type === "excel" ? (
               <iframe
                 title={current.title}
