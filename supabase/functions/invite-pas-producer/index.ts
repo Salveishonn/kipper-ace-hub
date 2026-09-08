@@ -30,24 +30,6 @@ function getValidatedSiteUrl(): string {
   return parsed.origin.replace(/\/$/, "");
 }
 
-async function assertCallerIsAdmin(
-  supabaseUrl: string,
-  serviceKey: string,
-  userId: string,
-): Promise<void> {
-  const admin = createClient(supabaseUrl, serviceKey);
-  const { data, error } = await admin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-
-  if (error || !data) {
-    throw new Error("FORBIDDEN");
-  }
-}
-
 async function findAuthUserByEmail(
   admin: SupabaseClient,
   email: string,
@@ -97,9 +79,8 @@ Deno.serve(async (req: Request) => {
     } = await userClient.auth.getUser();
     if (userErr || !user) return json({ error: "No autorizado" }, 401);
 
-    try {
-      await assertCallerIsAdmin(supabaseUrl, serviceKey, user.id);
-    } catch {
+    const { data: adminSession, error: mfaErr } = await userClient.rpc("is_admin_session");
+    if (mfaErr || adminSession !== true) {
       return json({ error: "Acceso restringido a administradores" }, 403);
     }
 

@@ -43,3 +43,24 @@ describe("outbox deny policies", () => {
     expect(followUp).toContain("REVOKE ALL ON FUNCTION public.get_my_producer_application() FROM anon");
   });
 });
+
+const mfaLockdown = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260908133000_mfa_tokens_and_storage_lockdown.sql"),
+  "utf8",
+);
+
+describe("MFA and token lockdown", () => {
+  it("requires an MFA session to mutate user_roles and PAS revoke/restore", () => {
+    expect(mfaLockdown).toContain("USING (public.is_admin_session())");
+    expect(mfaLockdown).toContain("IF caller IS NULL OR NOT public.is_admin_session() THEN");
+  });
+
+  it("keeps integration_tokens off PostgREST for clients", () => {
+    expect(mfaLockdown).toContain("no client access to integration_tokens");
+    expect(mfaLockdown).toContain("REVOKE ALL ON TABLE public.integration_tokens FROM PUBLIC, anon, authenticated");
+  });
+
+  it("stops productores reading every payment-proof object", () => {
+    expect(mfaLockdown).toContain('DROP POLICY IF EXISTS "Productores read payment proofs" ON storage.objects');
+  });
+});

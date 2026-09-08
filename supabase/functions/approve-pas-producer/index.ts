@@ -125,16 +125,12 @@ Deno.serve(async (req: Request) => {
     } = await userClient.auth.getUser();
     if (userErr || !user) return json({ error: "No autorizado" }, 401);
 
-    const admin = createClient(supabaseUrl, serviceKey);
-    const { data: adminRole } = await admin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!adminRole) {
+    const { data: adminSession, error: mfaErr } = await userClient.rpc("is_admin_session");
+    if (mfaErr || adminSession !== true) {
       return json({ error: "Acceso restringido a administradores" }, 403);
     }
+
+    const admin = createClient(supabaseUrl, serviceKey);
 
     const body = await req.json().catch(() => ({}));
     const applicationId = body.application_id as string | undefined;
