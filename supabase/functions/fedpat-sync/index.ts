@@ -55,12 +55,10 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr || !user) return err("No autorizado", cors, 401);
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin");
-    if (!roles?.length) return err("Acceso restringido a administradores", cors, 403);
+    const { data: adminSession, error: mfaErr } = await supabase.rpc("is_admin_session");
+    if (mfaErr || adminSession !== true) {
+      return err("Acceso restringido a administradores", cors, 403);
+    }
 
     if (!checkRateLimit(user.id)) return err("Demasiadas solicitudes. Intentá en un minuto.", cors, 429);
 

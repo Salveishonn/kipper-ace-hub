@@ -47,7 +47,7 @@
     --input: 30 20% 90%;
     --ring: 0 85% 27%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Custom Kipper tokens */
     --kipper-bordo: 0 85% 27%;
@@ -81,7 +81,10 @@
 
     /* Layout */
     --container-public: 80rem;
+    --container-narrow: 56rem;
+    --container-prose: 42rem;
     --space-section-y: 4.5rem;
+    --space-gutter: 1.5rem;
 
     /* Motion */
     --motion-fast: 180ms;
@@ -149,11 +152,23 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 
@@ -209,7 +224,20 @@
   }
 
   .scroll-story [data-scroll-track] {
-    min-height: 100vh;
+    min-height: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .scroll-story [data-scroll-track] {
+      min-height: 800vh;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-story [data-scroll-track] {
+      min-height: auto !important;
+      height: auto !important;
+    }
   }
 
   .card-elevated {
@@ -225,8 +253,57 @@
     @apply px-4 py-16 md:px-8 lg:py-24;
   }
 
+  .page-wrap {
+    width: 100%;
+    max-width: var(--container-public);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .page-wrap.max-w-4xl {
+    max-width: var(--container-narrow);
+  }
+
+  @media (min-width: 640px) {
+    .page-wrap {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-wrap {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
   .container-narrow {
     @apply max-w-6xl mx-auto;
+  }
+
+  .prose-kipper {
+    max-width: var(--container-prose);
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+
+  .workspace-card {
+    @apply bg-card rounded-xl p-5 shadow-soft border border-border/60;
+  }
+
+  .workspace-table {
+    @apply w-full text-sm;
+  }
+
+  .workspace-table thead th {
+    @apply text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide py-3 px-3 border-b border-border bg-muted/40;
+  }
+
+  .workspace-table tbody td {
+    @apply py-3 px-3 border-b border-border/70 align-middle;
   }
 
   .text-gradient {

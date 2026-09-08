@@ -197,10 +197,13 @@ describe("Federación Patronal hierarchy", () => {
     expect(screen.getByText("Federación Patronal")).toBeInTheDocument();
     expect(screen.getByText(/compañía principal/i)).toBeInTheDocument();
     expect(document.querySelector("[data-insurer-featured]")).toBeTruthy();
-    expect(screen.getByText("La Segunda")).toBeInTheDocument();
-    expect(screen.getByText("Zurich")).toBeInTheDocument();
+    expect(screen.getByText("La Caja")).toBeInTheDocument();
+    expect(screen.getByText("Mercantil Andina")).toBeInTheDocument();
+    expect(screen.getByText("Go Assistance")).toBeInTheDocument();
+    expect(screen.queryByText("La Segunda")).not.toBeInTheDocument();
+    expect(screen.queryByText("Zurich")).not.toBeInTheDocument();
     const pills = document.querySelectorAll("[data-insurer-pill]");
-    expect(pills.length).toBeGreaterThan(3);
+    expect(pills.length).toBe(3);
   });
 });
 

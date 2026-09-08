@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, Instagram, Facebook, Linkedin } from "lucide-react";
 import logoKipper from "@/assets/logo-kipper.png";
 import { siteConfig } from "@/lib/siteConfig";
+import { PUBLIC_INSURERS } from "@/lib/insurers";
 import { buildWhatsAppUrl, whatsappCtaClickHandler } from "@/lib/whatsappCta";
 
 export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+      <div className="page-wrap py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -97,6 +98,7 @@ export function Footer() {
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm opacity-60">
           <p>© {new Date().getFullYear()} Kipper Seguros. Todos los derechos reservados.</p>
           <p className="mt-1">Organización de Productores Asesores de Seguros</p>
+          <p className="mt-2">Compañías: {PUBLIC_INSURERS.join(" · ")}</p>
         </div>
       </div>
     </footer>

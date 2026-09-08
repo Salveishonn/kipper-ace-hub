@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.admin-mfa]
 verify_jwt = true
+
+[functions.process-support-notifications]
+verify_jwt = false

@@ -16,7 +16,7 @@ const AcademyPage = () => {
     <MainLayout>
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground py-20">
-        <div className="container mx-auto px-4">
+        <div className="page-wrap">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-sm font-medium mb-6">
               <BookOpen size={16} /> Formación Profesional
@@ -47,7 +47,7 @@ const AcademyPage = () => {
 
       {/* Benefits */}
       <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
+        <div className="page-wrap">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: BookOpen, title: "Contenido Exclusivo", description: "Cursos diseñados por expertos del mercado" },
@@ -70,7 +70,7 @@ const AcademyPage = () => {
       {/* Paywall / Pricing */}
       {!hasAccess && (
         <section className="py-16">
-          <div className="container mx-auto px-4">
+          <div className="page-wrap">
             <h2 className="text-3xl font-bold text-foreground text-center mb-4">Planes de Acceso</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
               Elegí el plan que mejor se adapte a tu situación

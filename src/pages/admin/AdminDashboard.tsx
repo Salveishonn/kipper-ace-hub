@@ -12,6 +12,7 @@ import {
 } from "@/lib/producerApplicationStatus";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
 import { consultaCategoryLabel } from "@/lib/consultaCategories";
 
 /** Real published-content counts, fetched head-only (no rows). */
@@ -65,17 +66,17 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Resumen</h1>
-        <p className="text-muted-foreground">Gestión de la red PAS y el contenido interno</p>
-      </div>
+      <WorkspaceHeader
+        title="Resumen"
+        description="Gestión de la red PAS y el contenido interno"
+      />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((c) => (
           <Link
             key={c.href + c.label}
             to={c.href}
-            className="bg-card rounded-xl p-5 shadow-soft border border-border/60 hover:border-primary/30 transition-colors"
+            className="workspace-card hover:border-primary/30 transition-colors"
           >
             <c.icon className="text-primary mb-3" size={22} aria-hidden />
             <p className="text-2xl font-bold">{c.value}</p>

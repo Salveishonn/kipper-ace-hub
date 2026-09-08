@@ -7,6 +7,8 @@ import {
   useProfilesByUserIds,
 } from "@/hooks/useSupportTickets";
 import { displayName } from "@/components/shared/UserAvatar";
+import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
+import { StatusBadge, statusToneFromConsulta } from "@/components/ui/status-badge";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
 import {
@@ -57,10 +59,10 @@ const AdminConsultas = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Consultas</h1>
-        <p className="text-muted-foreground">Casos reportados por productores</p>
-      </div>
+      <WorkspaceHeader
+        title="Consultas"
+        description="Casos reportados por productores"
+      />
 
       <div className="flex flex-wrap gap-3">
         <select
@@ -126,9 +128,13 @@ const AdminConsultas = () => {
                 </Link>
                 <p className="text-xs text-muted-foreground">
                   {displayName(profilesById[t.producer_id], "Productor")} · {consultaCategoryLabel(t.category)} ·{" "}
-                  {consultaStatusLabel(t.status)} ·{" "}
                   {new Date(t.updated_at).toLocaleDateString("es-AR")}
                 </p>
+                <div className="mt-2">
+                  <StatusBadge tone={statusToneFromConsulta(t.status)}>
+                    {consultaStatusLabel(t.status)}
+                  </StatusBadge>
+                </div>
                 {t.status === "resuelto" && t.resolved_by && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     Resuelto por {displayName(profilesById[t.resolved_by])}

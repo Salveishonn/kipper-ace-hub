@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Calendar, ArrowRight, Tag, Search } from "lucide-react";
+import { PageHero } from "@/components/layout/PageHero";
+import { Calendar, ArrowRight, Tag } from "lucide-react";
 import { useBlogPosts, useBlogPost } from "@/hooks/useBlogPosts";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { useParams } from "react-router-dom";
@@ -39,7 +40,7 @@ const BlogPostDetail = ({ slug }: { slug: string }) => {
       </section>
       <section className="py-12">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-card rounded-2xl shadow-soft p-8">
+          <div className="bg-card rounded-xl shadow-soft p-8">
             <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
               {post.content}
             </div>
@@ -69,17 +70,10 @@ const ComunidadListing = () => {
 
   return (
     <MainLayout>
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Comunidad Kipper</h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Tips, novedades y todo lo que necesitás saber sobre seguros.
-          </p>
-        </div>
-      </section>
+      <PageHero title="Comunidad Kipper" subtitle="Tips, novedades y todo lo que necesitás saber sobre seguros." />
 
       <section className="section-padding">
-        <div className="max-w-7xl mx-auto">
+        <div className="page-wrap">
           {isLoading ? (
             <LoadingState text="Cargando artículos..." />
           ) : error ? (
@@ -91,8 +85,8 @@ const ComunidadListing = () => {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayPosts.map((post: any) => (
-                <article key={post.id} className="bg-card rounded-2xl shadow-soft overflow-hidden group hover:shadow-card transition-shadow">
+              {displayPosts.map((post) => (
+                <article key={post.id} className="bg-card rounded-xl shadow-soft overflow-hidden group hover:shadow-card transition-shadow">
                   <div className="h-48 bg-muted flex items-center justify-center">
                     <span className="text-6xl">📰</span>
                   </div>

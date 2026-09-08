@@ -75,7 +75,7 @@ export function ServicesSection() {
 
   return (
     <section ref={scopeRef} data-section="services" className="section-padding bg-muted/30">
-      <div className="max-w-7xl mx-auto">
+        <div className="page-wrap">
         <div className="text-center mb-12 max-w-2xl mx-auto">
           <h2 data-reveal="heading" className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Todos los seguros que necesitás

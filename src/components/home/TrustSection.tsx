@@ -2,26 +2,15 @@ import { animate, createDrawable, onScroll, stagger } from "animejs";
 import { useAnimeScope } from "@/hooks/useAnimeScope";
 import { registerSectionReveal } from "@/lib/motion/sectionReveal";
 import { motion } from "@/lib/motion/tokens";
+import { FEATURED_INSURER, OTHER_INSURERS } from "@/lib/insurers";
 import { Users, Award, Building, Headphones, Star } from "lucide-react";
 import fedpatLogo from "@/assets/fedpat-logo.png";
 
 const stats = [
   { icon: Users, value: "15+", label: "Productores especializados" },
   { icon: Award, value: "20+", label: "Años de experiencia" },
-  { icon: Building, value: "20+", label: "Compañías asociadas" },
+  { icon: Building, value: "4", label: "Compañías asociadas" },
   { icon: Headphones, value: "24hs", label: "Tiempo de respuesta" },
-];
-
-const FEATURED_INSURER = "Federación Patronal";
-
-const otherInsurers = [
-  "La Segunda",
-  "Sancor",
-  "Rivadavia",
-  "San Cristóbal",
-  "Zurich",
-  "Mapfre",
-  "Allianz",
 ];
 
 export function TrustSection() {
@@ -81,7 +70,7 @@ export function TrustSection() {
 
   return (
     <section ref={scopeRef} data-section="trust" className="section-padding">
-      <div className="max-w-7xl mx-auto">
+      <div className="page-wrap">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-14">
           {stats.map((stat) => (
             <div key={stat.label} data-trust-stat className="text-center">
@@ -119,7 +108,7 @@ export function TrustSection() {
 
           <div
             data-insurer-featured
-            className="fedpat-featured-card mx-auto mb-5 max-w-md rounded-2xl px-6 py-6"
+            className="fedpat-featured-card mx-auto mb-5 max-w-md rounded-xl px-6 py-6"
           >
             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 text-white px-3 py-1 text-xs font-semibold mb-4">
               <Star size={12} className="fill-white text-white" aria-hidden />
@@ -133,27 +122,23 @@ export function TrustSection() {
                 className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-full shadow-[0_0_0_2px_rgba(255,255,255,0.25)]"
               />
               <div className="text-left">
-                <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  {FEATURED_INSURER}
-                </p>
-                <p className="mt-1 text-sm text-white/75">
-                  Nuestra principal compañía con la que trabajamos
-                </p>
+                <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{FEATURED_INSURER}</p>
+                <p className="mt-1 text-sm text-white/75">Nuestra principal compañía con la que trabajamos</p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-            {otherInsurers.map((insurer) => (
-              <div
+          <ul className="flex flex-wrap justify-center gap-3 md:gap-4">
+            {OTHER_INSURERS.map((insurer) => (
+              <li
                 key={insurer}
                 data-insurer-pill
-                className="px-5 py-2.5 bg-muted rounded-lg text-muted-foreground font-medium text-sm border border-transparent"
+                className="px-5 py-2.5 bg-muted rounded-lg text-muted-foreground font-medium text-sm border border-border/80"
               >
                 {insurer}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </section>
