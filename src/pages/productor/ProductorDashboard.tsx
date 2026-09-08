@@ -6,6 +6,7 @@ import { usePasResources } from "@/hooks/usePasResources";
 import { useDesignResources, designCategoryLabel } from "@/hooks/useDesignResources";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { useAuth } from "@/hooks/useAuth";
+import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
 
 const quickLinks = [
   { href: "/productor/academy", label: "Academy", description: "Capacitación y cursos", icon: BookOpen },
@@ -41,19 +42,17 @@ const ProductorDashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">
-          Hola, {profile?.full_name?.split(" ")[0] ?? "Productor"}
-        </h1>
-        <p className="text-muted-foreground">Portal Productores · Kipper Seguros</p>
-      </div>
+      <WorkspaceHeader
+        title={`Hola, ${profile?.full_name?.split(" ")[0] ?? "Productor"}`}
+        description="Portal Productores · Kipper Seguros"
+      />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {quickLinks.map((q) => (
           <Link
             key={q.href}
             to={q.href}
-            className="bg-card rounded-xl p-4 shadow-soft border border-border/60 hover:border-primary/30 transition-colors"
+            className="workspace-card hover:border-primary/30 transition-colors"
           >
             <q.icon className="text-primary mb-2" size={20} aria-hidden />
             <p className="font-medium text-sm">{q.label}</p>

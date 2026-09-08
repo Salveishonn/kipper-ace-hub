@@ -6,6 +6,8 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-st
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
+import { StatusBadge, statusToneFromConsulta } from "@/components/ui/status-badge";
 import { CONSULTA_CATEGORIES, consultaCategoryLabel, consultaStatusLabel } from "@/lib/consultaCategories";
 
 const ProductorConsultas = () => {
@@ -42,15 +44,15 @@ const ProductorConsultas = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Consultas</h1>
-          <p className="text-muted-foreground">Casos comerciales, siniestros y administración con el equipo Kipper</p>
-        </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus size={18} className="mr-2" aria-hidden /> Nueva consulta
-        </Button>
-      </div>
+      <WorkspaceHeader
+        title="Consultas"
+        description="Casos comerciales, siniestros y administración con el equipo Kipper"
+        actions={
+          <Button onClick={() => setShowForm(true)}>
+            <Plus size={18} className="mr-2" aria-hidden /> Nueva consulta
+          </Button>
+        }
+      />
 
       {showForm && (
         <div className="bg-card rounded-xl p-6 shadow-soft border border-border/60 space-y-4">
@@ -111,10 +113,13 @@ const ProductorConsultas = () => {
                 className="block bg-card rounded-xl p-4 border border-border/60 hover:shadow-soft transition-shadow"
               >
                 <p className="font-medium">{t.subject}</p>
-                <p className="text-xs text-muted-foreground">
-                  {consultaCategoryLabel(t.category)} · {consultaStatusLabel(t.status)} ·{" "}
-                  {new Date(t.updated_at).toLocaleDateString("es-AR")}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <StatusBadge tone={statusToneFromConsulta(t.status)}>
+                    {consultaStatusLabel(t.status)}
+                  </StatusBadge>
+                  <span>{consultaCategoryLabel(t.category)}</span>
+                  <span>{new Date(t.updated_at).toLocaleDateString("es-AR")}</span>
+                </div>
               </Link>
             </li>
           ))}
