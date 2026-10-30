@@ -24,3 +24,9 @@ export function getVideoEmbedUrl(url: string) {
   }
   return url;
 }
+
+/** Preview image for YouTube lessons; other providers have no public thumbnail URL. */
+export function getVideoThumbnailUrl(url: string) {
+  const id = getVideoEmbedUrl(url).match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]+)/)?.[1];
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}

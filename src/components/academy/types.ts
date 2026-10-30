@@ -21,6 +21,7 @@ export type AcademyModuleRow = {
   title: string;
   slug: string;
   description: string | null;
+  cover_image?: string | null;
   published: boolean;
   sort_order: number;
   academy_lessons: AcademyLessonRow[] | null;
