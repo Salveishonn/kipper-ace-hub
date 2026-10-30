@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.create-pas-producer]
 verify_jwt = true
 
+[functions.delete-pas-producer]
+verify_jwt = true
+
 [functions.google-reviews]
 verify_jwt = false
 

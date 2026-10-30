@@ -5,6 +5,7 @@ import {
   isLegacyInviteFlow,
   isPasAccessSuspended,
   isPasAccessDeleted,
+  canPermanentlyDeletePas,
   matchesPasAdminFilter,
   countPasAdminFilters,
   defaultPasAdminFilter,
@@ -50,6 +51,21 @@ describe("admin PAS management routing", () => {
     expect(isPasAccessSuspended({ status: "activo", account_status: "active" })).toBe(false);
     expect(isPasAccessSuspended({ status: "pending", account_status: "suspended" })).toBe(false);
     expect(isPasAccessDeleted({ status: "activo", account_status: "suspended" })).toBe(true);
+  });
+
+  it("treats an approved application without an account as deleted, not active", () => {
+    const orphan = { status: "activo", account_status: null, user_id: null };
+    expect(isPasAccessDeleted(orphan)).toBe(true);
+    expect(matchesPasAdminFilter(orphan, "activos")).toBe(false);
+    expect(matchesPasAdminFilter(orphan, "eliminados")).toBe(true);
+  });
+
+  it("offers permanent delete only once access is already removed", () => {
+    expect(canPermanentlyDeletePas({ status: "activo", account_status: "suspended", user_id: "u" })).toBe(true);
+    expect(canPermanentlyDeletePas({ status: "activo", account_status: null, user_id: null })).toBe(true);
+    expect(canPermanentlyDeletePas({ status: "rechazado", account_status: "pending", user_id: "u" })).toBe(true);
+    expect(canPermanentlyDeletePas({ status: "activo", account_status: "active", user_id: "u" })).toBe(false);
+    expect(canPermanentlyDeletePas({ status: "pending", account_status: "pending", user_id: "u" })).toBe(false);
   });
 });
 

@@ -279,6 +279,35 @@ export function useCreatePasProducer() {
   });
 }
 
+export function useDeletePasProducerPermanently() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ application_id }: { application_id: string }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sesión requerida");
+
+      const res = await fetch(getSupabaseFunctionUrl("delete-pas-producer"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ application_id }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "No se pudo eliminar el productor");
+      return body as { ok: boolean; warning?: string | null };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["producer_applications"] });
+      qc.invalidateQueries({ queryKey: ["producers"] });
+    },
+  });
+}
+
 /** Legacy-only: applications without Auth user_id. */
 export function useInvitePasProducer() {
   const qc = useQueryClient();

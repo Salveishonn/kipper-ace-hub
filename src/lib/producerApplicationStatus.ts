@@ -61,12 +61,26 @@ export function isPasAccessSuspended(app: {
   return app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.account_status === "suspended";
 }
 
-/** Soft-deleted PAS account (same backend as suspended; admin UI says Eliminado). */
+/**
+ * Soft-deleted PAS account (same backend as suspended; admin UI says Eliminado).
+ * Also covers an approved application whose Auth user no longer exists.
+ */
 export function isPasAccessDeleted(app: {
   status: string;
   account_status?: string | null;
+  user_id?: string | null;
 }): boolean {
+  if (app.status === PRODUCER_APPLICATION_STATUS.ACTIVO && app.user_id === null) return true;
   return isPasAccessSuspended(app);
+}
+
+/** Only access that was already removed can be erased for good (enforced by delete-pas-producer). */
+export function canPermanentlyDeletePas(app: {
+  status: string;
+  account_status?: string | null;
+  user_id?: string | null;
+}): boolean {
+  return isPasAccessDeleted(app) || app.status === PRODUCER_APPLICATION_STATUS.RECHAZADO;
 }
 
 export type PasAdminFilter =
@@ -79,6 +93,7 @@ export type PasAdminFilter =
 export type PasAdminListRow = {
   status: string;
   account_status?: string | null;
+  user_id?: string | null;
 };
 
 export function matchesPasAdminFilter(
