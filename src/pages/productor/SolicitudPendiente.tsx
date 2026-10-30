@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { RefreshCw, LogOut } from "lucide-react";
+import { Loader2, RefreshCw, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logoKipper from "@/assets/logo-kipper.png";
 import { Button } from "@/components/ui/button";

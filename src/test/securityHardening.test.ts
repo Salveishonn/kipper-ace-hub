@@ -92,3 +92,39 @@ describe("outbox trigger ambiguity fix", () => {
     expect(outboxFix).not.toMatch(/DECLARE[\s\S]*\bevent_type text;/);
   });
 });
+
+const pasNotifications = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20261030170000_pas_application_notifications.sql"),
+  "utf8",
+);
+const notificationProcessor = readFileSync(
+  resolve(process.cwd(), "supabase/functions/process-support-notifications/index.ts"),
+  "utf8",
+);
+const registerFunction = readFileSync(
+  resolve(process.cwd(), "supabase/functions/register-pas-application/index.ts"),
+  "utf8",
+);
+
+describe("solicitud PAS notifications", () => {
+  it("enqueues only applications awaiting review, without blocking signup", () => {
+    expect(pasNotifications).toContain("'pas.application.created'");
+    expect(pasNotifications).toContain("IF NEW.status NOT IN ('pending', 'nuevo')");
+    expect(pasNotifications).toContain("EXCEPTION WHEN OTHERS");
+    expect(pasNotifications).toContain("AFTER INSERT ON public.producer_applications");
+  });
+
+  it("always emails the operations inbox", () => {
+    expect(notificationProcessor).toContain('OPERATIONS_INBOX = "organizacionkipper@gmail.com"');
+    expect(notificationProcessor).toContain('row.event_type === "pas.application.created"');
+  });
+
+  it("does not report success when signup was rate limited", () => {
+    const rateLimitBranch = registerFunction.slice(
+      registerFunction.indexOf('signUpMessage.includes("rate limit")'),
+      registerFunction.indexOf("accountAlreadyExists ="),
+    );
+    expect(rateLimitBranch).toContain("429");
+    expect(rateLimitBranch).not.toContain("GENERIC_OK");
+  });
+});
