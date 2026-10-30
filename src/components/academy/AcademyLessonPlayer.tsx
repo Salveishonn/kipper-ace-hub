@@ -8,6 +8,8 @@ import { getAcademyFileSignedUrl, isAcademyFileType } from "@/lib/fileUploads";
 import { getVideoEmbedUrl, officeEmbedUrl } from "@/lib/videoEmbed";
 import { useBlobObjectUrl } from "@/hooks/useBlobObjectUrl";
 import { useAuth } from "@/hooks/useAuth";
+import { AcademyMaterials } from "@/components/academy/AcademyMaterials";
+import { lessonIcon, lessonLabel, materialLessons } from "@/components/academy/academyLessonMeta";
 import type { AcademyLessonRow } from "@/components/academy/types";
 
 export type AcademyLessonPayload = {
@@ -15,6 +17,7 @@ export type AcademyLessonPayload = {
   module: { id: string; title: string; slug: string; published: boolean };
   prev: AcademyLessonRow | null;
   next: AcademyLessonRow | null;
+  lessons: AcademyLessonRow[];
   position: number;
   total: number;
 };
@@ -54,6 +57,7 @@ export function useAcademyLesson(moduleSlug?: string, lessonSlug?: string) {
         module: mod,
         prev: index > 0 ? (lessons[index - 1] as AcademyLessonRow) : null,
         next: index < lessons.length - 1 ? (lessons[index + 1] as AcademyLessonRow) : null,
+        lessons: lessons as AcademyLessonRow[],
         position: index + 1,
         total: lessons.length,
       };
@@ -111,7 +115,14 @@ export function AcademyLessonPlayer({
     );
   }
 
-  const { lesson: current, module: mod, prev, next, position, total } = data;
+  const { lesson: current, module: mod, prev, next, lessons, position, total } = data;
+  const materials = materialLessons(lessons)
+    .filter((l) => l.id !== current.id)
+    .map((l) => ({ lesson: l, moduleSlug: mod.slug }));
+  const hasContent =
+    isFileLesson ||
+    (current.type === "video" && !!current.video_url) ||
+    (current.type === "chat" && !!current.content_text);
   const downloadName = current.file_name || current.title;
 
   const handleDownload = () => {
@@ -128,155 +139,248 @@ export function AcademyLessonPlayer({
     current.type === "excel" ? FileSpreadsheet : current.type === "image" ? Image : FileText;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <nav className="text-sm text-muted-foreground mb-3 flex flex-wrap items-center gap-1">
-          <Link to={backHref} className="hover:text-primary">
-            Academy
-          </Link>
-          <span>/</span>
-          {moduleHref ? (
-            <Link to={moduleHref} className="text-foreground/80 hover:text-primary">
+    <div className="grid xl:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
+      <div className="space-y-6 min-w-0">
+        <div>
+          <nav className="text-sm text-muted-foreground mb-3 flex flex-wrap items-center gap-1" aria-label="Ruta">
+            <Link to={backHref} className="hover:text-primary">
+              Academy
+            </Link>
+            <span aria-hidden>/</span>
+            <Link to={moduleHref ?? `${basePath}/${mod.slug}`} className="text-foreground/80 hover:text-primary">
               {mod.title}
             </Link>
-          ) : (
-            <span className="text-foreground/80">{mod.title}</span>
-          )}
-        </nav>
-        <p className="text-xs font-medium text-primary mb-1">
-          Lección {position} de {total}
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{current.title}</h1>
-        {isAdmin && (!mod.published || !current.published) && (
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
-            Borrador: los productores no ven este contenido hasta que lo publiques.
+          </nav>
+          <p className="text-xs font-medium text-primary mb-1">
+            Lección {position} de {total} · {lessonLabel(current.type)}
           </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{current.title}</h1>
+          {isAdmin && (!mod.published || !current.published) && (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+              Borrador: los productores no ven este contenido hasta que lo publiques.
+            </p>
+          )}
+        </div>
+
+        {current.type === "video" && current.video_url && (
+          <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-soft border border-border/40">
+            <iframe
+              src={getVideoEmbedUrl(current.video_url)}
+              className="w-full h-full"
+              allowFullScreen
+              allow="autoplay; encrypted-media"
+              title={current.title}
+            />
+          </div>
         )}
-      </div>
 
-      {current.type === "video" && current.video_url && (
-        <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-soft border border-border/40">
-          <iframe
-            src={getVideoEmbedUrl(current.video_url)}
-            className="w-full h-full"
-            allowFullScreen
-            allow="autoplay; encrypted-media"
-            title={current.title}
-          />
-        </div>
-      )}
-
-      {current.type === "chat" && current.content_text && (
-        <div className="bg-card rounded-2xl border border-border/60 shadow-soft p-6 sm:p-8">
-          <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-            {current.content_text}
-          </div>
-        </div>
-      )}
-
-      {isFileLesson && (
-        <div className="bg-card rounded-2xl border border-border/60 shadow-soft overflow-hidden">
-          <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
-            <div className="flex items-center gap-2 min-w-0">
-              <FileIcon size={18} className="text-primary shrink-0" aria-hidden />
-              <p className="font-medium truncate">{downloadName}</p>
+        {current.type === "chat" && current.content_text && (
+          <div className="bg-card rounded-2xl border border-border/60 shadow-soft p-6 sm:p-8">
+            <div className="prose prose-sm max-w-prose text-foreground whitespace-pre-wrap leading-relaxed">
+              {current.content_text}
             </div>
-            {signedUrl && (
-              <Button size="sm" variant="outline" onClick={handleDownload}>
-                <Download size={14} className="mr-1.5" aria-hidden /> Descargar
-              </Button>
-            )}
           </div>
-          <div className="p-4 min-h-[40vh] bg-muted/30">
-            {!filePath ? (
-              <p className="text-center text-muted-foreground py-16">Archivo no disponible aún</p>
-            ) : fileLoading ? (
-              <LoadingState text="Cargando archivo..." />
-            ) : !signedUrl ? (
-              <p className="text-center text-muted-foreground py-16">No se pudo cargar el archivo</p>
-            ) : current.type === "image" ? (
-              <img
-                src={signedUrl}
-                alt={current.title}
-                className="max-w-full max-h-[70vh] mx-auto object-contain rounded-lg"
-              />
-            ) : current.type === "pdf" ? (
-              pdfObjectUrl ? (
+        )}
+
+        {!hasContent && (
+          <div className="bg-card rounded-2xl border border-border/60 shadow-soft p-6 sm:p-8">
+            <p className="text-center text-muted-foreground py-8">Contenido no disponible aún</p>
+          </div>
+        )}
+
+        {isFileLesson && (
+          <div className="bg-card rounded-2xl border border-border/60 shadow-soft overflow-hidden">
+            <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileIcon size={18} className="text-primary shrink-0" aria-hidden />
+                <p className="font-medium truncate">{downloadName}</p>
+              </div>
+              {signedUrl && (
+                <Button size="sm" variant="outline" onClick={handleDownload}>
+                  <Download size={14} className="mr-1.5" aria-hidden /> Descargar
+                </Button>
+              )}
+            </div>
+            <div className="p-4 min-h-[40vh] bg-muted/30">
+              {!filePath ? (
+                <p className="text-center text-muted-foreground py-16">Archivo no disponible aún</p>
+              ) : fileLoading ? (
+                <LoadingState text="Cargando archivo..." />
+              ) : !signedUrl ? (
+                <p className="text-center text-muted-foreground py-16">No se pudo cargar el archivo</p>
+              ) : current.type === "image" ? (
+                <img
+                  src={signedUrl}
+                  alt={current.title}
+                  className="max-w-full max-h-[70vh] mx-auto object-contain rounded-lg"
+                />
+              ) : current.type === "pdf" ? (
+                pdfObjectUrl ? (
+                  <iframe
+                    title={current.title}
+                    src={pdfObjectUrl}
+                    className="w-full h-[70vh] rounded-lg bg-white"
+                  />
+                ) : (
+                  <LoadingState text="Cargando archivo..." />
+                )
+              ) : current.type === "word" || current.type === "excel" ? (
                 <iframe
                   title={current.title}
-                  src={pdfObjectUrl}
+                  src={officeEmbedUrl(signedUrl)}
                   className="w-full h-[70vh] rounded-lg bg-white"
                 />
-              ) : (
-                <LoadingState text="Cargando archivo..." />
-              )
-            ) : current.type === "word" || current.type === "excel" ? (
-              <iframe
-                title={current.title}
-                src={officeEmbedUrl(signedUrl)}
-                className="w-full h-[70vh] rounded-lg bg-white"
-              />
-            ) : null}
+              ) : null}
+            </div>
           </div>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-between pt-2 border-t border-border">
-        {prev ? (
-          onSelectLesson ? (
-            <button
-              type="button"
-              onClick={() => onSelectLesson(mod.slug, prev.slug)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary text-left"
-            >
-              <ArrowLeft size={16} aria-hidden />
-              <span className="truncate max-w-[220px]">{prev.title}</span>
-            </button>
-          ) : (
-            <Link
-              to={`${basePath}/${mod.slug}/${prev.slug}`}
-              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              <ArrowLeft size={16} aria-hidden />
-              <span className="truncate max-w-[220px]">{prev.title}</span>
-            </Link>
-          )
-        ) : onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft size={16} aria-hidden /> Volver a Academy
-          </button>
-        ) : (
-          <Link
-            to={backHref}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft size={16} aria-hidden /> Volver a Academy
-          </Link>
         )}
-        {next &&
-          (onSelectLesson ? (
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-between pt-2 border-t border-border">
+          {prev ? (
+            onSelectLesson ? (
+              <button
+                type="button"
+                onClick={() => onSelectLesson(mod.slug, prev.slug)}
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary text-left"
+              >
+                <ArrowLeft size={16} aria-hidden />
+                <span className="truncate max-w-[220px]">{prev.title}</span>
+              </button>
+            ) : (
+              <Link
+                to={`${basePath}/${mod.slug}/${prev.slug}`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
+              >
+                <ArrowLeft size={16} aria-hidden />
+                <span className="truncate max-w-[220px]">{prev.title}</span>
+              </Link>
+            )
+          ) : onBack ? (
             <button
               type="button"
-              onClick={() => onSelectLesson(mod.slug, next.slug)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto text-left"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
             >
-              <span className="truncate max-w-[220px]">{next.title}</span>
-              <ArrowRight size={16} aria-hidden />
+              <ArrowLeft size={16} aria-hidden /> Volver a Academy
             </button>
           ) : (
             <Link
-              to={`${basePath}/${mod.slug}/${next.slug}`}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto"
+              to={backHref}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
             >
-              <span className="truncate max-w-[220px]">{next.title}</span>
-              <ArrowRight size={16} aria-hidden />
+              <ArrowLeft size={16} aria-hidden /> Volver a Academy
             </Link>
-          ))}
+          )}
+          {next &&
+            (onSelectLesson ? (
+              <button
+                type="button"
+                onClick={() => onSelectLesson(mod.slug, next.slug)}
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto text-left"
+              >
+                <span className="truncate max-w-[220px]">{next.title}</span>
+                <ArrowRight size={16} aria-hidden />
+              </button>
+            ) : (
+              <Link
+                to={`${basePath}/${mod.slug}/${next.slug}`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline sm:ml-auto"
+              >
+                <span className="truncate max-w-[220px]">{next.title}</span>
+                <ArrowRight size={16} aria-hidden />
+              </Link>
+            ))}
+        </div>
       </div>
+
+      <aside className="space-y-6 min-w-0 xl:sticky xl:top-6">
+        <LessonOutline
+          moduleTitle={mod.title}
+          lessons={lessons}
+          currentId={current.id}
+          hrefFor={(slug) => `${basePath}/${mod.slug}/${slug}`}
+          onSelect={onSelectLesson ? (slug) => onSelectLesson(mod.slug, slug) : undefined}
+        />
+        <AcademyMaterials
+          title="Materiales del módulo"
+          materials={materials}
+          basePath={basePath}
+          onSelectLesson={onSelectLesson}
+        />
+      </aside>
     </div>
+  );
+}
+
+function LessonOutline({
+  moduleTitle,
+  lessons,
+  currentId,
+  hrefFor,
+  onSelect,
+}: {
+  moduleTitle: string;
+  lessons: AcademyLessonRow[];
+  currentId: string;
+  hrefFor: (slug: string) => string;
+  onSelect?: (slug: string) => void;
+}) {
+  return (
+    <section className="workspace-card !p-0 overflow-hidden" aria-label="Contenido del módulo">
+      <div className="px-4 py-3 border-b border-border">
+        <p className="text-xs text-muted-foreground">Contenido del módulo</p>
+        <h2 className="font-semibold text-sm mt-0.5">{moduleTitle}</h2>
+      </div>
+      <ol className="divide-y divide-border xl:max-h-[50vh] xl:overflow-y-auto">
+        {lessons.map((lesson, index) => {
+          const Icon = lessonIcon(lesson.type);
+          const isCurrent = lesson.id === currentId;
+          const rowClass = `w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+            isCurrent ? "bg-primary/10" : "hover:bg-muted/40"
+          }`;
+          const body = (
+            <>
+              <span
+                className={`text-xs font-semibold w-5 tabular-nums shrink-0 ${
+                  isCurrent ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`block text-sm line-clamp-2 ${
+                    isCurrent ? "font-semibold text-primary" : "font-medium text-foreground"
+                  }`}
+                >
+                  {lesson.title}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Icon size={12} aria-hidden /> {lessonLabel(lesson.type)}
+                </span>
+              </span>
+            </>
+          );
+          return (
+            <li key={lesson.id}>
+              {onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(lesson.slug)}
+                  className={rowClass}
+                  aria-current={isCurrent ? "true" : undefined}
+                >
+                  {body}
+                </button>
+              ) : (
+                <Link to={hrefFor(lesson.slug)} className={rowClass} aria-current={isCurrent ? "true" : undefined}>
+                  {body}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

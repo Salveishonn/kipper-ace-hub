@@ -29,6 +29,7 @@ const ContactoPage = lazy(() => import("./pages/Contacto"));
 const ComunidadPage = lazy(() => import("./pages/Comunidad"));
 const AcademyPage = lazy(() => import("./pages/Academy"));
 const AcademyContenido = lazy(() => import("./pages/academy/AcademyContenido"));
+const AcademyModulo = lazy(() => import("./pages/academy/AcademyModulo"));
 const AcademyLesson = lazy(() => import("./pages/academy/AcademyLesson"));
 const SumatePage = lazy(() => import("./pages/Sumate"));
 
@@ -144,6 +145,7 @@ const App = () => (
               }>
                 <Route index element={<ProductorDashboard />} />
                 <Route path="academy" element={<AcademyContenido />} />
+                <Route path="academy/:moduleSlug" element={<AcademyModulo />} />
                 <Route path="academy/:moduleSlug/:lessonSlug" element={<AcademyLesson />} />
                 <Route path="recursos" element={<ProductorRecursos />} />
                 <Route path="novedades" element={<ProductorMateriales />} />
