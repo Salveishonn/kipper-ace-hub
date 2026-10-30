@@ -21,10 +21,12 @@ import {
   useApprovePasProducer,
   useInvitePasProducer,
   useCreatePasProducer,
+  useDeletePasProducerPermanently,
 } from "@/hooks/useProducerApplications";
 import { useRestorePasProducer, useRevokePasProducer, useUpdateProducerProfile } from "@/hooks/useProducers";
 import {
   PRODUCER_APPLICATION_STATUS,
+  canPermanentlyDeletePas,
   countPasAdminFilters,
   defaultPasAdminFilter,
   isLegacyInviteFlow,
@@ -86,6 +88,7 @@ const AdminProductores = () => {
   const createPas = useCreatePasProducer();
   const revoke = useRevokePasProducer();
   const restore = useRestorePasProducer();
+  const permanentDelete = useDeletePasProducerPermanently();
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<PasAdminFilter | null>(null);
@@ -203,6 +206,26 @@ const AdminProductores = () => {
       toast.success("Acceso restaurado. El productor ya puede entrar al portal.");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "No se pudo restaurar");
+    }
+  };
+
+  const handlePermanentDelete = async (app: AppRow) => {
+    if (
+      !confirm(
+        `¿Eliminar definitivamente a ${app.full_name}?\n\nSe borran su cuenta, su solicitud, sus consultas y sus archivos. Esta acción no se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      const result = await permanentDelete.mutateAsync({ application_id: app.id });
+      if (result.warning) {
+        toast.warning("Productor eliminado con advertencia", { description: result.warning });
+      } else {
+        toast.success("Productor eliminado definitivamente.");
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo eliminar el productor");
     }
   };
 
@@ -410,7 +433,9 @@ const AdminProductores = () => {
                 {deleted && (
                   <p className="text-sm text-amber-800 flex items-center gap-2">
                     <Ban size={16} />
-                    Acceso eliminado. No puede entrar al portal hasta que lo restaures.
+                    {app.user_id
+                      ? "Acceso eliminado. No puede entrar al portal hasta que lo restaures."
+                      : "Su cuenta ya no existe. Solo queda borrar este registro."}
                   </p>
                 )}
 
@@ -502,6 +527,22 @@ const AdminProductores = () => {
                         Eliminar
                       </Button>
                     ))}
+
+                  {canPermanentlyDeletePas(app) && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handlePermanentDelete(app)}
+                      disabled={permanentDelete.isPending}
+                    >
+                      {permanentDelete.isPending && permanentDelete.variables?.application_id === app.id ? (
+                        <Loader2 className="animate-spin mr-2" size={16} />
+                      ) : (
+                        <Trash2 size={16} className="mr-2" />
+                      )}
+                      Eliminar definitivamente
+                    </Button>
+                  )}
 
                   {legacy && app.status !== PRODUCER_APPLICATION_STATUS.INVITADO && (
                     <>
