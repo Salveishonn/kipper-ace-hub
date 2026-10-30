@@ -10,7 +10,7 @@
 | Production branch | **`master`** | GitHub default branch |
 | Frontend hosting | **Vercel** project `kipper-ace-hub` | Auto-deploys on every push to `master` |
 | Backend | **Supabase** project `qefzutfaawsegmwgaynj` | Auth, Postgres, Storage, Edge Functions |
-| Production domain | **https://kipperseguros.com** | Canonical apex; `www` → apex (308) |
+| Production domain | **https://kipperseguros.com** | Canonical apex; `www` → apex (308). `kipperseguros.online` also redirects here via `vercel.json` |
 | Lovable | **Not required** | Archive / disconnect only after domain cutover |
 
 Preview deployments are created automatically for non-`master` branches and pull requests.
