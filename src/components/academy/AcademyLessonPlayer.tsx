@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Download, FileSpreadsheet, FileText, Image } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, FileSpreadsheet, FileText, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -10,6 +10,13 @@ import { useBlobObjectUrl } from "@/hooks/useBlobObjectUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { AcademyMaterials } from "@/components/academy/AcademyMaterials";
 import { lessonIcon, lessonLabel, materialLessons } from "@/components/academy/academyLessonMeta";
+import {
+  countCompleted,
+  progressLabel,
+  useAcademyProgress,
+  useSetLessonCompleted,
+  type AcademyProgress,
+} from "@/components/academy/academyProgress";
 import type { AcademyLessonRow } from "@/components/academy/types";
 
 export type AcademyLessonPayload = {
@@ -89,6 +96,8 @@ export function AcademyLessonPlayer({
   const { isAdmin } = useAuth();
   const backHref = libraryHref ?? basePath;
   const { data, isLoading } = useAcademyLesson(moduleSlug, lessonSlug);
+  const progress = useAcademyProgress();
+  const setLessonCompleted = useSetLessonCompleted();
 
   const lesson = data?.lesson;
   const filePath = lesson?.file_path ?? null;
@@ -235,6 +244,19 @@ export function AcademyLessonPlayer({
           </div>
         )}
 
+        {progress.tracked && (
+          <LessonCompletion
+            completed={progress.completed.has(current.id)}
+            onToggle={() => {
+              if (setLessonCompleted.isPending) return;
+              setLessonCompleted.mutate({
+                lessonId: current.id,
+                completed: !progress.completed.has(current.id),
+              });
+            }}
+          />
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 justify-between pt-2 border-t border-border">
           {prev ? (
             onSelectLesson ? (
@@ -298,6 +320,7 @@ export function AcademyLessonPlayer({
           moduleTitle={mod.title}
           lessons={lessons}
           currentId={current.id}
+          progress={progress}
           hrefFor={(slug) => `${basePath}/${mod.slug}/${slug}`}
           onSelect={onSelectLesson ? (slug) => onSelectLesson(mod.slug, slug) : undefined}
         />
@@ -312,16 +335,32 @@ export function AcademyLessonPlayer({
   );
 }
 
+function LessonCompletion({ completed, onToggle }: { completed: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card rounded-2xl border border-border/60 shadow-soft p-4">
+      <p className="flex items-center gap-2 text-sm font-medium text-foreground" aria-live="polite">
+        {completed && <CheckCircle2 size={18} className="text-primary shrink-0" aria-hidden />}
+        {completed ? "Lección completada" : "¿Terminaste esta lección?"}
+      </p>
+      <Button size="sm" variant={completed ? "outline" : "default"} onClick={onToggle}>
+        {completed ? "Desmarcar" : "Marcar como completada"}
+      </Button>
+    </div>
+  );
+}
+
 function LessonOutline({
   moduleTitle,
   lessons,
   currentId,
+  progress,
   hrefFor,
   onSelect,
 }: {
   moduleTitle: string;
   lessons: AcademyLessonRow[];
   currentId: string;
+  progress: AcademyProgress;
   hrefFor: (slug: string) => string;
   onSelect?: (slug: string) => void;
 }) {
@@ -330,6 +369,11 @@ function LessonOutline({
       <div className="px-4 py-3 border-b border-border">
         <p className="text-xs text-muted-foreground">Contenido del módulo</p>
         <h2 className="font-semibold text-sm mt-0.5">{moduleTitle}</h2>
+        {progress.tracked && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {progressLabel(countCompleted(lessons, progress.completed), lessons.length)}
+          </p>
+        )}
       </div>
       <ol className="divide-y divide-border xl:max-h-[50vh] xl:overflow-y-auto">
         {lessons.map((lesson, index) => {
@@ -340,13 +384,17 @@ function LessonOutline({
           }`;
           const body = (
             <>
-              <span
-                className={`text-xs font-semibold w-5 tabular-nums shrink-0 ${
-                  isCurrent ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {String(index + 1).padStart(2, "0")}
-              </span>
+              {progress.completed.has(lesson.id) ? (
+                <CheckCircle2 size={18} className="text-primary w-5 shrink-0" role="img" aria-label="Completada" />
+              ) : (
+                <span
+                  className={`text-xs font-semibold w-5 tabular-nums shrink-0 ${
+                    isCurrent ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+              )}
               <span className="min-w-0 flex-1">
                 <span
                   className={`block text-sm line-clamp-2 ${

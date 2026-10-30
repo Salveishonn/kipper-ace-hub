@@ -14,6 +14,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      academy_lesson_progress: {
+        Row: {
+          completed_at: string
+          lesson_id: string
+          producer_id: string
+        }
+        Insert: {
+          completed_at?: string
+          lesson_id: string
+          producer_id: string
+        }
+        Update: {
+          completed_at?: string
+          lesson_id?: string
+          producer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academy_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "academy_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       academy_lessons: {
         Row: {
           content_text: string | null

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BookOpen,
+  CheckCircle2,
   ChevronRight,
   GraduationCap,
   MessageSquare,
@@ -15,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState, EmptyState } from "@/components/ui/loading-state";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { AcademyMaterials } from "@/components/academy/AcademyMaterials";
 import {
@@ -27,6 +29,13 @@ import {
   moduleCover,
   normalizeSearch,
 } from "@/components/academy/academyLessonMeta";
+import {
+  countCompleted,
+  findResumePoint,
+  progressLabel,
+  useAcademyProgress,
+  type AcademyProgress,
+} from "@/components/academy/academyProgress";
 import type { AcademyLessonRow, AcademyModuleRow } from "@/components/academy/types";
 
 export function useAcademyLibrary() {
@@ -71,6 +80,7 @@ export function AcademyModuleLibrary({
 }: AcademyModuleLibraryProps) {
   const { isAdmin } = useAuth();
   const { data: modules, isLoading } = useAcademyLibrary();
+  const progress = useAcademyProgress();
   const backHref = notFoundHref ?? basePath;
 
   const allModules: LibraryModule[] = (modules || []).map((mod) => {
@@ -94,7 +104,15 @@ export function AcademyModuleLibrary({
         </div>
       );
     }
-    return <ModuleView mod={mod} basePath={basePath} isAdmin={isAdmin} showBreadcrumb={showIntro} />;
+    return (
+      <ModuleView
+        mod={mod}
+        basePath={basePath}
+        isAdmin={isAdmin}
+        showBreadcrumb={showIntro}
+        progress={progress}
+      />
+    );
   }
 
   return (
@@ -102,6 +120,7 @@ export function AcademyModuleLibrary({
       modules={allModules.filter((m) => m.lessons.length > 0)}
       basePath={basePath}
       isAdmin={isAdmin}
+      progress={progress}
     />
   );
 }
@@ -110,17 +129,23 @@ function ClassroomView({
   modules,
   basePath,
   isAdmin,
+  progress,
 }: {
   modules: LibraryModule[];
   basePath: string;
   isAdmin: boolean;
+  progress: AcademyProgress;
 }) {
   const [search, setSearch] = useState("");
   const lessons = modules.flatMap((m) => m.lessons);
   const materials = modules.flatMap((m) =>
     materialLessons(m.lessons).map((lesson) => ({ lesson, moduleSlug: m.slug, moduleTitle: m.title })),
   );
-  const firstModule = modules[0];
+  const resume = findResumePoint(
+    modules.flatMap((m) => m.lessons.map((lesson) => ({ id: lesson.id, lesson, mod: m }))),
+    progress.completed,
+  );
+  const completedCount = countCompleted(lessons, progress.completed);
 
   const videoCount = lessons.filter((l) => l.type === "video").length;
   const stats = [
@@ -159,15 +184,37 @@ function ClassroomView({
               </p>
             )}
           </div>
-          {firstModule && (
+          {resume && !progress.loading && (
             <Link
-              to={`${basePath}/${firstModule.slug}/${firstModule.lessons[0].slug}`}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-background text-primary font-semibold px-5 py-3 text-sm shrink-0 hover:bg-background/90 transition-colors"
+              to={`${basePath}/${resume.lesson.mod.slug}/${resume.lesson.lesson.slug}`}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-background text-primary font-semibold px-5 py-3 text-sm shrink-0 sm:max-w-xs hover:bg-background/90 transition-colors"
             >
-              <Play size={16} aria-hidden /> Ir a la primera lección
+              <Play size={16} className="shrink-0" aria-hidden />
+              {!progress.tracked ? (
+                "Ir a la primera lección"
+              ) : resume.status === "start" ? (
+                "Empezar primera lección"
+              ) : resume.status === "done" ? (
+                "Repasar desde el inicio"
+              ) : (
+                <span className="min-w-0">
+                  <span className="block">Continuar</span>
+                  <span className="block truncate text-xs font-normal">{resume.lesson.lesson.title}</span>
+                </span>
+              )}
             </Link>
           )}
         </div>
+        {progress.tracked && modules.length > 0 && (
+          <div className="mt-6">
+            <p className="text-sm font-medium mb-1.5">{progressLabel(completedCount, lessons.length)}</p>
+            <Progress
+              value={(completedCount / lessons.length) * 100}
+              aria-label="Progreso en Academy"
+              className="h-2 bg-primary-foreground/20 [&>div]:bg-primary-foreground"
+            />
+          </div>
+        )}
         {modules.length > 0 && (
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-6">
             {stats.map((stat) => (
@@ -221,6 +268,7 @@ function ClassroomView({
                           href={`${basePath}/${mod.slug}/${lesson.slug}`}
                           detail={mod.title}
                           isAdmin={isAdmin}
+                          completed={progress.completed.has(lesson.id)}
                         />
                       </li>
                     ))}
@@ -240,6 +288,7 @@ function ClassroomView({
                       position={index + 1}
                       basePath={basePath}
                       isAdmin={isAdmin}
+                      progress={progress}
                     />
                   ))}
                 </div>
@@ -332,13 +381,17 @@ function ModuleCard({
   position,
   basePath,
   isAdmin,
+  progress,
 }: {
   mod: LibraryModule;
   position: number;
   basePath: string;
   isAdmin: boolean;
+  progress: AcademyProgress;
 }) {
   const hiddenLessons = mod.lessons.length - CARD_PREVIEW_LESSONS;
+  const completedCount = countCompleted(mod.lessons, progress.completed);
+  const isComplete = completedCount === mod.lessons.length;
 
   return (
     <Link
@@ -360,7 +413,11 @@ function ModuleCard({
             const Icon = lessonIcon(lesson.type);
             return (
               <li key={lesson.id} className="flex items-center gap-2 text-sm text-foreground/80">
-                <Icon size={14} className="text-muted-foreground shrink-0" aria-hidden />
+                {progress.completed.has(lesson.id) ? (
+                  <CheckCircle2 size={14} className="text-primary shrink-0" role="img" aria-label="Completada" />
+                ) : (
+                  <Icon size={14} className="text-muted-foreground shrink-0" aria-hidden />
+                )}
                 <span className="truncate">{lesson.title}</span>
               </li>
             );
@@ -369,9 +426,21 @@ function ModuleCard({
         {hiddenLessons > 0 && (
           <p className="text-xs text-muted-foreground mt-1.5">y {hiddenLessons} más</p>
         )}
-        <div className="flex items-center justify-between gap-3 mt-auto pt-4">
+        <div className="mt-auto" />
+        {progress.tracked && (
+          <Progress
+            value={(completedCount / mod.lessons.length) * 100}
+            aria-label={`Progreso en ${mod.title}`}
+            className="h-1.5 mt-4"
+          />
+        )}
+        <div className="flex items-center justify-between gap-3 pt-4">
           <span className="text-xs text-muted-foreground">
-            {countLabel(mod.lessons.length, "lección", "lecciones")}
+            {!progress.tracked
+              ? countLabel(mod.lessons.length, "lección", "lecciones")
+              : isComplete
+                ? "Módulo completado"
+                : progressLabel(completedCount, mod.lessons.length)}
           </span>
           <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
             Ver módulo
@@ -388,13 +457,16 @@ function ModuleView({
   basePath,
   isAdmin,
   showBreadcrumb,
+  progress,
 }: {
   mod: LibraryModule;
   basePath: string;
   isAdmin: boolean;
   showBreadcrumb: boolean;
+  progress: AcademyProgress;
 }) {
-  const firstLesson = mod.lessons[0];
+  const resume = findResumePoint(mod.lessons, progress.completed);
+  const completedCount = countCompleted(mod.lessons, progress.completed);
   const materials = materialLessons(mod.lessons).map((lesson) => ({ lesson, moduleSlug: mod.slug }));
 
   return (
@@ -422,12 +494,29 @@ function ModuleView({
           <div className="mt-3">
             <TypeCounts lessons={mod.lessons} />
           </div>
-          {firstLesson && (
+          {progress.tracked && mod.lessons.length > 0 && (
+            <div className="mt-4 max-w-md">
+              <p className="text-sm font-medium text-foreground mb-1.5">
+                {progressLabel(completedCount, mod.lessons.length)}
+              </p>
+              <Progress
+                value={(completedCount / mod.lessons.length) * 100}
+                aria-label={`Progreso en ${mod.title}`}
+                className="h-2"
+              />
+            </div>
+          )}
+          {resume && !progress.loading && (
             <Link
-              to={`${basePath}/${mod.slug}/${firstLesson.slug}`}
+              to={`${basePath}/${mod.slug}/${resume.lesson.slug}`}
               className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-semibold px-5 py-2.5 text-sm hover:bg-primary/90 transition-colors"
             >
-              <Play size={16} aria-hidden /> Empezar módulo
+              <Play size={16} aria-hidden />
+              {resume.status === "continue"
+                ? "Continuar módulo"
+                : resume.status === "done"
+                  ? "Repasar módulo"
+                  : "Empezar módulo"}
             </Link>
           )}
         </div>
@@ -452,6 +541,7 @@ function ModuleView({
                     href={`${basePath}/${mod.slug}/${lesson.slug}`}
                     position={index + 1}
                     isAdmin={isAdmin}
+                    completed={progress.completed.has(lesson.id)}
                   />
                 </li>
               ))}
@@ -472,12 +562,14 @@ function LessonRow({
   position,
   detail,
   isAdmin,
+  completed,
 }: {
   lesson: AcademyLessonRow;
   href: string;
   position?: number;
   detail?: string;
   isAdmin: boolean;
+  completed: boolean;
 }) {
   const Icon = lessonIcon(lesson.type);
   const thumbnail = lessonThumbnail(lesson);
@@ -512,6 +604,9 @@ function LessonRow({
           {isAdmin && !lesson.published ? " · borrador" : ""}
         </p>
       </div>
+      {completed && (
+        <CheckCircle2 size={18} className="text-primary shrink-0" role="img" aria-label="Completada" />
+      )}
       <ChevronRight size={18} className="text-muted-foreground shrink-0" aria-hidden />
     </Link>
   );
