@@ -21,6 +21,14 @@ describe("production CSP", () => {
     expect(csp).toMatch(/media-src[^;]*https:\/\/static\.botmaker\.com/);
   });
 
+  it("lets the Botmaker webchat connect so messages can be sent", () => {
+    const csp = cspValue();
+    expect(csp).toMatch(/connect-src[^;]*wss:\/\/ws\.botmaker\.com/);
+    expect(csp).toMatch(/connect-src[^;]*https:\/\/m-infra\.appspot\.com/);
+    expect(csp).toMatch(/connect-src[^;]*https:\/\/storage\.googleapis\.com\/m-infra\.appspot\.com\//);
+    expect(csp).toMatch(/worker-src[^;]*blob:/);
+  });
+
   it("lets Chrome's PDF viewer and Academy iframes load", () => {
     const csp = cspValue();
     expect(csp).toMatch(/object-src[^;]*blob:/);
