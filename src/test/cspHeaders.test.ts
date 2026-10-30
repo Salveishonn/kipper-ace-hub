@@ -14,8 +14,11 @@ function cspValue() {
 }
 
 describe("production CSP", () => {
-  it("lets the Botmaker webchat load its widget script", () => {
-    expect(cspValue()).toMatch(/script-src[^;]*https:\/\/static\.botmaker\.com/);
+  it("lets the Botmaker webchat load its script, styles and sounds", () => {
+    const csp = cspValue();
+    expect(csp).toMatch(/script-src[^;]*https:\/\/static\.botmaker\.com/);
+    expect(csp).toMatch(/style-src[^;]*https:\/\/static\.botmaker\.com/);
+    expect(csp).toMatch(/media-src[^;]*https:\/\/static\.botmaker\.com/);
   });
 
   it("lets Chrome's PDF viewer and Academy iframes load", () => {
