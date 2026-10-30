@@ -14,6 +14,10 @@ function cspValue() {
 }
 
 describe("production CSP", () => {
+  it("lets the Botmaker webchat load its widget script", () => {
+    expect(cspValue()).toMatch(/script-src[^;]*https:\/\/static\.botmaker\.com/);
+  });
+
   it("lets Chrome's PDF viewer and Academy iframes load", () => {
     const csp = cspValue();
     expect(csp).toMatch(/object-src[^;]*blob:/);
