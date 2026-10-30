@@ -213,7 +213,11 @@ Deno.serve(async (req: Request) => {
       idempotent: Boolean(result.idempotent),
       email_verified: emailVerified,
       email_notification_sent: emailResult.sent,
-      warning: emailResult.warning ?? null,
+      warning:
+        emailResult.warning ??
+        (emailVerified
+          ? null
+          : "Acceso aprobado, pero el productor todavía no verificó su email: al ingresar se le va a pedir que lo verifique."),
       message: result.idempotent
         ? "El productor ya estaba activo."
         : "Acceso aprobado. El productor ya puede ingresar al portal.",

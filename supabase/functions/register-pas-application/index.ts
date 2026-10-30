@@ -84,7 +84,8 @@ Deno.serve(async (req: Request) => {
     const { data: existingApp } = await admin
       .from("producer_applications")
       .select("id, user_id, status")
-      .ilike("email", email)
+      // Escape ILIKE wildcards: "_" is common in emails and would match other addresses.
+      .ilike("email", email.replace(/[\\%_]/g, "\\$&"))
       .maybeSingle();
 
     if (existingApp) {
@@ -113,19 +114,59 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    // Enumeration-safe: treat "already registered" as success.
-    if (signUpError) {
-      const m = signUpError.message.toLowerCase();
-      if (
-        m.includes("already") ||
-        m.includes("registered") ||
-        m.includes("exists") ||
-        m.includes("rate limit")
-      ) {
-        return json(req, GENERIC_OK);
-      }
+    const signUpMessage = signUpError?.message.toLowerCase() ?? "";
+    // No account was created, so telling the applicant we got it would lose the solicitud.
+    if (signUpMessage.includes("rate limit")) {
+      console.error("signUp rate limited", signUpError?.message);
+      return json(
+        req,
+        { error: "Hay muchas solicitudes en este momento. Intentá nuevamente en unos minutos." },
+        429,
+      );
+    }
+
+    // Supabase hides existing accounts: an error, or a placeholder user without identities.
+    const accountAlreadyExists =
+      signUpMessage.includes("already") ||
+      signUpMessage.includes("registered") ||
+      signUpMessage.includes("exists") ||
+      (!signUpError && signUpData.user?.identities?.length === 0);
+
+    if (signUpError && !accountAlreadyExists) {
       console.error("signUp error", signUpError.message);
       return json(req, { error: "No se pudo registrar la solicitud. Intentá nuevamente." }, 400);
+    }
+
+    // Enumeration-safe: same response, but the existing account still gets its solicitud.
+    if (accountAlreadyExists) {
+      const { data: existingProfile } = await admin
+        .from("profiles")
+        .select("user_id")
+        .ilike("email", email.replace(/[\\%_]/g, "\\$&"))
+        .maybeSingle();
+
+      if (existingProfile?.user_id) {
+        const { error: insertErr } = await admin.from("producer_applications").insert({
+          full_name,
+          email,
+          phone,
+          matricula_ssn,
+          city,
+          province,
+          years_experience,
+          current_companies,
+          message,
+          status: "pending",
+          user_id: existingProfile.user_id,
+        });
+        if (insertErr && insertErr.code !== "23505") {
+          console.error("application insert", insertErr.message);
+          return json(req, { error: "No se pudo registrar la solicitud. Intentá nuevamente." }, 500);
+        }
+      } else {
+        console.error("existing account without profile, solicitud not created");
+      }
+      return json(req, GENERIC_OK);
     }
 
     const userId = signUpData.user?.id;
@@ -164,9 +205,10 @@ Deno.serve(async (req: Request) => {
           status: "pending",
           user_id: userId,
         });
-        if (insertErr) {
-          // Unique race: still generic success.
+        // Unique race: still generic success. Anything else means no solicitud was saved.
+        if (insertErr && insertErr.code !== "23505") {
           console.error("application insert", insertErr.message);
+          return json(req, { error: "No se pudo registrar la solicitud. Intentá nuevamente." }, 500);
         }
       }
 

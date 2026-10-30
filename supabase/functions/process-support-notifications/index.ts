@@ -3,11 +3,14 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 type OutboxRow = {
   id: string;
-  event_type: "case.created" | "case.message.created";
+  event_type: "case.created" | "case.message.created" | "pas.application.created";
   event_id: string;
   payload: Record<string, unknown>;
   attempts: number;
 };
+
+// Always notified, whether or not this address is an admin account.
+const OPERATIONS_INBOX = "organizacionkipper@gmail.com";
 
 function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -135,8 +138,8 @@ Deno.serve(async (req: Request) => {
 
   const recipients = Array.from(
     new Set(
-      (profileRows ?? [])
-        .map((row) => (typeof row.email === "string" ? row.email.trim().toLowerCase() : ""))
+      [OPERATIONS_INBOX, ...(profileRows ?? []).map((row) => row.email)]
+        .map((email) => (typeof email === "string" ? email.trim().toLowerCase() : ""))
         .filter((email) => email.includes("@")),
     ),
   );
@@ -154,7 +157,26 @@ Deno.serve(async (req: Request) => {
     const ref = caseRef(ticketId || row.event_id);
 
     const email =
-      row.event_type === "case.created"
+      row.event_type === "pas.application.created"
+        ? {
+            subject: "Nueva solicitud PAS — Kipper Seguros",
+            html: brandedEmail({
+              heading: "Nueva solicitud PAS",
+              intro: `${producerName} pidió sumarse como Productor Asesor de Seguros.`,
+              rows: [
+                ["Nombre", producerName],
+                ["Email", String(payload.email ?? "—")],
+                ["Teléfono", String(payload.phone ?? "—")],
+                ["Matrícula SSN", String(payload.matricula_ssn ?? "—")],
+                ["Ubicación", String(payload.location ?? "—")],
+                ["Fecha", createdAt],
+                ["Mensaje", messagePreview || "—"],
+              ],
+              ctaUrl: `${siteUrl}/admin/productores`,
+              ctaLabel: "Revisar solicitud",
+            }),
+          }
+        : row.event_type === "case.created"
         ? {
             subject: "Nuevo caso de productor — Kipper Seguros",
             html: brandedEmail({

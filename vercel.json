@@ -14,6 +14,28 @@
       ],
       "destination": "https://kipperseguros.com/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "kipperseguros.online"
+        }
+      ],
+      "destination": "https://kipperseguros.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.kipperseguros.online"
+        }
+      ],
+      "destination": "https://kipperseguros.com/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
