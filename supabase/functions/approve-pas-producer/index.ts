@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildWelcomeEmail } from "../_shared/welcomeEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,10 +26,12 @@ function getValidatedSiteUrl(): string {
   return parsed.origin.replace(/\/$/, "");
 }
 
-async function sendApprovalEmail(params: {
+async function sendWelcomeEmail(params: {
+  applicationId: string;
   to: string;
   fullName: string;
-  loginUrl: string;
+  siteUrl: string;
+  emailVerified: boolean;
 }): Promise<{ sent: boolean; warning?: string }> {
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const from =
@@ -43,36 +46,26 @@ async function sendApprovalEmail(params: {
     };
   }
 
-  const subject = "Tu acceso como Productor Kipper fue aprobado";
-  const html = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 560px; margin: 0 auto; color: #1a2332;">
-      <h1 style="font-size: 22px; margin-bottom: 16px;">Kipper Seguros</h1>
-      <p>Hola ${escapeHtml(params.fullName)},</p>
-      <p>
-        Aprobamos tu solicitud para acceder al Portal de Productores de Kipper Seguros.
-        Ya podés ingresar con el email y la contraseña que elegiste al registrarte.
-      </p>
-      <p style="margin: 28px 0;">
-        <a href="${params.loginUrl}"
-           style="background:#0f3d5c;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;display:inline-block;">
-          Ingresar al Portal
-        </a>
-      </p>
-      <p style="font-size: 13px; color: #5a6570;">Si el botón no funciona, visitá: ${params.loginUrl}</p>
-    </div>
-  `;
+  const { subject, html, text: plainText } = buildWelcomeEmail({
+    fullName: params.fullName,
+    email: params.to,
+    siteUrl: params.siteUrl,
+    emailVerified: params.emailVerified,
+  });
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${resendKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `pas-welcome/${params.applicationId}`,
     },
     body: JSON.stringify({
       from,
       to: [params.to],
       subject,
       html,
+      text: plainText,
     }),
   });
 
@@ -87,14 +80,6 @@ async function sendApprovalEmail(params: {
   }
 
   return { sent: true };
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 Deno.serve(async (req: Request) => {
@@ -199,11 +184,16 @@ Deno.serve(async (req: Request) => {
       status?: string;
     };
 
-    const emailResult = await sendApprovalEmail({
-      to: result.email || app.email,
-      fullName: result.full_name || app.full_name || "Productor",
-      loginUrl: `${siteUrl}/login`,
-    });
+    // Re-approving an active producer must not send a second welcome.
+    const emailResult: { sent: boolean; warning?: string } = result.idempotent
+      ? { sent: false }
+      : await sendWelcomeEmail({
+          applicationId,
+          to: result.email || app.email,
+          fullName: result.full_name || app.full_name || "",
+          siteUrl,
+          emailVerified,
+        });
 
     return json({
       ok: true,
