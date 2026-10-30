@@ -116,5 +116,5 @@ Lovable is a temporary rollback host until custom-domain cutover is verified; af
 ## What not to do
 
 - Do not publish the production frontend through Lovable.
-- Do not force-push `master` or delete `main` / `master`.
+- Do not force-push or delete `master`.
 - Do not put service-role keys in the frontend or Vercel.
