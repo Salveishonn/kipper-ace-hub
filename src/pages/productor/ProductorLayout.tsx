@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultasLive, useConsultaUnreadCount } from "@/hooks/useSupportTickets";
+import { UnreadBadge } from "@/components/consultas/UnreadBadge";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { KipperBrandLockup } from "@/components/layout/KipperBrandLockup";
 
@@ -21,7 +23,9 @@ const ProductorLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
+  useConsultasLive(!!user);
+  const unreadConsultas = useConsultaUnreadCount("productor", user?.id);
 
   const handleLogout = async () => {
     await signOut();
@@ -56,6 +60,7 @@ const ProductorLayout = () => {
                 >
                   <link.icon size={18} aria-hidden />
                   <span className="font-medium">{link.label}</span>
+                  {link.href === "/productor/consultas" && <UnreadBadge count={unreadConsultas} />}
                 </Link>
               );
             })}

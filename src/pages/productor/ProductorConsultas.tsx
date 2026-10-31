@@ -1,49 +1,32 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Plus, MessageSquare } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useSupportTickets, useCreateSupportTicket } from "@/hooks/useSupportTickets";
-import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { useState } from "react";
-import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { ChevronRight, MessageSquare, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSupportTickets } from "@/hooks/useSupportTickets";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
-import { StatusBadge, statusToneFromConsulta } from "@/components/ui/status-badge";
-import { CONSULTA_CATEGORIES, consultaCategoryLabel, consultaStatusLabel } from "@/lib/consultaCategories";
+import { ConsultaPreview } from "@/components/consultas/ConsultaPreview";
+import { NewConsultaDialog } from "@/components/consultas/NewConsultaDialog";
+import { isConsultaActive, isConsultaUnread } from "@/lib/consultaActivity";
+import { cn } from "@/lib/utils";
 
 const ProductorConsultas = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { data, isLoading, error } = useSupportTickets({ producerId: user?.id });
-  const create = useCreateSupportTicket();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ category: "comercial", subject: "", message: "" });
-
-  const handleCreate = async () => {
-    if (!user || !form.subject.trim() || !form.message.trim()) {
-      toast.error("Completá asunto y mensaje");
-      return;
-    }
-    try {
-      const ticket = await create.mutateAsync({
-        producer_id: user.id,
-        category: form.category,
-        subject: form.subject,
-        initial_message: form.message,
-      });
-      toast.success("Consulta enviada");
-      setShowForm(false);
-      setForm({ category: "comercial", subject: "", message: "" });
-      navigate(`/productor/consultas/${ticket.id}`);
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error");
-    }
-  };
+  const [view, setView] = useState<"activas" | "finalizadas">("activas");
 
   if (isLoading) return <LoadingState text="Cargando consultas..." />;
   if (error) return <ErrorState title="Error" message="No se pudieron cargar tus consultas" />;
 
+  const tickets = data ?? [];
+  const active = tickets.filter((t) => isConsultaActive(t.status));
+  const finished = tickets.filter((t) => !isConsultaActive(t.status));
+  const visible = view === "activas" ? active : finished;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <WorkspaceHeader
         title="Consultas"
         description="Casos comerciales, siniestros y administración con el equipo Kipper"
@@ -54,76 +37,71 @@ const ProductorConsultas = () => {
         }
       />
 
-      {showForm && (
-        <div className="bg-card rounded-xl p-6 shadow-soft border border-border/60 space-y-4">
-          <div>
-            <label htmlFor="consulta-category" className="block text-sm font-medium mb-1">
-              Categoría
-            </label>
-            <select
-              id="consulta-category"
-              className="input-kipper"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-            >
-              {CONSULTA_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <input
-            className="input-kipper"
-            placeholder="Asunto"
-            aria-label="Asunto"
-            value={form.subject}
-            onChange={(e) => setForm({ ...form, subject: e.target.value })}
-          />
-          <textarea
-            className="input-kipper min-h-[100px]"
-            placeholder="Describí el caso..."
-            aria-label="Mensaje"
-            value={form.message}
-            onChange={(e) => setForm({ ...form, message: e.target.value })}
-          />
-          <div className="flex gap-2">
-            <Button onClick={handleCreate} disabled={create.isPending}>
-              {create.isPending ? "Enviando..." : "Enviar"}
-            </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      )}
+      {user && <NewConsultaDialog open={showForm} onOpenChange={setShowForm} producerId={user.id} />}
 
-      {!data?.length ? (
+      {!tickets.length ? (
         <EmptyState
           icon={<MessageSquare size={48} />}
-          title="Sin consultas"
+          title="Todavía no tenés consultas"
           description="Abrí un caso cuando necesites ayuda comercial, de siniestros o administrativa."
         />
       ) : (
-        <ul className="space-y-3">
-          {data.map((t) => (
-            <li key={t.id}>
-              <Link
-                to={`/productor/consultas/${t.id}`}
-                className="block bg-card rounded-xl p-4 border border-border/60 hover:shadow-soft transition-shadow"
+        <>
+          <div className="flex gap-1 border-b border-border">
+            {(
+              [
+                ["activas", "Activas", active.length],
+                ["finalizadas", "Finalizadas", finished.length],
+              ] as const
+            ).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={view === value}
+                onClick={() => setView(value)}
+                className={cn(
+                  "-mb-px border-b-2 px-3 py-2 text-sm transition-colors",
+                  view === value
+                    ? "border-primary font-medium text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
               >
-                <p className="font-medium">{t.subject}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <StatusBadge tone={statusToneFromConsulta(t.status)}>
-                    {consultaStatusLabel(t.status)}
-                  </StatusBadge>
-                  <span>{consultaCategoryLabel(t.category)}</span>
-                  <span>{new Date(t.updated_at).toLocaleDateString("es-AR")}</span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                {label} <span className="text-xs text-muted-foreground">({count})</span>
+              </button>
+            ))}
+          </div>
+
+          {!visible.length ? (
+            <EmptyState
+              title={view === "activas" ? "No tenés consultas activas" : "No tenés consultas finalizadas"}
+              description={
+                view === "activas"
+                  ? "Cuando abras una consulta, la vas a ver acá."
+                  : "Las consultas resueltas y cerradas aparecen acá."
+              }
+            />
+          ) : (
+            <ul className="space-y-3">
+              {visible.map((t) => {
+                const unread = isConsultaUnread(t, "productor");
+                return (
+                  <li key={t.id}>
+                    <Link
+                      to={`/productor/consultas/${t.id}`}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl border bg-card p-4 transition-shadow hover:shadow-soft",
+                        unread ? "border-primary/40" : "border-border/60",
+                      )}
+                    >
+                      <ConsultaPreview ticket={t} unread={unread} ownSide="productor" />
+                      <ChevronRight size={18} className="shrink-0 text-muted-foreground" aria-hidden />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

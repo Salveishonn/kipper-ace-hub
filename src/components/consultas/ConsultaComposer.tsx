@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Paperclip, X } from "lucide-react";
+import { Paperclip, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,27 +77,52 @@ export function ConsultaComposer({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <textarea
-          className="input-kipper flex-1 min-h-[80px]"
-          placeholder={placeholder}
-          value={body}
-          disabled={busy}
-          onChange={(e) => setBody(e.target.value)}
-        />
-        <div className="flex flex-col gap-2">
-          <Button
+    <div className="bg-card rounded-xl border border-border/60 p-3 focus-within:border-primary/50 transition-colors">
+      <textarea
+        className="w-full min-h-[84px] resize-y bg-transparent px-1 py-1 text-sm focus:outline-none placeholder:text-muted-foreground"
+        placeholder={placeholder}
+        aria-label={placeholder}
+        value={body}
+        disabled={busy}
+        onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            void handleSend();
+          }
+        }}
+      />
+      {file && (
+        <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-xs">
+          <Paperclip size={12} className="shrink-0" aria-hidden />
+          <span className="truncate">{file.name}</span>
+          <button
             type="button"
-            variant="outline"
-            size="icon"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-            aria-label="Adjuntar archivo"
+            className="shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={() => {
+              setFile(null);
+              if (inputRef.current) inputRef.current.value = "";
+            }}
+            aria-label="Quitar adjunto"
           >
-            <Paperclip size={16} />
-          </Button>
-          <Button onClick={handleSend} disabled={busy || (!body.trim() && !file)}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Paperclip size={16} className="mr-1.5" aria-hidden /> Adjuntar
+        </Button>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-[11px] text-muted-foreground sm:inline">Ctrl + Enter para enviar</span>
+          <Button size="sm" onClick={handleSend} disabled={busy || (!body.trim() && !file)}>
+            <Send size={14} className="mr-1.5" aria-hidden />
             {uploading ? "Subiendo..." : sending ? "Enviando..." : "Enviar"}
           </Button>
         </div>
@@ -109,23 +134,6 @@ export function ConsultaComposer({
         accept={CONSULTA_ACCEPT}
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
       />
-      {file && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Paperclip size={12} aria-hidden />
-          <span className="truncate">{file.name}</span>
-          <button
-            type="button"
-            className="text-foreground hover:text-destructive"
-            onClick={() => {
-              setFile(null);
-              if (inputRef.current) inputRef.current.value = "";
-            }}
-            aria-label="Quitar adjunto"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

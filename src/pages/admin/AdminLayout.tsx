@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultasLive, useConsultaUnreadCount } from "@/hooks/useSupportTickets";
+import { UnreadBadge } from "@/components/consultas/UnreadBadge";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { KipperBrandLockup } from "@/components/layout/KipperBrandLockup";
 
@@ -28,7 +30,9 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  useConsultasLive(!!user);
+  const unreadConsultas = useConsultaUnreadCount("equipo");
 
   const handleSignOut = async () => {
     await signOut();
@@ -50,6 +54,7 @@ const AdminLayout = () => {
       >
         <link.icon size={18} aria-hidden />
         <span className="font-medium">{link.label}</span>
+        {link.href === "/admin/consultas" && <UnreadBadge count={unreadConsultas} />}
       </Link>
     );
   };
