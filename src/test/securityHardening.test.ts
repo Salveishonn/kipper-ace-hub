@@ -119,12 +119,12 @@ describe("solicitud PAS notifications", () => {
     expect(notificationProcessor).toContain('row.event_type === "pas.application.created"');
   });
 
-  it("does not report success when signup was rate limited", () => {
-    const rateLimitBranch = registerFunction.slice(
-      registerFunction.indexOf('signUpMessage.includes("rate limit")'),
+  it("does not report success when signup failed", () => {
+    const failureBranch = registerFunction.slice(
+      registerFunction.indexOf("describeSignUpFailure(signUpError)"),
       registerFunction.indexOf("accountAlreadyExists ="),
     );
-    expect(rateLimitBranch).toContain("429");
-    expect(rateLimitBranch).not.toContain("GENERIC_OK");
+    expect(failureBranch).toContain("signUpFailure.status");
+    expect(failureBranch).not.toContain("GENERIC_OK");
   });
 });

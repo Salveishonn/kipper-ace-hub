@@ -63,6 +63,8 @@ This needs `SUPABASE_ACCESS_TOKEN` set to a personal access token, and it also s
 
 `invite-pas-producer` remains only for legacy applications without an Auth `user_id`.
 
+Notification emails are sent when an event fires. The `process-due-notification-outbox` pg_cron job checks every 5 minutes and retries failed sends with backoff, up to 8 attempts in about 10.5 hours. After that a row stays `failed` in `notification_outbox`, with the reason in `last_error`.
+
 Apply DB migration:
 
 ```sh
