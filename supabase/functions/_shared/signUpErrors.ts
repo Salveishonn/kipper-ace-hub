@@ -2,6 +2,8 @@ export type SignUpFailure = { error: string; status: number };
 
 const NOT_SAVED = "Tu solicitud no se registró.";
 
+export const EMAIL_NOT_FOUND_MESSAGE = `Ese email no parece existir. Revisá que esté bien escrito. ${NOT_SAVED}`;
+
 /** Explains failures where no account was created, so the applicant knows what to do next. */
 export function describeSignUpFailure(error: {
   code?: string;
@@ -10,10 +12,7 @@ export function describeSignUpFailure(error: {
   const message = error.message.toLowerCase();
 
   if (error.code === "email_address_invalid") {
-    return {
-      error: `Ese email no parece existir. Revisá que esté bien escrito. ${NOT_SAVED}`,
-      status: 400,
-    };
+    return { error: EMAIL_NOT_FOUND_MESSAGE, status: 400 };
   }
   if (error.code === "weak_password") {
     return {
