@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { emailDetails, emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
+import { sendKipperEmail, type SendEmailResult } from "../_shared/sendEmail.ts";
 
 type OutboxRow = {
   id: string;
@@ -19,84 +21,55 @@ function json(req: Request, body: unknown, status = 200) {
   });
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
 function caseRef(id: string): string {
   return id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
-function brandedEmail(params: {
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+
+function notificationEmail(params: {
+  subject: string;
+  eyebrow: string;
   heading: string;
   intro: string;
   rows: Array<[string, string]>;
   ctaUrl: string;
   ctaLabel: string;
-}): string {
-  const rows = params.rows
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 0;color:#6b5e57;font-size:13px;width:140px;">${escapeHtml(label)}</td><td style="padding:6px 0;color:#1a1412;font-size:14px;">${escapeHtml(value)}</td></tr>`,
-    )
-    .join("");
-  return `
-  <div style="font-family:Inter,Segoe UI,Arial,sans-serif;background:#f7f4f1;padding:24px;">
-    <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #eadfd6;border-radius:8px;overflow:hidden;">
-      <div style="background:#601410;color:#fff;padding:18px 24px;">
-        <p style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;">Kipper Seguros</p>
-        <h1 style="margin:8px 0 0;font-size:20px;">${escapeHtml(params.heading)}</h1>
-      </div>
-      <div style="padding:24px;">
-        <p style="margin:0 0 16px;color:#3a332f;line-height:1.55;">${escapeHtml(params.intro)}</p>
-        <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${rows}</table>
-        <p style="margin:0 0 8px;">
-          <a href="${escapeHtml(params.ctaUrl)}" style="display:inline-block;background:#601410;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:600;">
-            ${escapeHtml(params.ctaLabel)}
-          </a>
-        </p>
-        <p style="margin:12px 0 0;font-size:12px;color:#7a716b;">Si el botón no funciona: ${escapeHtml(params.ctaUrl)}</p>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function sendResend(params: {
-  to: string[];
-  subject: string;
-  html: string;
-  idempotencyKey: string;
-}): Promise<{ id?: string; error?: string }> {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const from =
-    Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
-    "Kipper Seguros <notificaciones@kipperseguros.com>";
-  if (!resendKey) return { error: "RESEND_API_KEY no configurado" };
-  if (!params.to.length) return { error: "Sin destinatarios admin" };
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": params.idempotencyKey.slice(0, 256),
-    },
-    body: JSON.stringify({
-      from,
-      to: params.to,
+}): { subject: string; html: string; text: string } {
+  const footerNote = "Aviso interno para el equipo de Organización Kipper.";
+  return {
+    subject: params.subject,
+    html: renderKipperEmail({
       subject: params.subject,
-      html: params.html,
+      preheader: params.intro,
+      eyebrow: params.eyebrow,
+      headline: params.heading,
+      bodyHtml: `${emailParagraph(params.intro)}
+              ${emailDetails(params.rows)}`,
+      cta: { label: params.ctaLabel, url: params.ctaUrl, showFallbackLink: true },
+      footerNote,
     }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    return { error: `Resend ${res.status}: ${JSON.stringify(body).slice(0, 280)}` };
-  }
-  return { id: typeof body?.id === "string" ? body.id : undefined };
+    text: [
+      params.heading,
+      "",
+      params.intro,
+      "",
+      ...params.rows.map(([label, value]) => `${label}: ${value}`),
+      "",
+      `${params.ctaLabel}: ${params.ctaUrl}`,
+      "",
+      "Organización Kipper",
+      footerNote,
+    ].join("\n"),
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -151,71 +124,71 @@ Deno.serve(async (req: Request) => {
     const ticketId = String(payload.ticket_id ?? "");
     const subject = String(payload.subject ?? "Consulta");
     const producerName = String(payload.producer_name ?? "Productor");
-    const createdAt = String(payload.created_at ?? new Date().toISOString());
+    const createdAt = formatDate(String(payload.created_at ?? new Date().toISOString()));
     const messagePreview = String(payload.preview ?? "");
     const ctaUrl = `${siteUrl}/admin/consultas/${ticketId}`;
     const ref = caseRef(ticketId || row.event_id);
 
     const email =
       row.event_type === "pas.application.created"
-        ? {
-            subject: "Nueva solicitud PAS — Kipper Seguros",
-            html: brandedEmail({
-              heading: "Nueva solicitud PAS",
-              intro: `${producerName} pidió sumarse como Productor Asesor de Seguros.`,
-              rows: [
-                ["Nombre", producerName],
-                ["Email", String(payload.email ?? "—")],
-                ["Teléfono", String(payload.phone ?? "—")],
-                ["Matrícula SSN", String(payload.matricula_ssn ?? "—")],
-                ["Ubicación", String(payload.location ?? "—")],
-                ["Fecha", createdAt],
-                ["Mensaje", messagePreview || "—"],
-              ],
-              ctaUrl: `${siteUrl}/admin/productores`,
-              ctaLabel: "Revisar solicitud",
-            }),
-          }
+        ? notificationEmail({
+            subject: "Nueva solicitud PAS — Organización Kipper",
+            eyebrow: "Solicitud PAS",
+            heading: "Nueva solicitud PAS",
+            intro: `${producerName} pidió sumarse como Productor Asesor de Seguros.`,
+            rows: [
+              ["Nombre", producerName],
+              ["Email", String(payload.email ?? "—")],
+              ["Teléfono", String(payload.phone ?? "—")],
+              ["Matrícula SSN", String(payload.matricula_ssn ?? "—")],
+              ["Ubicación", String(payload.location ?? "—")],
+              ["Fecha", createdAt],
+              ["Mensaje", messagePreview || "—"],
+            ],
+            ctaUrl: `${siteUrl}/admin/productores`,
+            ctaLabel: "Revisar solicitud",
+          })
         : row.event_type === "case.created"
-        ? {
-            subject: "Nuevo caso de productor — Kipper Seguros",
-            html: brandedEmail({
-              heading: "Nuevo caso de productor",
-              intro: `${producerName} abrió un caso en el portal de productores.`,
-              rows: [
-                ["Productor", producerName],
-                ["Caso", `#${ref}`],
-                ["Asunto", subject],
-                ["Fecha", createdAt],
-                ["Vista previa", messagePreview || "—"],
-              ],
-              ctaUrl,
-              ctaLabel: "Ver caso en admin",
-            }),
-          }
-        : {
-            subject: `Nuevo mensaje en caso #${ref} — Kipper Seguros`,
-            html: brandedEmail({
-              heading: "Nuevo mensaje de productor",
-              intro: `${producerName} escribió en un caso abierto.`,
-              rows: [
-                ["Productor", producerName],
-                ["Caso", `#${ref}`],
-                ["Asunto", subject],
-                ["Fecha", createdAt],
-                ["Vista previa", messagePreview || "—"],
-              ],
-              ctaUrl,
-              ctaLabel: "Abrir conversación",
-            }),
-          };
+        ? notificationEmail({
+            subject: "Nuevo caso de productor — Organización Kipper",
+            eyebrow: "Portal de consultas",
+            heading: "Nuevo caso de productor",
+            intro: `${producerName} abrió un caso en el portal de productores.`,
+            rows: [
+              ["Productor", producerName],
+              ["Caso", `#${ref}`],
+              ["Asunto", subject],
+              ["Fecha", createdAt],
+              ["Vista previa", messagePreview || "—"],
+            ],
+            ctaUrl,
+            ctaLabel: "Ver caso en admin",
+          })
+        : notificationEmail({
+            subject: `Nuevo mensaje en caso #${ref} — Organización Kipper`,
+            eyebrow: "Portal de consultas",
+            heading: "Nuevo mensaje de productor",
+            intro: `${producerName} escribió en un caso abierto.`,
+            rows: [
+              ["Productor", producerName],
+              ["Caso", `#${ref}`],
+              ["Asunto", subject],
+              ["Fecha", createdAt],
+              ["Vista previa", messagePreview || "—"],
+            ],
+            ctaUrl,
+            ctaLabel: "Abrir conversación",
+          });
 
-    const sent = await sendResend({
-      to: recipients,
-      subject: email.subject,
-      html: email.html,
-      idempotencyKey: `${row.event_type}/${row.event_id}`,
-    });
+    const sent: SendEmailResult = recipients.length
+      ? await sendKipperEmail({
+          to: recipients,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          idempotencyKey: `${row.event_type}/${row.event_id}`,
+        })
+      : { error: "Sin destinatarios admin" };
 
     if (sent.error) {
       console.error("notification email failed", row.event_type);

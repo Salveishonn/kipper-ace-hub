@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2";
+import { emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
+import { sendKipperEmail } from "../_shared/sendEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,14 +33,6 @@ function trimOrNull(v: unknown): string | null {
   return t.length ? t : null;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
 function randomPassword(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(24));
   let raw = "";
@@ -66,12 +60,30 @@ async function sendSetupEmail(params: {
   fullName: string;
   setupUrl: string;
 }): Promise<{ sent: boolean; warning?: string }> {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const from =
-    Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
-    "Kipper Seguros <noreply@kipperseguros.com>";
+  const subject = "Creá tu contraseña para el Portal de Productores Kipper";
+  const greeting = `Hola ${params.fullName},`;
+  const intro =
+    "Te dimos acceso al Portal de Productores de Organización Kipper. Elegí tu contraseña con este enlace (vence en unas horas):";
+  const footerNote = "Recibís este email porque el equipo de Organización Kipper creó tu acceso.";
+  const html = renderKipperEmail({
+    subject,
+    preheader: "Elegí tu contraseña para ingresar al Portal de Productores.",
+    eyebrow: "Tu acceso",
+    headline: "Creá tu contraseña",
+    bodyHtml: `${emailParagraph(greeting)}
+              ${emailParagraph(intro)}`,
+    cta: { label: "Crear mi contraseña", url: params.setupUrl, showFallbackLink: true },
+    footerNote,
+  });
 
-  if (!resendKey) {
+  const result = await sendKipperEmail({
+    to: [params.to],
+    subject,
+    html,
+    text: [greeting, "", intro, params.setupUrl, "", "Organización Kipper", footerNote].join("\n"),
+  });
+
+  if (result.notConfigured) {
     return {
       sent: false,
       warning:
@@ -79,41 +91,8 @@ async function sendSetupEmail(params: {
     };
   }
 
-  const html = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 560px; margin: 0 auto; color: #1a2332;">
-      <h1 style="font-size: 22px; margin-bottom: 16px;">Kipper Seguros</h1>
-      <p>Hola ${escapeHtml(params.fullName)},</p>
-      <p>
-        Te dimos acceso al Portal de Productores de Kipper Seguros.
-        Elegí tu contraseña con este enlace (vence en unas horas):
-      </p>
-      <p style="margin: 28px 0;">
-        <a href="${params.setupUrl}"
-           style="background:#0f3d5c;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;display:inline-block;">
-          Crear mi contraseña
-        </a>
-      </p>
-      <p style="font-size: 13px; color: #5a6570;">Si el botón no funciona, visitá: ${params.setupUrl}</p>
-    </div>
-  `;
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [params.to],
-      subject: "Creá tu contraseña para el Portal de Productores Kipper",
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("Resend error", res.status, text.slice(0, 300));
+  if (result.error) {
+    console.error("Resend error", result.error);
     return {
       sent: false,
       warning:

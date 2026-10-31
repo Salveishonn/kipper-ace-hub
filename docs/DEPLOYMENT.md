@@ -51,9 +51,15 @@ npx supabase functions deploy delete-pas-producer --project-ref qefzutfaawsegmwg
 Required secrets (Supabase Dashboard → Edge Functions → Secrets, never Vite):
 
 - `SITE_URL=https://kipperseguros.com` (register + approve + legacy invite)
-- Optional approval email via Resend:
-  - `RESEND_API_KEY`
-  - `RESEND_FROM_EMAIL` (verified domain sender)
+- `RESEND_API_KEY` (all Edge Function emails)
+
+Every email uses `supabase/functions/_shared/emailLayout.ts` and is sent as `Organización Kipper <notificaciones@kipperseguros.com>` (`_shared/sendEmail.ts`). Supabase Auth sends its own emails, so its templates are generated from `supabase/templates/authEmails.ts`. After changing them, regenerate and apply:
+
+```sh
+deno run --allow-read --allow-write --allow-env --allow-net=api.supabase.com scripts/apply-auth-emails.ts --apply
+```
+
+This needs `SUPABASE_ACCESS_TOKEN` set to a personal access token, and it also sets the Auth SMTP sender name and address.
 
 `invite-pas-producer` remains only for legacy applications without an Auth `user_id`.
 
