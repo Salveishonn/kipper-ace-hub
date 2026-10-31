@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { describeSignUpFailure } from "../_shared/signUpErrors.ts";
 
 const GENERIC_OK = {
   ok: true as const,
@@ -116,13 +117,10 @@ Deno.serve(async (req: Request) => {
 
     const signUpMessage = signUpError?.message.toLowerCase() ?? "";
     // No account was created, so telling the applicant we got it would lose the solicitud.
-    if (signUpMessage.includes("rate limit")) {
-      console.error("signUp rate limited", signUpError?.message);
-      return json(
-        req,
-        { error: "Hay muchas solicitudes en este momento. Intentá nuevamente en unos minutos." },
-        429,
-      );
+    const signUpFailure = signUpError && describeSignUpFailure(signUpError);
+    if (signUpFailure) {
+      console.error("signUp failed", signUpError.code, signUpError.message);
+      return json(req, { error: signUpFailure.error }, signUpFailure.status);
     }
 
     // Supabase hides existing accounts: an error, or a placeholder user without identities.
