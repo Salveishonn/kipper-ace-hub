@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { emailCode, emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
+import { sendKipperEmail } from "../_shared/sendEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,14 +18,6 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function getSessionIdFromJwt(token: string): string | null {
@@ -64,44 +58,42 @@ async function sendCodeEmail(params: {
   to: string;
   code: string;
 }): Promise<{ sent: boolean; warning?: string }> {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const from =
-    Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
-    "Kipper Seguros <noreply@kipperseguros.com>";
+  const subject = "Código de acceso a Administración Kipper";
+  const footerNote = "Si no pediste este código, ignorá este email.";
+  const html = renderKipperEmail({
+    subject,
+    preheader: "Tu código de seguridad vence en 10 minutos.",
+    eyebrow: "Seguridad",
+    headline: "Tu código de acceso",
+    bodyHtml: `${emailParagraph("Tu código de seguridad para acceder a la administración es:")}
+              ${emailCode(params.code)}
+              ${emailParagraph("Vence en 10 minutos.")}`,
+    footerNote,
+  });
 
-  if (!resendKey) {
+  const result = await sendKipperEmail({
+    to: [params.to],
+    subject,
+    html,
+    text: [
+      "Tu código de seguridad para acceder a la administración es:",
+      "",
+      params.code,
+      "",
+      "Vence en 10 minutos.",
+      footerNote,
+    ].join("\n"),
+  });
+
+  if (result.notConfigured) {
     return {
       sent: false,
       warning: "No hay proveedor de email configurado (RESEND_API_KEY).",
     };
   }
 
-  const html = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 560px; margin: 0 auto; color: #1a2332;">
-      <h1 style="font-size: 22px; margin-bottom: 16px;">Kipper Seguros</h1>
-      <p>Tu código de seguridad para acceder a la administración es:</p>
-      <p style="font-size: 32px; letter-spacing: 8px; font-weight: 700; margin: 24px 0;">${escapeHtml(params.code)}</p>
-      <p>Vence en 10 minutos. Si no pediste este código, ignorá este email.</p>
-    </div>
-  `;
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [params.to],
-      subject: "Código de acceso a Administración Kipper",
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("Resend error", res.status, text.slice(0, 300));
+  if (result.error) {
+    console.error("Resend error", result.error);
     return { sent: false, warning: "No se pudo enviar el email con el código." };
   }
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendKipperEmail } from "../_shared/sendEmail.ts";
 import { buildWelcomeEmail } from "../_shared/welcomeEmail.ts";
 
 const corsHeaders = {
@@ -33,12 +34,22 @@ async function sendWelcomeEmail(params: {
   siteUrl: string;
   emailVerified: boolean;
 }): Promise<{ sent: boolean; warning?: string }> {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const from =
-    Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
-    "Kipper Seguros <noreply@kipperseguros.com>";
+  const { subject, html, text } = buildWelcomeEmail({
+    fullName: params.fullName,
+    email: params.to,
+    siteUrl: params.siteUrl,
+    emailVerified: params.emailVerified,
+  });
 
-  if (!resendKey) {
+  const result = await sendKipperEmail({
+    to: [params.to],
+    subject,
+    html,
+    text,
+    idempotencyKey: `pas-welcome/${params.applicationId}`,
+  });
+
+  if (result.notConfigured) {
     return {
       sent: false,
       warning:
@@ -46,32 +57,8 @@ async function sendWelcomeEmail(params: {
     };
   }
 
-  const { subject, html, text: plainText } = buildWelcomeEmail({
-    fullName: params.fullName,
-    email: params.to,
-    siteUrl: params.siteUrl,
-    emailVerified: params.emailVerified,
-  });
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": `pas-welcome/${params.applicationId}`,
-    },
-    body: JSON.stringify({
-      from,
-      to: [params.to],
-      subject,
-      html,
-      text: plainText,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("Resend error", res.status, text.slice(0, 300));
+  if (result.error) {
+    console.error("Resend error", result.error);
     return {
       sent: false,
       warning:
