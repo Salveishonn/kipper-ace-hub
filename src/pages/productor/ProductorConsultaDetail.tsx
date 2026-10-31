@@ -1,34 +1,51 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Lock, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  useMarkSupportTicketRead,
   useSupportMessages,
   useSendSupportMessage,
-  useSupportTickets,
+  useSupportTicket,
   useProfilesByUserIds,
 } from "@/hooks/useSupportTickets";
 import { ConsultaThread } from "@/components/consultas/ConsultaThread";
 import { ConsultaComposer } from "@/components/consultas/ConsultaComposer";
-import { displayName } from "@/components/shared/UserAvatar";
 import { LoadingState, ErrorState } from "@/components/ui/loading-state";
+import { StatusBadge, statusToneFromConsulta } from "@/components/ui/status-badge";
+import { consultaRef, isConsultaUnread } from "@/lib/consultaActivity";
 import { consultaCategoryLabel, consultaStatusLabel } from "@/lib/consultaCategories";
+
+function statusNotice(status: string, lastMessageBy: string | null) {
+  if (status === "cerrado") {
+    return { icon: Lock, text: "Esta consulta está cerrada. Si necesitás algo más, abrí una nueva." };
+  }
+  if (status === "resuelto") {
+    return { icon: CheckCircle2, text: "El equipo marcó esta consulta como resuelta. Si seguís necesitando ayuda, respondé y la reabrimos." };
+  }
+  if (lastMessageBy === "equipo") {
+    return { icon: MessageCircle, text: "El equipo respondió. Te toca a vos si necesitás algo más." };
+  }
+  return { icon: Clock, text: "Recibimos tu mensaje. Te avisamos por email cuando el equipo responda." };
+}
 
 const ProductorConsultaDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { data: tickets } = useSupportTickets({ producerId: user?.id });
-  const ticket = tickets?.find((t) => t.id === id);
+  const { data: ticket, isLoading: ticketLoading } = useSupportTicket(id);
   const { data: messages, isLoading, error } = useSupportMessages(id);
   const send = useSendSupportMessage();
+  const markRead = useMarkSupportTicketRead();
+  const { mutate: markTicketRead } = markRead;
 
-  const canReply = ticket && ["abierto", "en_gestion"].includes(ticket.status);
+  const unread = ticket ? isConsultaUnread(ticket, "productor") : false;
+  useEffect(() => {
+    if (id && unread) markTicketRead(id);
+  }, [id, unread, markTicketRead]);
 
   const profileIds = useMemo(() => {
     const ids = new Set<string>();
     if (ticket?.producer_id) ids.add(ticket.producer_id);
-    if (ticket?.resolved_by) ids.add(ticket.resolved_by);
-    if (ticket?.closed_by) ids.add(ticket.closed_by);
     for (const m of messages ?? []) ids.add(m.author_user_id);
     return Array.from(ids);
   }, [ticket, messages]);
@@ -39,42 +56,48 @@ const ProductorConsultaDetail = () => {
     [profiles],
   );
 
-  if (isLoading) return <LoadingState text="Cargando mensajes..." />;
+  if (isLoading || ticketLoading) return <LoadingState text="Cargando mensajes..." />;
   if (error) return <ErrorState title="Error" message="No se pudo cargar la conversación" />;
+  if (!ticket) return <ErrorState title="Consulta no encontrada" message="Puede que ya no exista o no tengas acceso." />;
+
+  const canReply = ticket.status !== "cerrado";
+  const notice = statusNotice(ticket.status, ticket.last_message_by);
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-5 max-w-3xl">
       <Link to="/productor/consultas" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft size={16} /> Volver
+        <ArrowLeft size={16} aria-hidden /> Volver a consultas
       </Link>
+
       <div>
-        <h1 className="text-2xl font-bold">{ticket?.subject ?? "Consulta"}</h1>
-        <p className="text-sm text-muted-foreground">
-          {ticket ? consultaCategoryLabel(ticket.category) : ""} · {ticket ? consultaStatusLabel(ticket.status) : ""}
-        </p>
-        {ticket?.status === "resuelto" && ticket.resolved_by && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Resuelto por {displayName(profilesById[ticket.resolved_by], "Equipo Kipper")}
-            {ticket.resolved_at ? ` · ${new Date(ticket.resolved_at).toLocaleString("es-AR")}` : ""}
-          </p>
-        )}
-        {ticket?.status === "cerrado" && ticket.closed_by && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Cerrado por {displayName(profilesById[ticket.closed_by], "Equipo Kipper")}
-            {ticket.closed_at ? ` · ${new Date(ticket.closed_at).toLocaleString("es-AR")}` : ""}
-          </p>
-        )}
+        <h1 className="text-2xl font-bold tracking-tight break-words">{ticket.subject}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <StatusBadge tone={statusToneFromConsulta(ticket.status)}>
+            {consultaStatusLabel(ticket.status)}
+          </StatusBadge>
+          <span>{consultaCategoryLabel(ticket.category)}</span>
+          <span aria-hidden>·</span>
+          <span>{consultaRef(ticket.id)}</span>
+          <span aria-hidden>·</span>
+          <span>Abierta el {new Date(ticket.created_at).toLocaleDateString("es-AR")}</span>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-muted/50 px-4 py-3 text-sm">
+        <notice.icon size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+        <p>{notice.text}</p>
       </div>
 
       <ConsultaThread
         messages={messages ?? []}
         currentUserId={user?.id}
+        producerId={ticket.producer_id}
         profilesById={profilesById}
       />
 
-      {canReply && id && user ? (
+      {canReply && id && user && (
         <ConsultaComposer
-          placeholder="Escribí tu mensaje..."
+          placeholder={ticket.status === "resuelto" ? "Escribí para reabrir la consulta..." : "Escribí tu mensaje..."}
           sending={send.isPending}
           ticketId={id}
           userId={user.id}
@@ -86,8 +109,6 @@ const ProductorConsultaDetail = () => {
             });
           }}
         />
-      ) : (
-        <p className="text-sm text-muted-foreground">Este caso está cerrado o resuelto.</p>
       )}
     </div>
   );

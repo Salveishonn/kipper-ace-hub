@@ -1058,11 +1058,16 @@ export type Database = {
           closed_by: string | null
           created_at: string
           id: string
+          last_message_at: string
+          last_message_by: string | null
+          last_message_preview: string | null
           producer_id: string
+          producer_last_read_at: string | null
           resolved_at: string | null
           resolved_by: string | null
           status: string
           subject: string
+          team_last_read_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1217,6 +1222,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      mark_support_ticket_read: {
+        Args: { p_ticket_id: string }
+        Returns: undefined
+      }
       approve_pas_application: {
         Args: {
           p_admin_user_id: string

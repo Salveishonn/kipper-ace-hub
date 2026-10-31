@@ -5,7 +5,12 @@ import { sendKipperEmail, type SendEmailResult } from "../_shared/sendEmail.ts";
 
 type OutboxRow = {
   id: string;
-  event_type: "case.created" | "case.message.created" | "pas.application.created";
+  event_type:
+    | "case.created"
+    | "case.message.created"
+    | "case.reply.created"
+    | "case.status.changed"
+    | "pas.application.created";
   event_id: string;
   payload: Record<string, unknown>;
   attempts: number;
@@ -43,8 +48,9 @@ function notificationEmail(params: {
   rows: Array<[string, string]>;
   ctaUrl: string;
   ctaLabel: string;
+  footerNote?: string;
 }): { subject: string; html: string; text: string } {
-  const footerNote = "Aviso interno para el equipo de Organización Kipper.";
+  const footerNote = params.footerNote ?? "Aviso interno para el equipo de Organización Kipper.";
   return {
     subject: params.subject,
     html: renderKipperEmail({
@@ -128,9 +134,44 @@ Deno.serve(async (req: Request) => {
     const messagePreview = String(payload.preview ?? "");
     const ctaUrl = `${siteUrl}/admin/consultas/${ticketId}`;
     const ref = caseRef(ticketId || row.event_id);
+    const portalUrl = `${siteUrl}/productor/consultas/${ticketId}`;
+    const producerFooter = "Recibís este email porque tenés una consulta abierta en el Portal de Productores.";
+    const toProducer = row.event_type === "case.reply.created" || row.event_type === "case.status.changed";
+    const closed = payload.status === "cerrado";
 
     const email =
-      row.event_type === "pas.application.created"
+      row.event_type === "case.reply.created"
+        ? notificationEmail({
+            subject: `Respondimos tu consulta #${ref} — Organización Kipper`,
+            eyebrow: "Tu consulta",
+            heading: "El equipo respondió tu consulta",
+            intro: "Tenés una nueva respuesta del equipo de Organización Kipper.",
+            rows: [
+              ["Consulta", `#${ref}`],
+              ["Asunto", subject],
+              ["Respuesta", messagePreview || "—"],
+            ],
+            ctaUrl: portalUrl,
+            ctaLabel: "Ver respuesta",
+            footerNote: producerFooter,
+          })
+        : row.event_type === "case.status.changed"
+        ? notificationEmail({
+            subject: `Tu consulta #${ref} fue ${closed ? "cerrada" : "resuelta"} — Organización Kipper`,
+            eyebrow: "Tu consulta",
+            heading: closed ? "Cerramos tu consulta" : "Resolvimos tu consulta",
+            intro: closed
+              ? "Si necesitás algo más, podés abrir una nueva consulta desde el portal."
+              : "Si seguís necesitando ayuda, respondé desde el portal y la reabrimos.",
+            rows: [
+              ["Consulta", `#${ref}`],
+              ["Asunto", subject],
+            ],
+            ctaUrl: portalUrl,
+            ctaLabel: "Ver consulta",
+            footerNote: producerFooter,
+          })
+        : row.event_type === "pas.application.created"
         ? notificationEmail({
             subject: "Nueva solicitud PAS — Organización Kipper",
             eyebrow: "Solicitud PAS",
@@ -180,15 +221,16 @@ Deno.serve(async (req: Request) => {
             ctaLabel: "Abrir conversación",
           });
 
-    const sent: SendEmailResult = recipients.length
+    const to = toProducer ? [String(payload.producer_email ?? "")].filter(Boolean) : recipients;
+    const sent: SendEmailResult = to.length
       ? await sendKipperEmail({
-          to: recipients,
+          to,
           subject: email.subject,
           html: email.html,
           text: email.text,
           idempotencyKey: `${row.event_type}/${row.event_id}`,
         })
-      : { error: "Sin destinatarios admin" };
+      : { error: "Sin destinatarios" };
 
     if (sent.error) {
       console.error("notification email failed", row.event_type);

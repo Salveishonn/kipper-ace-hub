@@ -1,58 +1,57 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import {
-  useSupportTickets,
-  useUpdateSupportTicketStatus,
-  useProfilesByUserIds,
-} from "@/hooks/useSupportTickets";
-import { displayName } from "@/components/shared/UserAvatar";
+import { Search } from "lucide-react";
+import { useProfilesByUserIds, useSupportTickets } from "@/hooks/useSupportTickets";
+import { UserAvatar, displayName } from "@/components/shared/UserAvatar";
 import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
-import { StatusBadge, statusToneFromConsulta } from "@/components/ui/status-badge";
+import { ConsultaPreview } from "@/components/consultas/ConsultaPreview";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
-import { toast } from "sonner";
 import {
-  CONSULTA_CATEGORIES,
-  CONSULTA_STATUSES,
-  consultaCategoryLabel,
-  consultaStatusLabel,
-} from "@/lib/consultaCategories";
+  ADMIN_CONSULTA_QUEUES,
+  consultaRef,
+  isConsultaUnread,
+  matchesAdminConsultaQueue,
+  type AdminConsultaQueue,
+} from "@/lib/consultaActivity";
+import { CONSULTA_CATEGORIES } from "@/lib/consultaCategories";
+import { cn } from "@/lib/utils";
 
 const AdminConsultas = () => {
-  const { user } = useAuth();
   const { data, isLoading, error } = useSupportTickets({ admin: true });
-  const updateStatus = useUpdateSupportTicketStatus();
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [queue, setQueue] = useState<AdminConsultaQueue>("por_responder");
+  const [queueChosen, setQueueChosen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("todos");
-  const [producerFilter, setProducerFilter] = useState("todos");
-
-  const relatedIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const t of data ?? []) {
-      ids.add(t.producer_id);
-      if (t.resolved_by) ids.add(t.resolved_by);
-      if (t.closed_by) ids.add(t.closed_by);
-    }
-    return Array.from(ids);
-  }, [data]);
-
-  const { data: profiles } = useProfilesByUserIds(relatedIds);
-  const profilesById = useMemo(
-    () => Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p])),
-    [profiles],
-  );
+  const [search, setSearch] = useState("");
 
   const producerIds = useMemo(
     () => Array.from(new Set((data ?? []).map((t) => t.producer_id))),
     [data],
   );
+  const { data: profiles } = useProfilesByUserIds(producerIds);
+  const profilesById = useMemo(
+    () => Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p])),
+    [profiles],
+  );
 
-  const filtered = (data ?? []).filter((t) => {
-    if (statusFilter !== "todos" && t.status !== statusFilter) return false;
+  const tickets = data ?? [];
+  const pendingCount = tickets.filter((t) => matchesAdminConsultaQueue(t, "por_responder")).length;
+
+  // With nothing to answer, an empty first tab would hide existing conversations.
+  useEffect(() => {
+    if (!queueChosen && data && pendingCount === 0) setQueue("todas");
+  }, [queueChosen, data, pendingCount]);
+
+  const term = search.trim().toLowerCase();
+  const matchesFilters = (t: (typeof tickets)[number]) => {
     if (categoryFilter !== "todos" && t.category !== categoryFilter) return false;
-    if (producerFilter !== "todos" && t.producer_id !== producerFilter) return false;
-    return true;
-  });
+    if (!term) return true;
+    const profile = profilesById[t.producer_id];
+    return [t.subject, consultaRef(t.id), t.last_message_preview, profile?.full_name, profile?.email]
+      .some((value) => value?.toLowerCase().includes(term));
+  };
+
+  const filtered = tickets.filter(matchesFilters);
+  const visible = filtered.filter((t) => matchesAdminConsultaQueue(t, queue));
 
   if (isLoading) return <LoadingState text="Cargando consultas..." />;
   if (error) return <ErrorState title="Error" message="No se pudieron cargar las consultas" />;
@@ -61,25 +60,56 @@ const AdminConsultas = () => {
     <div className="space-y-6">
       <WorkspaceHeader
         title="Consultas"
-        description="Casos reportados por productores"
+        description={
+          pendingCount
+            ? `${pendingCount} ${pendingCount === 1 ? "consulta espera" : "consultas esperan"} tu respuesta`
+            : "Estás al día con los productores"
+        }
       />
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
+        {ADMIN_CONSULTA_QUEUES.map((q) => {
+          const count = filtered.filter((t) => matchesAdminConsultaQueue(t, q.value)).length;
+          return (
+            <button
+              key={q.value}
+              type="button"
+              aria-pressed={queue === q.value}
+              onClick={() => {
+                setQueue(q.value);
+                setQueueChosen(true);
+              }}
+              className={cn(
+                "shrink-0 border-b-2 px-3 py-2 text-sm transition-colors",
+                queue === q.value
+                  ? "border-primary font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {q.label} <span className="text-xs text-muted-foreground">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            type="search"
+            className="input-kipper py-2 pl-9 text-sm"
+            placeholder="Buscar asunto, productor o número"
+            aria-label="Buscar consultas"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <select
-          className="input-kipper w-auto text-sm py-2"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          aria-label="Filtrar por estado"
-        >
-          <option value="todos">Todos los estados</option>
-          {CONSULTA_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input-kipper w-auto text-sm py-2"
+          className="input-kipper py-2 text-sm sm:w-56"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           aria-label="Filtrar por categoría"
@@ -91,82 +121,44 @@ const AdminConsultas = () => {
             </option>
           ))}
         </select>
-        <select
-          className="input-kipper w-auto text-sm py-2"
-          value={producerFilter}
-          onChange={(e) => setProducerFilter(e.target.value)}
-          aria-label="Filtrar por productor"
-        >
-          <option value="todos">Todos los productores</option>
-          {producerIds.map((id) => (
-            <option key={id} value={id}>
-              {displayName(profilesById[id], "Productor")}
-            </option>
-          ))}
-        </select>
       </div>
 
-      {!filtered.length ? (
+      {!visible.length ? (
         <EmptyState
           title="Sin consultas"
           description={
-            data?.length
-              ? "No hay consultas con esos filtros."
-              : "Cuando un productor abra un caso, aparecerá acá."
+            !tickets.length
+              ? "Cuando un productor abra un caso, aparecerá acá."
+              : term || categoryFilter !== "todos"
+                ? "No hay consultas con esos filtros."
+                : "No hay consultas en esta bandeja."
           }
         />
       ) : (
-        <div className="space-y-3">
-          {filtered.map((t) => (
-            <div
-              key={t.id}
-              className="bg-card rounded-xl p-4 border border-border/60 flex flex-wrap justify-between gap-4 items-center"
-            >
-              <div className="min-w-0">
-                <Link to={`/admin/consultas/${t.id}`} className="font-medium hover:text-primary">
-                  {t.subject}
+        <ul className="space-y-3">
+          {visible.map((t) => {
+            const unread = isConsultaUnread(t, "equipo");
+            const profile = profilesById[t.producer_id];
+            const person = displayName(profile, "Productor");
+            return (
+              <li key={t.id}>
+                <Link
+                  to={`/admin/consultas/${t.id}`}
+                  className={cn(
+                    "flex gap-3 rounded-xl border bg-card p-4 transition-shadow hover:shadow-soft",
+                    unread ? "border-primary/40" : "border-border/60",
+                  )}
+                >
+                  <UserAvatar profile={profile} className="h-10 w-10 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-0.5 truncate text-xs font-medium text-muted-foreground">{person}</p>
+                    <ConsultaPreview ticket={t} unread={unread} ownSide="equipo" person={person} />
+                  </div>
                 </Link>
-                <p className="text-xs text-muted-foreground">
-                  {displayName(profilesById[t.producer_id], "Productor")} · {consultaCategoryLabel(t.category)} ·{" "}
-                  {new Date(t.updated_at).toLocaleDateString("es-AR")}
-                </p>
-                <div className="mt-2">
-                  <StatusBadge tone={statusToneFromConsulta(t.status)}>
-                    {consultaStatusLabel(t.status)}
-                  </StatusBadge>
-                </div>
-                {t.status === "resuelto" && t.resolved_by && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Resuelto por {displayName(profilesById[t.resolved_by])}
-                  </p>
-                )}
-                {t.status === "cerrado" && t.closed_by && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Cerrado por {displayName(profilesById[t.closed_by])}
-                  </p>
-                )}
-              </div>
-              <select
-                className="input-kipper w-auto text-sm py-2"
-                value={t.status}
-                onChange={(e) => {
-                  if (!user) return;
-                  updateStatus.mutate(
-                    { id: t.id, status: e.target.value, actorUserId: user.id },
-                    { onSuccess: () => toast.success("Estado actualizado") },
-                  );
-                }}
-                aria-label={`Estado de ${t.subject}`}
-              >
-                {CONSULTA_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
