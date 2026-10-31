@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { describeSignUpFailure } from "../_shared/signUpErrors.ts";
+import { emailDomainCanReceiveMail } from "../_shared/emailDomain.ts";
+import { describeSignUpFailure, EMAIL_NOT_FOUND_MESSAGE } from "../_shared/signUpErrors.ts";
 
 const GENERIC_OK = {
   ok: true as const,
@@ -60,6 +61,10 @@ Deno.serve(async (req: Request) => {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return json(req, { error: "Ingresá un email válido." }, 400);
+    }
+    // Supabase can accept domains that don't exist, leaving a solicitud nobody can verify.
+    if (!(await emailDomainCanReceiveMail(email))) {
+      return json(req, { error: EMAIL_NOT_FOUND_MESSAGE }, 400);
     }
     if (password !== confirm_password) {
       return json(req, { error: "Las contraseñas no coinciden." }, 400);
