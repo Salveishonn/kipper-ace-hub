@@ -223,29 +223,38 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
 
-  /* Desktop pin range: sticky viewport + ~1 extra screen of scrub. Never an empty red tail. */
+  /* Pin range: how far you scroll to walk the whole office. Longer means slower footage. */
+  .scroll-story {
+    height: 500svh;
+  }
+
   @media (min-width: 1024px) {
     .scroll-story {
-      height: 220svh;
-    }
-
-    .scroll-story .hero-moment-stack {
-      display: none;
+      height: 700svh;
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .scroll-story {
-      height: auto !important;
-    }
+  .scroll-story .hero-moment-stack {
+    display: none;
+  }
 
-    .scroll-story .hero-moment-pin-only {
-      display: none !important;
-    }
+  /* Reduced motion / data saver: poster plus plain stacked copy, nothing pinned. */
+  .scroll-story[data-static] {
+    height: auto;
+  }
 
-    .scroll-story .hero-moment-stack {
-      display: block;
-    }
+  .scroll-story[data-static] .hero-sticky {
+    position: relative;
+    top: 0;
+  }
+
+  .scroll-story[data-static] .hero-moment-pin-only,
+  .scroll-story[data-static] .hero-scroll-hint {
+    display: none;
+  }
+
+  .scroll-story[data-static] .hero-moment-stack {
+    display: block;
   }
 
   .card-elevated {
