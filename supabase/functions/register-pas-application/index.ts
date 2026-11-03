@@ -2,6 +2,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { emailDomainCanReceiveMail } from "../_shared/emailDomain.ts";
 import { describeSignUpFailure, EMAIL_NOT_FOUND_MESSAGE } from "../_shared/signUpErrors.ts";
+import { firstOversizedField, signInProvesPassword } from "../_shared/security.ts";
+
+// Public endpoint: bound what an anonymous caller can store and have emailed to the team.
+const FIELD_LIMITS = {
+  full_name: 200,
+  email: 254,
+  phone: 50,
+  matricula_ssn: 50,
+  city: 100,
+  province: 100,
+  current_companies: 500,
+  message: 2000,
+};
+const MAX_PASSWORD_LENGTH = 72;
 
 const GENERIC_OK = {
   ok: true as const,
@@ -33,6 +47,21 @@ function trimOrNull(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const t = v.trim();
   return t.length ? t : null;
+}
+
+/** Signs in with a throwaway client and ends only that session; never touches other devices. */
+async function passwordMatchesAccount(
+  supabaseUrl: string,
+  anonKey: string,
+  email: string,
+  password: string,
+): Promise<boolean> {
+  const probe = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await probe.auth.signInWithPassword({ email, password });
+  if (data.session) await probe.auth.signOut({ scope: "local" });
+  return signInProvesPassword({ hasSession: Boolean(data.session), errorCode: error?.code });
 }
 
 Deno.serve(async (req: Request) => {
@@ -69,6 +98,9 @@ Deno.serve(async (req: Request) => {
     if (password !== confirm_password) {
       return json(req, { error: "Las contraseñas no coinciden." }, 400);
     }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      return json(req, { error: `La contraseña puede tener hasta ${MAX_PASSWORD_LENGTH} caracteres.` }, 400);
+    }
     const pwdErr = validatePassword(password);
     if (pwdErr) return json(req, { error: pwdErr }, 400);
 
@@ -81,7 +113,15 @@ Deno.serve(async (req: Request) => {
     let years_experience: number | null = null;
     if (body.years_experience !== undefined && body.years_experience !== null && body.years_experience !== "") {
       const n = Number(body.years_experience);
-      years_experience = Number.isFinite(n) ? Math.trunc(n) : null;
+      years_experience = Number.isFinite(n) && n >= 0 && n <= 80 ? Math.trunc(n) : null;
+    }
+    if (
+      firstOversizedField(
+        { full_name, email, phone, matricula_ssn, city, province, current_companies, message },
+        FIELD_LIMITS,
+      )
+    ) {
+      return json(req, { error: "Algún dato es demasiado largo. Revisá el formulario." }, 400);
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -142,6 +182,11 @@ Deno.serve(async (req: Request) => {
 
     // Enumeration-safe: same response, but the existing account still gets its solicitud.
     if (accountAlreadyExists) {
+      // Only the account's owner may file a solicitud for it; anyone else gets the same answer.
+      if (!(await passwordMatchesAccount(supabaseUrl, anonKey, email, password))) {
+        return json(req, GENERIC_OK);
+      }
+
       const { data: existingProfile } = await admin
         .from("profiles")
         .select("user_id")

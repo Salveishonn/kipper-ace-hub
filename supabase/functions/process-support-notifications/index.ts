@@ -258,5 +258,10 @@ Deno.serve(async (req: Request) => {
     results.push({ id: row.id, status: "sent" });
   }
 
-  return json(req, { processed: results.length, results });
+  // Callable without a session (the portal kicks it after each message): report counts only.
+  return json(req, {
+    processed: results.length,
+    sent: results.filter((r) => r.status === "sent").length,
+    failed: results.filter((r) => r.status === "failed").length,
+  });
 });

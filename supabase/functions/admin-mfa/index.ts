@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { emailCode, emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
 import { sendKipperEmail } from "../_shared/sendEmail.ts";
+import { randomDigits, timingSafeEqual } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,10 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 const VERIFY_TTL_MS = 12 * 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
+// Across codes: without these, a new code every minute gave 5 fresh guesses each time.
+const MAX_CODES_PER_HOUR = 5;
+const MAX_FAILED_ATTEMPTS_PER_HOUR = 10;
+const HOUR_MS = 60 * 60 * 1000;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -34,24 +39,11 @@ function getSessionIdFromJwt(token: string): string | null {
   }
 }
 
-function randomSixDigitCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return Array.from(bytes, (b) => (b % 10).toString()).join("");
-}
 
 async function sha256Hex(value: string): Promise<string> {
   const data = new TextEncoder().encode(value);
   const hash = await crypto.subtle.digest("SHA-256", data);
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let out = 0;
-  for (let i = 0; i < a.length; i++) {
-    out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return out === 0;
 }
 
 async function sendCodeEmail(params: {
@@ -143,7 +135,23 @@ Deno.serve(async (req: Request) => {
     const action = body.action as string | undefined;
     const sessionId = getSessionIdFromJwt(accessToken) ?? "";
 
+    const hourAgo = new Date(Date.now() - HOUR_MS).toISOString();
+    const { data: lastHour } = await admin
+      .from("admin_mfa_challenges")
+      .select("attempts")
+      .eq("user_id", user.id)
+      .gte("created_at", hourAgo);
+    const codesLastHour = lastHour?.length ?? 0;
+    const failuresLastHour = (lastHour ?? []).reduce((sum, row) => sum + (row.attempts ?? 0), 0);
+    if (failuresLastHour >= MAX_FAILED_ATTEMPTS_PER_HOUR) {
+      return json({ error: "Demasiados intentos. Probá de nuevo en una hora." }, 429);
+    }
+
     if (action === "send") {
+      if (codesLastHour >= MAX_CODES_PER_HOUR) {
+        return json({ error: "Pediste demasiados códigos. Probá de nuevo en una hora." }, 429);
+      }
+
       const { data: recent } = await admin
         .from("admin_mfa_challenges")
         .select("created_at")
@@ -173,7 +181,7 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", user.id)
         .is("consumed_at", null);
 
-      const code = randomSixDigitCode();
+      const code = randomDigits(6);
       const codeHash = await sha256Hex(`${code}:${user.id}`);
       const now = Date.now();
 

@@ -6,11 +6,14 @@ export const ALLOWED_ORIGINS = [
   "https://kipper-ace-hub.vercel.app",
 ];
 
-function isAllowedOrigin(origin: string | null): boolean {
+// Preview deployments of this Vercel project only; any account can host a *.vercel.app site.
+const VERCEL_PREVIEW = /^https:\/\/kipper-ace-hub(-[a-z0-9-]+)?\.vercel\.app$/;
+
+export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return true;
   return (
     ALLOWED_ORIGINS.includes(origin) ||
-    origin.endsWith(".vercel.app") ||
+    VERCEL_PREVIEW.test(origin) ||
     origin === "http://localhost:5173" ||
     origin === "http://localhost:8080" ||
     origin === "http://localhost:3000"

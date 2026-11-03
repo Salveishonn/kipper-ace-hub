@@ -9,6 +9,7 @@
  * Failed Google/refresh paths never overwrite a successful cache row.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { timingSafeEqual } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -246,7 +247,7 @@ async function resolveAuth(
 ): Promise<"cron" | "admin" | null> {
   const cronHeader = req.headers.get("x-cron-secret")?.trim();
   const expected = opts.cronSecret?.trim();
-  if (expected && cronHeader && cronHeader === expected) return "cron";
+  if (expected && cronHeader && timingSafeEqual(cronHeader, expected)) return "cron";
 
   const isAdmin = await requireAdmin(req, opts.supabaseUrl, opts.anonKey, opts.admin);
   return isAdmin ? "admin" : null;
