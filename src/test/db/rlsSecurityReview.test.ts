@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createMigratedDb, createUser, runAs, verifyAdminMfa } from "./supabaseDb";
 
-const FIX = "20261103120000_security_review_hardening.sql";
+const FIX = "20261103131256_security_review_hardening.sql";
 
 type Ids = {
   admin: string;
@@ -382,7 +382,7 @@ describe("after the fix", () => {
     it("rolls back cleanly and re-applies idempotently", async () => {
       const scratch = await createMigratedDb();
       const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
-      await scratch.exec(read("docs/security/rollback_20261103120000_security_review_hardening.sql"));
+      await scratch.exec(read("docs/security/rollback_20261103131256_security_review_hardening.sql"));
       const restored = await scratch.query("select 1 from pg_policies where policyname = 'Productores can insert policies'");
       expect(restored.rows).toHaveLength(1);
       await scratch.exec(read(`supabase/migrations/${FIX}`));

@@ -2,6 +2,8 @@
 
 Review date: 2026-11-03 · Branch: `security/asvs-l2-hardening` (from `master` @ 1a3c5b45)
 
+**Deployment status (2026-11-03):** migration `20261103131256_security_review_hardening` **applied to production** and verified (grants, policies, trigger, advisor). Edge Functions and frontend **not yet deployed**.
+
 This is a hardening exercise against OWASP ASVS 5.0.0 L2, not a certification. Nothing was
 deployed and no production data was changed. Production was only **read** for schema metadata
 (policies, grants, function ACLs), aggregate counts and the Supabase security advisor.
@@ -100,8 +102,8 @@ Severity reflects impact × exploitability **in this deployment**. Status: Fixed
 
 | File | Change |
 |---|---|
-| `supabase/migrations/20261103120000_security_review_hardening.sql` | SR-01…SR-09 (idempotent) |
-| `docs/security/rollback_20261103120000_security_review_hardening.sql` | Manual rollback (tested) |
+| `supabase/migrations/20261103131256_security_review_hardening.sql` | SR-01…SR-09 (idempotent) |
+| `docs/security/rollback_20261103131256_security_review_hardening.sql` | Manual rollback (tested) |
 | `supabase/functions/_shared/security.ts` | `timingSafeEqual`, `randomDigits`, `firstOversizedField`, `signInProvesPassword` |
 | `supabase/functions/register-pas-application/index.ts` | SR-10 |
 | `supabase/functions/admin-mfa/index.ts` | SR-11 |
@@ -170,10 +172,10 @@ A scanner's clean output is not proof of security; the DB tests cover the paths 
 ## 8. Deployment order & rollback
 
 1. **Before:** confirm no `pas_resources.external_url` / `design_resources.editable_url` / `academy_lessons.video_url` outside `http(s)` (checked 2026-11-03: none).
-2. **Apply migration** `20261103120000_security_review_hardening.sql` (`supabase db push`). Safe before the function deploy: Edge Functions call `approve_pas_application` as service role.
+2. **Apply migration** `20261103131256_security_review_hardening.sql` (`supabase db push`). Safe before the function deploy: Edge Functions call `approve_pas_application` as service role.
 3. **Smoke test:** admin login → email code → approve a test solicitud, reply to a consulta, edit a resource; producer → edit profile, open a consulta with attachment; Sumate registration with a new email.
 4. **Deploy Edge Functions:** `admin-mfa`, `register-pas-application`, `process-support-notifications`, `google-reviews`, `fedpat-sync`, plus all importing `_shared/cors.ts` (`delete-pas-producer`).
 5. **Frontend:** merge to `master` (Vercel auto-deploy).
 6. Re-run the Supabase security advisor.
 
-**Rollback:** functions — redeploy previous versions; frontend — Vercel instant rollback; database — run `docs/security/rollback_20261103120000_security_review_hardening.sql` (restores prior policies, keeps SR-01's revoke). Admin sessions whose MFA expired will see empty admin lists/RLS errors until they re-enter a code — expected, not a regression.
+**Rollback:** functions — redeploy previous versions; frontend — Vercel instant rollback; database — run `docs/security/rollback_20261103131256_security_review_hardening.sql` (restores prior policies, keeps SR-01's revoke). Admin sessions whose MFA expired will see empty admin lists/RLS errors until they re-enter a code — expected, not a regression.

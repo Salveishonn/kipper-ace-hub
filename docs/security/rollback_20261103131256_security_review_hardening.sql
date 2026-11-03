@@ -1,4 +1,4 @@
--- Rollback for supabase/migrations/20261103120000_security_review_hardening.sql.
+-- Rollback for supabase/migrations/20261103131256_security_review_hardening.sql.
 -- Restores the access rules that existing before it. Re-opens SR-01..SR-09; use only to unblock
 -- an outage, then re-apply a corrected migration. Not a migration: run it by hand (SQL editor).
 -- approve_pas_application keeps its new in-function guard; only the grant is left as it was.
