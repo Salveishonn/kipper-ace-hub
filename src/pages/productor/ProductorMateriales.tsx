@@ -4,6 +4,7 @@ import { usePasResources } from "@/hooks/usePasResources";
 import { PasResourceViewer } from "@/components/shared/PasResourceViewer";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { siteConfig } from "@/lib/siteConfig";
+import { safeExternalUrl } from "@/lib/safeUrl";
 
 const getIcon = (type: string) => {
   switch (type) {
@@ -61,8 +62,9 @@ const ProductorMateriales = () => {
                     key={item.id}
                     type="button"
                     onClick={() => {
-                      if (item.resource_type === "link" && item.external_url) {
-                        window.open(item.external_url, "_blank", "noopener,noreferrer");
+                      if (item.resource_type === "link") {
+                        const link = safeExternalUrl(item.external_url);
+                        if (link) window.open(link, "_blank", "noopener,noreferrer");
                         return;
                       }
                       setSelected(item);

@@ -5,6 +5,7 @@ import { useBlobObjectUrl } from "@/hooks/useBlobObjectUrl";
 import { officeEmbedUrl } from "@/lib/videoEmbed";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
+import { safeExternalUrl } from "@/lib/safeUrl";
 
 type ResourceLike = {
   title: string;
@@ -65,8 +66,9 @@ export function PasResourceViewer({
   };
 
   const handleOpenExternal = () => {
-    if (type === "link" && resource.external_url) {
-      window.open(resource.external_url, "_blank", "noopener,noreferrer");
+    if (type === "link") {
+      const link = safeExternalUrl(resource.external_url);
+      if (link) window.open(link, "_blank", "noopener,noreferrer");
       return;
     }
     if (signedUrl) window.open(signedUrl, "_blank", "noopener,noreferrer");

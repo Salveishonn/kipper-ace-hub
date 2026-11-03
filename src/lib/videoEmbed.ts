@@ -1,3 +1,5 @@
+import { safeExternalUrl } from "@/lib/safeUrl";
+
 export function officeEmbedUrl(signedUrl: string) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signedUrl)}`;
 }
@@ -22,7 +24,8 @@ export function getVideoEmbedUrl(url: string) {
   } catch {
     /* keep raw url */
   }
-  return url;
+  // Unknown providers are embedded as-is, but never as a javascript:/data: frame.
+  return safeExternalUrl(url) ?? "about:blank";
 }
 
 /** Preview image for YouTube lessons; other providers have no public thumbnail URL. */
