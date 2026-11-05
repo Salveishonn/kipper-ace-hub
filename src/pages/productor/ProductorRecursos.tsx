@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { safeExternalUrl } from "@/lib/safeUrl";
 
 const ProductorRecursos = () => {
   const { data: resources, isLoading, error } = useDesignResources();
@@ -140,9 +141,9 @@ const ProductorRecursos = () => {
                   <p className="text-xs text-muted-foreground mt-1">clic para ver</p>
                 </button>
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap gap-2">
-                  {r.editable_url && (
+                  {safeExternalUrl(r.editable_url) && (
                     <Button asChild size="sm">
-                      <a href={r.editable_url} target="_blank" rel="noopener noreferrer">
+                      <a href={safeExternalUrl(r.editable_url) ?? undefined} target="_blank" rel="noopener noreferrer">
                         Editar plantilla <ExternalLink size={14} className="ml-1" aria-hidden />
                       </a>
                     </Button>
@@ -177,9 +178,9 @@ const ProductorRecursos = () => {
                 <p className="text-sm text-muted-foreground">{preview.description}</p>
               )}
               <div className="flex flex-wrap gap-2">
-                {preview.editable_url && (
+                {safeExternalUrl(preview.editable_url) && (
                   <Button asChild>
-                    <a href={preview.editable_url} target="_blank" rel="noopener noreferrer">
+                    <a href={safeExternalUrl(preview.editable_url) ?? undefined} target="_blank" rel="noopener noreferrer">
                       Editar plantilla <ExternalLink size={14} className="ml-1" aria-hidden />
                     </a>
                   </Button>

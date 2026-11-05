@@ -15,14 +15,13 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8080",
 ];
 
+// Preview deployments of this Vercel project only; any account can host a *.vercel.app or
+// *.lovable.app site, so those suffixes are not trusted on their own.
+const VERCEL_PREVIEW = /^https:\/\/kipper-ace-hub(-[a-z0-9-]+)?\.vercel\.app$/;
+
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return true; // server-to-server / curl
-  return (
-    ALLOWED_ORIGINS.includes(origin) ||
-    origin.endsWith(".vercel.app") ||
-    origin.endsWith(".lovable.app") ||
-    origin.endsWith(".lovableproject.com")
-  );
+  return ALLOWED_ORIGINS.includes(origin) || VERCEL_PREVIEW.test(origin);
 }
 
 export function buildCorsHeaders(origin: string | null): Record<string, string> {

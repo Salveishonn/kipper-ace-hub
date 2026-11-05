@@ -32,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { safeExternalUrl } from "@/lib/safeUrl";
 
 const emptyForm = {
   title: "",
@@ -283,9 +284,9 @@ const AdminRecursosGraficos = () => {
                   <p className="text-xs text-muted-foreground mt-1">clic para ver</p>
                 </button>
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center gap-1">
-                  {r.editable_url && (
+                  {safeExternalUrl(r.editable_url) && (
                     <Button asChild size="sm" variant="outline">
-                      <a href={r.editable_url} target="_blank" rel="noopener noreferrer">
+                      <a href={safeExternalUrl(r.editable_url) ?? undefined} target="_blank" rel="noopener noreferrer">
                         <ExternalLink size={14} className="mr-1" aria-hidden /> Plantilla
                       </a>
                     </Button>
@@ -327,9 +328,9 @@ const AdminRecursosGraficos = () => {
                 <p className="text-sm text-muted-foreground">{preview.description}</p>
               )}
               <div className="flex flex-wrap gap-2">
-                {preview.editable_url && (
+                {safeExternalUrl(preview.editable_url) && (
                   <Button asChild>
-                    <a href={preview.editable_url} target="_blank" rel="noopener noreferrer">
+                    <a href={safeExternalUrl(preview.editable_url) ?? undefined} target="_blank" rel="noopener noreferrer">
                       <ExternalLink size={14} className="mr-1" aria-hidden /> Plantilla
                     </a>
                   </Button>
