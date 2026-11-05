@@ -9,6 +9,8 @@ import { useConsultasLive, useConsultaUnreadCount } from "@/hooks/useSupportTick
 import { UnreadBadge } from "@/components/consultas/UnreadBadge";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { KipperBrandLockup } from "@/components/layout/KipperBrandLockup";
+import { usePortalServiceWorker } from "@/hooks/usePushNotifications";
+import { PushPromptBanner } from "@/components/notifications/PushPromptBanner";
 
 const productorLinks = [
   { href: "/productor", label: "Inicio", icon: Home },
@@ -26,6 +28,7 @@ const ProductorLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, profile, signOut, isAdmin } = useAuth();
   useConsultasLive(!!user);
+  usePortalServiceWorker(!!user);
   const unreadConsultas = useConsultaUnreadCount("productor", user?.id);
 
   const handleLogout = async () => {
@@ -131,6 +134,7 @@ const ProductorLayout = () => {
               </Link>
             </div>
           )}
+          <PushPromptBanner />
           <Outlet />
         </main>
       </div>

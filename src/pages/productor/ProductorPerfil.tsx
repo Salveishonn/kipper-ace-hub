@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarUpload } from "@/components/shared/AvatarUpload";
 import { toast } from "sonner";
+import { NotificationSettings } from "@/components/notifications/NotificationSettings";
 
 const ProductorPerfil = () => {
   const { profile, refreshProfile } = useAuth();
@@ -205,6 +206,10 @@ const ProductorPerfil = () => {
             </button>
           </div>
         </form>
+      </div>
+
+      <div id="notificaciones">
+        <NotificationSettings />
       </div>
     </div>
   );

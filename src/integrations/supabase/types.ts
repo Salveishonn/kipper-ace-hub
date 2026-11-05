@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcasts: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sent_by: string | null
+          title: string
+          url: string | null
+        }
+        Insert: { [_ in never]: never }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          forum_new_post_email: boolean
+          forum_reply_email: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          forum_new_post_email?: boolean
+          forum_reply_email?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          forum_new_post_email?: boolean
+          forum_reply_email?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
       forum_comments: {
         Row: {
           author_id: string
@@ -1376,6 +1433,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_push_subscribers: {
+        Args: never
+        Returns: number
+      }
+      register_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
+      send_admin_broadcast: {
+        Args: { p_body: string; p_title: string; p_url?: string }
+        Returns: string
+      }
       get_forum_authors: {
         Args: { p_user_ids: string[] }
         Returns: {

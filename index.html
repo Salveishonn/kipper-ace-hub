@@ -56,8 +56,21 @@
         ) {
           document.documentElement.classList.add("kipper-no-assistant");
         }
+        // Installable app (PWA) only for the producer portal, not for the public site.
+        if (p.indexOf("/productor") === 0 || p.indexOf("/admin") === 0 || p === "/login") {
+          var link = document.createElement("link");
+          link.rel = "manifest";
+          link.href = "/manifest.webmanifest";
+          document.head.appendChild(link);
+        }
       })();
     </script>
+    <meta name="theme-color" content="#601410" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Kipper PAS" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-55QYPQGDF8"></script>
