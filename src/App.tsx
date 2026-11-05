@@ -64,6 +64,7 @@ const ProductorRecursos = lazy(() => import("./pages/productor/ProductorRecursos
 const ProductorPerfil = lazy(() => import("./pages/productor/ProductorPerfil"));
 const ProductorConsultas = lazy(() => import("./pages/productor/ProductorConsultas"));
 const ProductorConsultaDetail = lazy(() => import("./pages/productor/ProductorConsultaDetail"));
+const ForoPage = lazy(() => import("./pages/Foro"));
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,7 @@ const App = () => (
                 <Route path="tutoriales" element={<Navigate to="/productor/academy" replace />} />
                 <Route path="consultas" element={<ProductorConsultas />} />
                 <Route path="consultas/:id" element={<ProductorConsultaDetail />} />
+                <Route path="foro" element={<ForoPage />} />
                 <Route path="perfil" element={<ProductorPerfil />} />
               </Route>
 
@@ -173,6 +175,7 @@ const App = () => (
                 <Route path="recursos" element={<Navigate to="/admin/novedades" replace />} />
                 <Route path="consultas" element={<AdminConsultas />} />
                 <Route path="consultas/:id" element={<AdminConsultaDetail />} />
+                <Route path="foro" element={<ForoPage />} />
                 <Route path="contacts" element={<Navigate to="/admin" replace />} />
                 <Route path="blog" element={<AdminBlog />} />
                 <Route path="config" element={<AdminConfig />} />

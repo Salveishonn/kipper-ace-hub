@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      forum_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          post_id: string
+        }
+        Update: {
+          body?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_post_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          position: number
+          post_id: string
+          size_bytes: number | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          position?: number
+          post_id: string
+          size_bytes?: number | null
+        }
+        Update: { [_ in never]: never }
+        Relationships: [
+          {
+            foreignKeyName: "forum_post_attachments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+        }
+        Relationships: []
+      }
+      forum_reactions: {
+        Row: {
+          created_at: string
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          reaction?: string
+          user_id?: string
+        }
+        Update: {
+          reaction?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       academy_lessons: {
         Row: {
           content_text: string | null
@@ -1222,6 +1332,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_forum_authors: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          avatar_url: string | null
+          full_name: string | null
+          is_admin: boolean
+          user_id: string
+        }[]
+      }
       mark_support_ticket_read: {
         Args: { p_ticket_id: string }
         Returns: undefined
