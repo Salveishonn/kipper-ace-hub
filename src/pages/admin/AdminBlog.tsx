@@ -1,6 +1,21 @@
-import { useState } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff, X } from "lucide-react";
-import { useBlogPosts, useCreateBlogPost, useUpdateBlogPost, useDeleteBlogPost } from "@/hooks/useBlogPosts";
+import { useRef, useState } from "react";
+import { Plus, Edit, Trash2, Eye, EyeOff, X, Paperclip, FileText, Image as ImageIcon, Film } from "lucide-react";
+import {
+  type BlogPost,
+  useBlogPosts,
+  useCreateBlogPost,
+  useUpdateBlogPost,
+  useDeleteBlogPost,
+} from "@/hooks/useBlogPosts";
+import {
+  BLOG_ACCEPT,
+  type BlogAttachment,
+  blogFileError,
+  isImageAttachment,
+  isVideoAttachment,
+} from "@/lib/blogMedia";
+import { formatBytes } from "@/lib/forumFiles";
+import { safeExternalUrl } from "@/lib/safeUrl";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -12,15 +27,23 @@ const AdminBlog = () => {
   const deletePost = useDeleteBlogPost();
   const [showEditor, setShowEditor] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content: "", tags: "", status: "draft" as string });
+  const emptyForm = { title: "", slug: "", excerpt: "", content: "", tags: "", status: "draft" as string, video_url: "" };
+  const [form, setForm] = useState(emptyForm);
+  const [existingFiles, setExistingFiles] = useState<BlogAttachment[]>([]);
+  const [removedFiles, setRemovedFiles] = useState<BlogAttachment[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
-    setForm({ title: "", slug: "", excerpt: "", content: "", tags: "", status: "draft" });
+    setForm(emptyForm);
+    setExistingFiles([]);
+    setRemovedFiles([]);
+    setNewFiles([]);
     setEditingId(null);
     setShowEditor(false);
   };
 
-  const openEdit = (post: any) => {
+  const openEdit = (post: BlogPost) => {
     setForm({
       title: post.title,
       slug: post.slug,
@@ -28,14 +51,36 @@ const AdminBlog = () => {
       content: post.content,
       tags: (post.tags || []).join(", "),
       status: post.status,
+      video_url: post.video_url || "",
     });
+    setExistingFiles(post.blog_post_attachments ?? []);
+    setRemovedFiles([]);
+    setNewFiles([]);
     setEditingId(post.id);
     setShowEditor(true);
   };
 
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    const accepted: File[] = [];
+    for (const file of Array.from(list)) {
+      const err = blogFileError(file);
+      if (err) toast.error(err);
+      else accepted.push(file);
+    }
+    setNewFiles((prev) => [...prev, ...accepted]);
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
   const handleSave = async () => {
-    if (!form.title || !form.content) {
-      toast.error("Título y contenido son obligatorios");
+    const hasMedia = Boolean(form.video_url.trim()) || existingFiles.length > 0 || newFiles.length > 0;
+    if (!form.title || (!form.content.trim() && !hasMedia)) {
+      toast.error("Poné un título y agregá contenido, un video o archivos");
+      return;
+    }
+    const videoUrl = form.video_url.trim() ? safeExternalUrl(form.video_url) : null;
+    if (form.video_url.trim() && !videoUrl) {
+      toast.error("El link del video tiene que empezar con https://");
       return;
     }
     const slug = form.slug || form.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -46,38 +91,41 @@ const AdminBlog = () => {
       content: form.content,
       tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
       status: form.status,
+      video_url: videoUrl,
     };
+    const media = { newFiles, removed: removedFiles };
+    const nextPosition = existingFiles.reduce((max, f) => Math.max(max, f.position + 1), 0);
 
     try {
       if (editingId) {
-        await updatePost.mutateAsync({ id: editingId, ...payload });
+        await updatePost.mutateAsync({ id: editingId, ...payload, media, nextPosition });
         toast.success("Post actualizado");
       } else {
-        await createPost.mutateAsync(payload);
+        await createPost.mutateAsync({ ...payload, media });
         toast.success("Post creado");
       }
       resetForm();
-    } catch (err: any) {
-      toast.error(err.message || "Error al guardar");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este post?")) return;
+  const handleDelete = async (post: BlogPost) => {
+    if (!confirm("¿Eliminar este post y sus archivos?")) return;
     try {
-      await deletePost.mutateAsync(id);
+      await deletePost.mutateAsync(post);
       toast.success("Post eliminado");
-    } catch (err: any) {
-      toast.error(err.message || "Error al eliminar");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al eliminar");
     }
   };
 
-  const handleTogglePublish = async (post: any) => {
+  const handleTogglePublish = async (post: BlogPost) => {
     const newStatus = post.status === "published" ? "draft" : "published";
     try {
       await updatePost.mutateAsync({ id: post.id, status: newStatus });
       toast.success(newStatus === "published" ? "Publicado" : "Despublicado");
-    } catch (err: any) {
+    } catch {
       toast.error("Error al cambiar estado");
     }
   };
@@ -135,6 +183,8 @@ const AdminBlog = () => {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
+                    {(post.blog_post_attachments?.length ?? 0) > 0 && `${post.blog_post_attachments.length} archivo(s) • `}
+                    {post.video_url && "Video • "}
                     Slug: /comunidad/{post.slug} • {format(new Date(post.created_at), "dd/MM/yyyy")}
                   </p>
                 </div>
@@ -143,7 +193,7 @@ const AdminBlog = () => {
                     {post.status === "published" ? <EyeOff size={18} className="text-muted-foreground" /> : <Eye size={18} className="text-green-600" />}
                   </button>
                   <button onClick={() => openEdit(post)} className="p-2 rounded-lg hover:bg-muted transition-colors"><Edit size={18} className="text-muted-foreground" /></button>
-                  <button onClick={() => handleDelete(post.id)} className="p-2 rounded-lg hover:bg-muted transition-colors"><Trash2 size={18} className="text-destructive" /></button>
+                  <button onClick={() => handleDelete(post)} className="p-2 rounded-lg hover:bg-muted transition-colors"><Trash2 size={18} className="text-destructive" /></button>
                 </div>
               </div>
             </div>
@@ -173,8 +223,80 @@ const AdminBlog = () => {
                 <input className="input-kipper mt-1" value={form.excerpt} onChange={e => setForm({...form, excerpt: e.target.value})} />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Contenido * (Markdown)</label>
-                <textarea className="input-kipper mt-1 min-h-[200px] font-mono text-sm" value={form.content} onChange={e => setForm({...form, content: e.target.value})} />
+                <label className="text-sm font-medium text-foreground">Contenido</label>
+                <textarea className="input-kipper mt-1 min-h-[200px] text-sm" value={form.content} onChange={e => setForm({...form, content: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground" htmlFor="blog-video-url">Video de YouTube o Vimeo (opcional)</label>
+                <input
+                  id="blog-video-url"
+                  className="input-kipper mt-1"
+                  value={form.video_url}
+                  onChange={e => setForm({...form, video_url: e.target.value})}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">Archivos (PDF, Word, Excel, PowerPoint, imágenes, videos)</span>
+                  <button
+                    type="button"
+                    onClick={() => fileInput.current?.click()}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <Paperclip size={14} /> Agregar
+                  </button>
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    multiple
+                    accept={BLOG_ACCEPT}
+                    className="hidden"
+                    onChange={e => addFiles(e.target.files)}
+                  />
+                </div>
+                {existingFiles.length === 0 && newFiles.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Hasta 50 MB por archivo. La primera imagen se usa como portada.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {existingFiles.map(f => {
+                      const Icon = isImageAttachment(f) ? ImageIcon : isVideoAttachment(f) ? Film : FileText;
+                      return (
+                        <li key={f.id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+                          <Icon size={14} className="shrink-0 text-primary" />
+                          <span className="min-w-0 flex-1 truncate">{f.file_name}</span>
+                          <span className="text-xs text-muted-foreground">{formatBytes(f.size_bytes)}</span>
+                          <button
+                            type="button"
+                            aria-label={`Quitar ${f.file_name}`}
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setExistingFiles(prev => prev.filter(x => x.id !== f.id));
+                              setRemovedFiles(prev => [...prev, f]);
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </li>
+                      );
+                    })}
+                    {newFiles.map((f, i) => (
+                      <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 px-3 py-2 text-sm">
+                        <Paperclip size={14} className="shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                        <span className="text-xs text-muted-foreground">{formatBytes(f.size)} · nuevo</span>
+                        <button
+                          type="button"
+                          aria-label={`Quitar ${f.name}`}
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setNewFiles(prev => prev.filter((_, j) => j !== i))}
+                        >
+                          <X size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Tags (separados por coma)</label>
@@ -188,7 +310,7 @@ const AdminBlog = () => {
                 </select>
               </div>
               <button onClick={handleSave} disabled={createPost.isPending || updatePost.isPending} className="btn-hero w-full text-sm py-3">
-                {createPost.isPending || updatePost.isPending ? "Guardando..." : editingId ? "Actualizar" : "Crear Post"}
+                {createPost.isPending || updatePost.isPending ? (newFiles.length ? "Subiendo archivos..." : "Guardando...") : editingId ? "Actualizar" : "Crear Post"}
               </button>
             </div>
           </div>

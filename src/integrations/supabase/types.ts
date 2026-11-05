@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcasts: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sent_by: string | null
+          title: string
+          url: string | null
+        }
+        Insert: { [_ in never]: never }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          forum_new_post_email: boolean
+          forum_reply_email: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          forum_new_post_email?: boolean
+          forum_reply_email?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          forum_new_post_email?: boolean
+          forum_reply_email?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
       forum_comments: {
         Row: {
           author_id: string
@@ -252,6 +309,41 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_post_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          position: number
+          post_id: string
+          size_bytes: number | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          position?: number
+          post_id: string
+          size_bytes?: number | null
+        }
+        Update: {
+          file_name?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_attachments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -266,6 +358,7 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           author_id?: string | null
@@ -280,6 +373,7 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           author_id?: string | null
@@ -294,6 +388,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -924,6 +1019,8 @@ export type Database = {
           city: string | null
           created_at: string
           current_companies: string | null
+          has_insurer_code: boolean | null
+          insurer_codes: Json
           email: string
           full_name: string
           id: string
@@ -947,6 +1044,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           current_companies?: string | null
+          has_insurer_code?: boolean | null
+          insurer_codes?: Json
           email: string
           full_name: string
           id?: string
@@ -970,6 +1069,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           current_companies?: string | null
+          has_insurer_code?: boolean | null
+          insurer_codes?: Json
           email?: string
           full_name?: string
           id?: string
@@ -1332,6 +1433,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_push_subscribers: {
+        Args: never
+        Returns: number
+      }
+      register_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
+      send_admin_broadcast: {
+        Args: { p_body: string; p_title: string; p_url?: string }
+        Returns: string
+      }
       get_forum_authors: {
         Args: { p_user_ids: string[] }
         Returns: {

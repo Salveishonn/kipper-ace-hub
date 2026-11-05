@@ -229,6 +229,36 @@ export function useUpdateSupportTicketStatus() {
   });
 }
 
+/** Admin (MFA) only: removes the consulta, its messages (cascade) and its uploaded files. */
+export function useDeleteSupportTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data: files, error: filesErr } = await supabase
+        .from("support_messages")
+        .select("attachment_path")
+        .eq("ticket_id", id)
+        .not("attachment_path", "is", null);
+      if (filesErr) throw filesErr;
+
+      const { data, error } = await supabase.from("support_tickets").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data?.length) {
+        throw new Error("No se pudo eliminar. Verificá tu código de seguridad de admin.");
+      }
+
+      const paths = (files ?? [])
+        .map((f) => f.attachment_path)
+        .filter((p): p is string => Boolean(p));
+      if (paths.length) await supabase.storage.from("consulta-attachments").remove(paths);
+    },
+    onSuccess: (_d, id) => {
+      qc.removeQueries({ queryKey: ["support_messages", id] });
+      qc.invalidateQueries({ queryKey: ["support_tickets"] });
+    },
+  });
+}
+
 export function useSupportMessages(ticketId: string | undefined) {
   return useQuery({
     queryKey: ["support_messages", ticketId],

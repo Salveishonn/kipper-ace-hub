@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Lock, Mail, MapPin, Phone, RotateCcw, Timer, UserRound } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, Lock, Mail, MapPin, Phone, RotateCcw, Timer, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useConsultaProducerDetails,
+  useDeleteSupportTicket,
   useMarkSupportTicketRead,
   useSupportMessages,
   useSendSupportMessage,
@@ -43,6 +44,8 @@ const AdminConsultaDetail = () => {
   const send = useSendSupportMessage();
   const updateStatus = useUpdateSupportTicketStatus();
   const { mutate: markTicketRead } = useMarkSupportTicketRead();
+  const deleteTicket = useDeleteSupportTicket();
+  const navigate = useNavigate();
 
   const unread = ticket ? isConsultaUnread(ticket, "equipo") : false;
   useEffect(() => {
@@ -195,6 +198,45 @@ const AdminConsultaDetail = () => {
                 </AlertDialog>
               )}
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="mt-2 w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={deleteTicket.isPending}
+                >
+                  <Trash2 size={16} className="mr-2" aria-hidden /> Eliminar consulta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar esta consulta definitivamente?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se borran la consulta, todos sus mensajes y los archivos adjuntos, también para el
+                    productor. No se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      if (!id) return;
+                      deleteTicket.mutate(id, {
+                        onSuccess: () => {
+                          toast.success("Consulta eliminada");
+                          navigate("/admin/consultas", { replace: true });
+                        },
+                        onError: (e) =>
+                          toast.error(e instanceof Error ? e.message : "No se pudo eliminar la consulta"),
+                      });
+                    }}
+                  >
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             {ticket.status === "resuelto" && ticket.resolved_by && (
               <p className="mt-3 text-xs text-muted-foreground">
                 Resuelta por {displayName(profilesById[ticket.resolved_by], "Equipo Kipper")}

@@ -141,6 +141,7 @@ describe("Sumate form", () => {
       target: { value: "SecurePass1" },
     });
 
+    fireEvent.click(screen.getByLabelText(/no tengo código/i));
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta y enviar solicitud/i }));
 
     await waitFor(() => {
@@ -166,10 +167,43 @@ describe("Sumate form", () => {
       target: { value: "SecurePass1" },
     });
 
+    fireEvent.click(screen.getByLabelText(/no tengo código/i));
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta y enviar solicitud/i }));
 
     expect(
       await screen.findByText(/revisá tu email para verificar tu dirección/i),
     ).toBeInTheDocument();
+  });
+
+  it("sends the company codes when the applicant has one", async () => {
+    render(wrap(<SumatePage />));
+
+    fireEvent.change(screen.getByLabelText(/nombre y apellido/i), { target: { value: "Ana Productora" } });
+    fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: "ana@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^contraseña/i), { target: { value: "SecurePass1" } });
+    fireEvent.change(screen.getByLabelText(/confirmar contraseña/i), { target: { value: "SecurePass1" } });
+    fireEvent.click(screen.getByLabelText(/sí, tengo código/i));
+    fireEvent.change(screen.getByLabelText(/^compañía 1$/i), { target: { value: "Federación Patronal" } });
+    fireEvent.change(screen.getByLabelText(/código en la compañía 1/i), { target: { value: "12345" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /crear cuenta y enviar solicitud/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.has_insurer_code).toBe(true);
+    expect(body.insurer_codes).toEqual([{ company: "Federación Patronal", code: "12345" }]);
+  });
+
+  it("does not submit until the company-code question is answered", async () => {
+    render(wrap(<SumatePage />));
+
+    fireEvent.change(screen.getByLabelText(/nombre y apellido/i), { target: { value: "Ana Productora" } });
+    fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: "ana@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^contraseña/i), { target: { value: "SecurePass1" } });
+    fireEvent.change(screen.getByLabelText(/confirmar contraseña/i), { target: { value: "SecurePass1" } });
+    fireEvent.click(screen.getByRole("button", { name: /crear cuenta y enviar solicitud/i }));
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

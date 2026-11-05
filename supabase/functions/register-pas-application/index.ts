@@ -43,6 +43,23 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
+type InsurerCode = { company: string; code: string };
+
+/** Accepts up to 10 {company, code} pairs; anything malformed is dropped. */
+function parseInsurerCodes(v: unknown): InsurerCode[] | "too_long" {
+  if (!Array.isArray(v)) return [];
+  const out: InsurerCode[] = [];
+  for (const item of v.slice(0, 10)) {
+    if (!item || typeof item !== "object") continue;
+    const company = trimOrNull((item as Record<string, unknown>).company);
+    const code = trimOrNull((item as Record<string, unknown>).code) ?? "";
+    if (!company) continue;
+    if (company.length > 100 || code.length > 50) return "too_long";
+    out.push({ company, code });
+  }
+  return out;
+}
+
 function trimOrNull(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const t = v.trim();
@@ -115,6 +132,16 @@ Deno.serve(async (req: Request) => {
       const n = Number(body.years_experience);
       years_experience = Number.isFinite(n) && n >= 0 && n <= 80 ? Math.trunc(n) : null;
     }
+    const has_insurer_code =
+      body.has_insurer_code === true ? true : body.has_insurer_code === false ? false : null;
+    const parsedCodes = has_insurer_code ? parseInsurerCodes(body.insurer_codes) : [];
+    if (parsedCodes === "too_long") {
+      return json(req, { error: "Algún dato es demasiado largo. Revisá el formulario." }, 400);
+    }
+    if (has_insurer_code && parsedCodes.length === 0) {
+      return json(req, { error: "Indicá en qué compañía tenés código de productor." }, 400);
+    }
+    const insurer_codes = parsedCodes;
     if (
       firstOversizedField(
         { full_name, email, phone, matricula_ssn, city, province, current_companies, message },
@@ -148,6 +175,8 @@ Deno.serve(async (req: Request) => {
       years_experience,
       current_companies,
       message,
+      has_insurer_code,
+      insurer_codes,
     };
 
     const anon = createClient(supabaseUrl, anonKey);
@@ -204,6 +233,8 @@ Deno.serve(async (req: Request) => {
           years_experience,
           current_companies,
           message,
+          has_insurer_code,
+          insurer_codes,
           status: "pending",
           user_id: existingProfile.user_id,
         });
@@ -250,6 +281,8 @@ Deno.serve(async (req: Request) => {
           years_experience,
           current_companies,
           message,
+          has_insurer_code,
+          insurer_codes,
           status: "pending",
           user_id: userId,
         });

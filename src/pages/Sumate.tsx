@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Shield, TrendingUp, Briefcase, Check, Send, Eye, EyeOff } from "lucide-react";
+import { Users, Shield, TrendingUp, Briefcase, Check, Send, Eye, EyeOff, Plus, X } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useCreateProducerApplication } from "@/hooks/useProducerApplications";
+import { useCreateProducerApplication, type InsurerCode } from "@/hooks/useProducerApplications";
+import { PUBLIC_INSURERS } from "@/lib/insurers";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   isPasswordValid,
   passwordsMatch,
@@ -53,7 +55,12 @@ const SumatePage = () => {
     password: "",
     confirm_password: "",
   });
+  const [hasInsurerCode, setHasInsurerCode] = useState<"si" | "no" | "">("");
+  const [insurerCodes, setInsurerCodes] = useState<InsurerCode[]>([{ company: "", code: "" }]);
   const createApplication = useCreateProducerApplication();
+
+  const updateCode = (index: number, patch: Partial<InsurerCode>) =>
+    setInsurerCodes((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +75,18 @@ const SumatePage = () => {
     }
     if (!passwordsMatch(formData.password, formData.confirm_password)) {
       toast.error("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (!hasInsurerCode) {
+      toast.error("Indicá si tenés código de productor en alguna compañía");
+      return;
+    }
+    const filledCodes = insurerCodes
+      .map((c) => ({ company: c.company.trim(), code: c.code.trim() }))
+      .filter((c) => c.company);
+    if (hasInsurerCode === "si" && filledCodes.length === 0) {
+      toast.error("Indicá en qué compañía tenés código de productor");
       return;
     }
 
@@ -87,6 +106,8 @@ const SumatePage = () => {
         years_experience: formData.experience_years ? yearsMap[formData.experience_years] ?? null : null,
         current_companies: formData.insurers || null,
         message: formData.message || null,
+        has_insurer_code: hasInsurerCode === "si",
+        insurer_codes: hasInsurerCode === "si" ? filledCodes : [],
       });
 
       setSuccessMessage(result.message);
@@ -325,6 +346,77 @@ const SumatePage = () => {
                       />
                     </div>
                   </div>
+
+                  <fieldset className="space-y-3 rounded-xl border border-border p-4">
+                    <legend className="px-1 text-sm font-medium">
+                      ¿Tenés código de productor en alguna compañía de seguros? *
+                    </legend>
+                    <RadioGroup
+                      value={hasInsurerCode}
+                      onValueChange={(v) => setHasInsurerCode(v as "si" | "no")}
+                      className="flex flex-wrap gap-6"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="si" id="insurer-code-si" />
+                        <Label htmlFor="insurer-code-si" className="font-normal">Sí, tengo código</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="no" id="insurer-code-no" />
+                        <Label htmlFor="insurer-code-no" className="font-normal">No tengo código</Label>
+                      </div>
+                    </RadioGroup>
+
+                    {hasInsurerCode === "si" && (
+                      <div className="space-y-2">
+                        <datalist id="insurer-options">
+                          {PUBLIC_INSURERS.map((name) => (
+                            <option key={name} value={name} />
+                          ))}
+                        </datalist>
+                        {insurerCodes.map((row, index) => (
+                          <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <Input
+                              list="insurer-options"
+                              aria-label={`Compañía ${index + 1}`}
+                              placeholder="Compañía (ej: Federación Patronal)"
+                              value={row.company}
+                              maxLength={100}
+                              onChange={(e) => updateCode(index, { company: e.target.value })}
+                            />
+                            <Input
+                              aria-label={`Código en la compañía ${index + 1}`}
+                              placeholder="Tu código / N° de productor"
+                              value={row.code}
+                              maxLength={50}
+                              onChange={(e) => updateCode(index, { code: e.target.value })}
+                              className="sm:max-w-[220px]"
+                            />
+                            {insurerCodes.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Quitar compañía ${index + 1}`}
+                                onClick={() => setInsurerCodes((rows) => rows.filter((_, i) => i !== index))}
+                              >
+                                <X size={16} />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        {insurerCodes.length < 10 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInsurerCodes((rows) => [...rows, { company: "", code: "" }])}
+                          >
+                            <Plus size={14} className="mr-1.5" /> Agregar otra compañía
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </fieldset>
 
                   <div className="space-y-2">
                     <Label htmlFor="message">Mensaje (opcional)</Label>
