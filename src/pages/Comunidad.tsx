@@ -7,6 +7,7 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/loading-st
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { BlogMedia, blogCoverUrl } from "@/components/blog/BlogMedia";
 
 // Blog post detail sub-component
 const BlogPostDetail = ({ slug }: { slug: string }) => {
@@ -40,10 +41,17 @@ const BlogPostDetail = ({ slug }: { slug: string }) => {
       </section>
       <section className="py-12">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-card rounded-xl shadow-soft p-8">
-            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
-              {post.content}
-            </div>
+          <div className="bg-card rounded-xl shadow-soft p-8 space-y-8">
+            {post.content.trim() && (
+              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+                {post.content}
+              </div>
+            )}
+            <BlogMedia
+              videoUrl={post.video_url}
+              attachments={post.blog_post_attachments ?? []}
+              title={post.title}
+            />
           </div>
         </div>
       </section>
@@ -87,8 +95,17 @@ const ComunidadListing = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayPosts.map((post) => (
                 <article key={post.id} className="bg-card rounded-xl shadow-soft overflow-hidden group hover:shadow-card transition-shadow">
-                  <div className="h-48 bg-muted flex items-center justify-center">
-                    <span className="text-6xl">📰</span>
+                  <div className="h-48 bg-muted flex items-center justify-center overflow-hidden">
+                    {blogCoverUrl(post.blog_post_attachments) ? (
+                      <img
+                        src={blogCoverUrl(post.blog_post_attachments) ?? undefined}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-6xl" aria-hidden>📰</span>
+                    )}
                   </div>
                   <div className="p-6">
                     <div className="flex items-center gap-4 mb-3">
