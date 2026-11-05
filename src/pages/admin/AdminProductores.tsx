@@ -49,6 +49,16 @@ const statusLabel: Record<string, string> = {
   aprobado: "Pendiente de aprobación",
 };
 
+function insurerCodeList(value: unknown): Array<{ company: string; code: string }> {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => ({
+      company: String((v as { company?: unknown })?.company ?? "").trim(),
+      code: String((v as { code?: unknown })?.code ?? "").trim(),
+    }))
+    .filter((c) => c.company);
+}
+
 type AppRow = {
   id: string;
   full_name: string;
@@ -60,6 +70,8 @@ type AppRow = {
   years_experience: number | null;
   current_companies: string | null;
   message: string | null;
+  has_insurer_code?: boolean | null;
+  insurer_codes?: unknown;
   status: string;
   user_id: string | null;
   admin_notes: string | null;
@@ -449,6 +461,28 @@ const AdminProductores = () => {
                         invitación legacy o pedirle al productor que se registre en Sumate.
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {app.has_insurer_code != null && (
+                  <div className="text-sm">
+                    <span className="font-medium">Código en compañía: </span>
+                    {app.has_insurer_code ? (
+                      <span>
+                        Sí
+                        {insurerCodeList(app.insurer_codes).map((c) => (
+                          <span
+                            key={`${c.company}-${c.code}`}
+                            className="ml-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs"
+                          >
+                            {c.company}
+                            {c.code ? `: ${c.code}` : ""}
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">No tiene</span>
+                    )}
                   </div>
                 )}
 

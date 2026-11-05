@@ -924,6 +924,8 @@ export type Database = {
           city: string | null
           created_at: string
           current_companies: string | null
+          has_insurer_code: boolean | null
+          insurer_codes: Json
           email: string
           full_name: string
           id: string
@@ -947,6 +949,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           current_companies?: string | null
+          has_insurer_code?: boolean | null
+          insurer_codes?: Json
           email: string
           full_name: string
           id?: string
@@ -970,6 +974,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           current_companies?: string | null
+          has_insurer_code?: boolean | null
+          insurer_codes?: Json
           email?: string
           full_name?: string
           id?: string

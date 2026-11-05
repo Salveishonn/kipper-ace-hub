@@ -26,6 +26,21 @@ function json(req: Request, body: unknown, status = 200) {
   });
 }
 
+function insurerCodesLabel(payload: Record<string, unknown>): string {
+  if (payload.has_insurer_code === false) return "No tiene";
+  if (payload.has_insurer_code !== true) return "—";
+  const codes = Array.isArray(payload.insurer_codes) ? payload.insurer_codes : [];
+  const list = codes
+    .map((c) => {
+      const row = c as { company?: unknown; code?: unknown };
+      const company = String(row.company ?? "").trim();
+      const code = String(row.code ?? "").trim();
+      return company ? (code ? `${company}: ${code}` : company) : "";
+    })
+    .filter(Boolean);
+  return list.length ? `Sí — ${list.join(" · ")}` : "Sí";
+}
+
 function caseRef(id: string): string {
   return id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
@@ -182,6 +197,7 @@ Deno.serve(async (req: Request) => {
               ["Email", String(payload.email ?? "—")],
               ["Teléfono", String(payload.phone ?? "—")],
               ["Matrícula SSN", String(payload.matricula_ssn ?? "—")],
+              ["Código en compañía", insurerCodesLabel(payload)],
               ["Ubicación", String(payload.location ?? "—")],
               ["Fecha", createdAt],
               ["Mensaje", messagePreview || "—"],

@@ -19,7 +19,11 @@ export interface ProducerApplicationInput {
   years_experience?: number | null;
   current_companies?: string | null;
   message?: string | null;
+  has_insurer_code?: boolean | null;
+  insurer_codes?: InsurerCode[];
 }
+
+export type InsurerCode = { company: string; code: string };
 
 export type RegisterPasResult = {
   ok: true;
@@ -48,6 +52,8 @@ export function useCreateProducerApplication() {
         years_experience: input.years_experience ?? null,
         current_companies: input.current_companies ?? null,
         message: input.message ?? null,
+        has_insurer_code: input.has_insurer_code ?? null,
+        insurer_codes: input.has_insurer_code ? input.insurer_codes ?? [] : [],
       };
 
       const res = await fetch(getSupabaseFunctionUrl("register-pas-application"), {
