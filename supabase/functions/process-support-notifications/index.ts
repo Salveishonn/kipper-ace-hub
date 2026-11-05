@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { emailDetails, emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
 import { sendKipperEmail, type SendEmailResult } from "../_shared/sendEmail.ts";
+import { EXTENDED_EVENTS, handleExtendedEvent, pushToUsers } from "./extended.ts";
 
 type OutboxRow = {
   id: string;
@@ -10,7 +11,11 @@ type OutboxRow = {
     | "case.message.created"
     | "case.reply.created"
     | "case.status.changed"
-    | "pas.application.created";
+    | "pas.application.created"
+    | "forum.post.created"
+    | "forum.comment.created"
+    | "content.published"
+    | "admin.broadcast";
   event_id: string;
   payload: Record<string, unknown>;
   attempts: number;
@@ -140,7 +145,31 @@ Deno.serve(async (req: Request) => {
 
   const results: Array<{ id: string; status: string }> = [];
 
+  const markRow = async (id: string, error: string | null) => {
+    await admin
+      .from("notification_outbox")
+      .update(
+        error
+          ? { status: "failed", last_error: error.slice(0, 500), processed_at: new Date().toISOString() }
+          : { status: "sent", last_error: null, processed_at: new Date().toISOString() },
+      )
+      .eq("id", id);
+    results.push({ id, status: error ? "failed" : "sent" });
+  };
+
   for (const row of rows) {
+    if (EXTENDED_EVENTS.has(row.event_type)) {
+      let error: string | null;
+      try {
+        error = await handleExtendedEvent(admin, row, siteUrl);
+      } catch (e) {
+        error = e instanceof Error ? e.message : "Error interno";
+      }
+      if (error) console.error("notification failed", row.event_type);
+      await markRow(row.id, error);
+      continue;
+    }
+
     const payload = row.payload ?? {};
     const ticketId = String(payload.ticket_id ?? "");
     const subject = String(payload.subject ?? "Consulta");
@@ -272,6 +301,25 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", row.id);
     results.push({ id: row.id, status: "sent" });
+
+    // The producer also gets a push on their devices; never blocks or fails the email.
+    if (toProducer && payload.producer_id) {
+      try {
+        await pushToUsers(admin, [String(payload.producer_id)], {
+          title:
+            row.event_type === "case.reply.created"
+              ? "Respondimos tu consulta"
+              : closed
+                ? "Cerramos tu consulta"
+                : "Resolvimos tu consulta",
+          body: subject,
+          url: `/productor/consultas/${ticketId}`,
+          tag: `consulta-${ticketId}`,
+        });
+      } catch (e) {
+        console.error("consulta push failed", e instanceof Error ? e.message : e);
+      }
+    }
   }
 
   // Callable without a session (the portal kicks it after each message): report counts only.
