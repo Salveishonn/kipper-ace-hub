@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Settings, LogOut,
   Menu, X, UserCheck, MessageSquare,
-  FileText, BookOpen, Palette, Newspaper, Shield,
+  FileText, BookOpen, Palette, Newspaper, Shield, MessagesSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ const adminLinks = [
   { href: "/admin/recursos-graficos", label: "Recursos gráficos", icon: Palette },
   { href: "/admin/novedades", label: "Novedades", icon: Newspaper },
   { href: "/admin/consultas", label: "Consultas", icon: MessageSquare },
+  { href: "/admin/foro", label: "Foro", icon: MessagesSquare },
 ];
 
 const siteLinks = [

@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, User, LogOut, Menu, X,
-  Palette, Newspaper, BookOpen, MessageSquare,
+  Palette, Newspaper, BookOpen, MessageSquare, MessagesSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ const productorLinks = [
   { href: "/productor", label: "Inicio", icon: Home },
   { href: "/productor/academy", label: "Academy", icon: BookOpen },
   { href: "/productor/recursos", label: "Recursos gráficos", icon: Palette },
+  { href: "/productor/foro", label: "Foro", icon: MessagesSquare },
   { href: "/productor/novedades", label: "Novedades", icon: Newspaper },
   { href: "/productor/consultas", label: "Consultas", icon: MessageSquare },
   { href: "/productor/perfil", label: "Mi perfil", icon: User },
