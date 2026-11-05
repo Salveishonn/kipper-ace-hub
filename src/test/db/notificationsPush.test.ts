@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Forum emails, push subscriptions and broadcasts (20261105172000_forum_emails_and_push.sql).
+// Forum emails, push subscriptions and broadcasts (20261105170440_forum_emails_and_push.sql).
 import { beforeAll, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
 import { createMigratedDb, createUser, runAs, verifyAdminMfa } from "./supabaseDb";

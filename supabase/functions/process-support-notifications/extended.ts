@@ -1,5 +1,5 @@
 // Forum emails, portal push notifications and team broadcasts (outbox events added in
-// 20261105172000_forum_emails_and_push.sql). Kept apart from the support-case emails in index.ts.
+// 20261105170440_forum_emails_and_push.sql). Kept apart from the support-case emails in index.ts.
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { emailParagraph, emailSmallHtml, emailLink, renderKipperEmail } from "../_shared/emailLayout.ts";
 import { sendKipperEmailBatch, type BatchEmail } from "../_shared/sendEmail.ts";

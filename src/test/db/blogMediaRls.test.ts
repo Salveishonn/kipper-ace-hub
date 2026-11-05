@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Blog attachments (20261105171000_blog_media.sql): public reads only for published posts,
+// Blog attachments (20261105165958_blog_media.sql): public reads only for published posts,
 // writes only for admins who passed the MFA step.
 import { beforeAll, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
