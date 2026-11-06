@@ -204,6 +204,34 @@ export async function pushToUsers(
   return { sent, failed };
 }
 
+export type AdminPushKind = "admin_push_cases" | "admin_push_applications" | "admin_push_forum";
+
+/** Push to every admin who kept this kind of team notification on. Never throws. */
+export async function pushToAdmins(
+  admin: SupabaseClient,
+  kind: AdminPushKind,
+  notification: { title: string; body: string; url: string; tag?: string },
+  opts: { exclude?: string } = {},
+): Promise<{ sent: number; failed: number }> {
+  try {
+    const { data: roleRows, error } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+    if (error) throw new Error("admin lookup failed");
+    const { data: off } = await admin.from("notification_preferences").select("user_id").eq(kind, false);
+    const skip = new Set((off ?? []).map((r) => r.user_id as string));
+    if (opts.exclude) skip.add(opts.exclude);
+    const ids = Array.from(new Set((roleRows ?? []).map((r) => r.user_id as string))).filter((id) => !skip.has(id));
+    return await pushToUsers(admin, ids, notification);
+  } catch (e) {
+    console.error("admin push failed", e instanceof Error ? e.message : e);
+    return { sent: 0, failed: 0 };
+  }
+}
+
+function clip(text: unknown, max = 120): string {
+  const value = String(text ?? "").replace(/\s+/g, " ").trim();
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
 /** Handles one extended outbox row. Returns an error string when the row should be retried. */
 export async function handleExtendedEvent(
   admin: SupabaseClient,
@@ -217,9 +245,22 @@ export async function handleExtendedEvent(
       row.event_type === "forum.post.created"
         ? await forumPostEmails(admin, payload, siteUrl)
         : await forumCommentEmails(admin, payload, siteUrl);
-    if (!emails.length) return null;
-    const res = await sendKipperEmailBatch(emails, `${row.event_type}/${row.event_id}`);
-    return res.error ?? null;
+    if (emails.length) {
+      const res = await sendKipperEmailBatch(emails, `${row.event_type}/${row.event_id}`);
+      if (res.error) return res.error;
+    }
+    // Admins follow forum activity on their devices (after the emails, so a retry never repeats it).
+    const authorName = String(payload.author_name ?? "Un productor");
+    const postId = String(payload.post_id ?? "");
+    await pushToAdmins(
+      admin,
+      "admin_push_forum",
+      row.event_type === "forum.post.created"
+        ? { title: `${authorName} publicó en el foro`, body: clip(payload.preview) || "Nueva publicación", url: "/admin/foro", tag: `forum-post-${postId}` }
+        : { title: `${authorName} comentó en el foro`, body: clip(payload.preview) || "Nuevo comentario", url: "/admin/foro", tag: `forum-post-${postId}` },
+      { exclude: String(payload.author_id ?? "") },
+    );
+    return null;
   }
 
   if (row.event_type === "content.published") {
