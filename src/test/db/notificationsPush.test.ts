@@ -132,4 +132,25 @@ describe("forum emails, push and broadcasts", () => {
       "insert into public.notification_preferences (user_id, forum_new_post_email) values ($1, false)", [other]);
     expect(forged.error).toMatch(/row-level security/);
   });
+
+  it("admins keep every team push on by default and can switch each one off", async () => {
+    const created = await runAs(db, as(admin), "insert into public.notification_preferences default values");
+    expect(created.error).toBeNull();
+    const defaults = await db.query<Record<string, boolean>>(
+      "select admin_push_cases, admin_push_applications, admin_push_forum from public.notification_preferences where user_id = $1",
+      [admin],
+    );
+    expect(defaults.rows[0]).toEqual({ admin_push_cases: true, admin_push_applications: true, admin_push_forum: true });
+
+    const off = await runAs(db, as(admin), "update public.notification_preferences set admin_push_forum = false");
+    expect(off.error).toBeNull();
+    const othersTouched = await runAs<{ user_id: string }>(db, as(other),
+      "update public.notification_preferences set admin_push_cases = false returning user_id");
+    expect(othersTouched.rows).toHaveLength(0);
+
+    const { rows } = await db.query<{ user_id: string }>(
+      "select user_id from public.notification_preferences where admin_push_forum = false",
+    );
+    expect(rows).toEqual([{ user_id: admin }]);
+  });
 });

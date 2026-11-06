@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { emailDetails, emailParagraph, renderKipperEmail } from "../_shared/emailLayout.ts";
 import { sendKipperEmail, type SendEmailResult } from "../_shared/sendEmail.ts";
-import { EXTENDED_EVENTS, handleExtendedEvent, pushToUsers } from "./extended.ts";
+import { EXTENDED_EVENTS, handleExtendedEvent, pushToAdmins, pushToUsers } from "./extended.ts";
 
 type OutboxRow = {
   id: string;
@@ -318,6 +318,29 @@ Deno.serve(async (req: Request) => {
         });
       } catch (e) {
         console.error("consulta push failed", e instanceof Error ? e.message : e);
+      }
+    }
+
+    // Team events also reach admins' devices (PWA de administración). Best effort.
+    if (!toProducer) {
+      const preview = messagePreview.replace(/\s+/g, " ").trim().slice(0, 120);
+      if (row.event_type === "pas.application.created") {
+        await pushToAdmins(admin, "admin_push_applications", {
+          title: "Nueva solicitud PAS",
+          body: `${producerName} quiere sumarse como productor`,
+          url: "/admin/productores",
+          tag: `pas-${row.event_id}`,
+        });
+      } else if (ticketId) {
+        await pushToAdmins(admin, "admin_push_cases", {
+          title:
+            row.event_type === "case.created"
+              ? `Nueva consulta de ${producerName}`
+              : `${producerName} escribió en #${ref}`,
+          body: preview ? `${subject}: ${preview}` : subject,
+          url: `/admin/consultas/${ticketId}`,
+          tag: `admin-consulta-${ticketId}`,
+        });
       }
     }
   }

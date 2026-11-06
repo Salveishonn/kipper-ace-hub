@@ -82,3 +82,40 @@ export function usePushNotifications() {
 
   return { support, enabled, busy, turnOn, turnOff, canInstall, install, installed };
 }
+
+export type PortalApp = "productor" | "admin";
+
+const APP_MANIFEST: Record<PortalApp, { href: string; title: string }> = {
+  productor: { href: "/manifest.webmanifest", title: "Kipper PAS" },
+  admin: { href: "/manifest-admin.webmanifest", title: "Kipper Admin" },
+};
+
+/**
+ * Points the page at the right installable app. index.html picks it on first load, but an
+ * admin who signs in at /login lands on /admin through client-side navigation.
+ */
+export function usePortalManifest(app: PortalApp) {
+  useEffect(() => {
+    const { href, title } = APP_MANIFEST[app];
+    let link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "manifest";
+      document.head.appendChild(link);
+    }
+    if (link.getAttribute("href") !== href) link.setAttribute("href", href);
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", title);
+  }, [app]);
+}
+
+/** Shows the unread count on the installed app icon, where the platform supports it. */
+export function useAppBadge(count: number) {
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (!nav.setAppBadge || !isStandalone()) return;
+    void (count > 0 ? nav.setAppBadge(count) : nav.clearAppBadge?.())?.catch(() => undefined);
+  }, [count]);
+}

@@ -56,6 +56,7 @@ const AdminRecursosGraficos = lazy(() => import("./pages/admin/AdminRecursosGraf
 const AdminConsultas = lazy(() => import("./pages/admin/AdminConsultas"));
 const AdminConsultaDetail = lazy(() => import("./pages/admin/AdminConsultaDetail"));
 const AdminAvisos = lazy(() => import("./pages/admin/AdminAvisos"));
+const AdminNotificaciones = lazy(() => import("./pages/admin/AdminNotificaciones"));
 
 // Productor
 const ProductorLayout = lazy(() => import("./pages/productor/ProductorLayout"));
@@ -178,6 +179,7 @@ const App = () => (
                 <Route path="consultas/:id" element={<AdminConsultaDetail />} />
                 <Route path="foro" element={<ForoPage />} />
                 <Route path="avisos" element={<AdminAvisos />} />
+                <Route path="notificaciones" element={<AdminNotificaciones />} />
                 <Route path="contacts" element={<Navigate to="/admin" replace />} />
                 <Route path="blog" element={<AdminBlog />} />
                 <Route path="config" element={<AdminConfig />} />

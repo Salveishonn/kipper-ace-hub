@@ -5,10 +5,27 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
-const DISMISS_KEY = "kipper-push-prompt-dismissed";
+const COPY = {
+  productor: {
+    dismissKey: "kipper-push-prompt-dismissed",
+    install: "Agregá el portal a tu pantalla de inicio para recibir avisos en el celular.",
+    enable:
+      "Activá las notificaciones para enterarte al instante cuando respondamos tus consultas o haya novedades.",
+    help: "/productor/perfil#notificaciones",
+  },
+  admin: {
+    dismissKey: "kipper-admin-push-prompt-dismissed",
+    install: "Agregá Kipper Admin a tu pantalla de inicio para recibir avisos del equipo en el celular.",
+    enable:
+      "Activá las notificaciones para enterarte al instante de consultas nuevas, solicitudes PAS y actividad del foro.",
+    help: "/admin/notificaciones",
+  },
+} as const;
 
 /** One-time nudge in the portal to turn on notifications on this device. */
-export function PushPromptBanner() {
+export function PushPromptBanner({ variant = "productor" }: { variant?: keyof typeof COPY }) {
+  const copy = COPY[variant];
+  const DISMISS_KEY = copy.dismissKey;
   const push = usePushNotifications();
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === "1");
 
@@ -24,14 +41,12 @@ export function PushPromptBanner() {
     <div className="mb-6 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm sm:flex-row sm:items-center">
       <Bell size={18} className="hidden shrink-0 text-primary sm:block" aria-hidden />
       <p className="flex-1">
-        {push.support === "ios-needs-install"
-          ? "Agregá el portal a tu pantalla de inicio para recibir avisos en el celular."
-          : "Activá las notificaciones para enterarte al instante cuando respondamos tus consultas o haya novedades."}
+        {push.support === "ios-needs-install" ? copy.install : copy.enable}
       </p>
       <div className="flex items-center gap-2">
         {push.support === "ios-needs-install" ? (
           <Button asChild size="sm" variant="outline">
-            <Link to="/productor/perfil#notificaciones">Ver cómo</Link>
+            <Link to={copy.help}>Ver cómo</Link>
           </Button>
         ) : (
           <Button

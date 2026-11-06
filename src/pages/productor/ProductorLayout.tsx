@@ -9,7 +9,7 @@ import { useConsultasLive, useConsultaUnreadCount } from "@/hooks/useSupportTick
 import { UnreadBadge } from "@/components/consultas/UnreadBadge";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { KipperBrandLockup } from "@/components/layout/KipperBrandLockup";
-import { usePortalServiceWorker } from "@/hooks/usePushNotifications";
+import { useAppBadge, usePortalManifest, usePortalServiceWorker } from "@/hooks/usePushNotifications";
 import { PushPromptBanner } from "@/components/notifications/PushPromptBanner";
 
 const productorLinks = [
@@ -30,6 +30,8 @@ const ProductorLayout = () => {
   useConsultasLive(!!user);
   usePortalServiceWorker(!!user);
   const unreadConsultas = useConsultaUnreadCount("productor", user?.id);
+  usePortalManifest("productor");
+  useAppBadge(unreadConsultas);
 
   const handleLogout = async () => {
     await signOut();

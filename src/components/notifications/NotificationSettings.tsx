@@ -7,8 +7,44 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
-type Prefs = { forum_new_post_email: boolean; forum_reply_email: boolean };
-const DEFAULT_PREFS: Prefs = { forum_new_post_email: true, forum_reply_email: true };
+type Prefs = {
+  forum_new_post_email: boolean;
+  forum_reply_email: boolean;
+  admin_push_cases: boolean;
+  admin_push_applications: boolean;
+  admin_push_forum: boolean;
+};
+const DEFAULT_PREFS: Prefs = {
+  forum_new_post_email: true,
+  forum_reply_email: true,
+  admin_push_cases: true,
+  admin_push_applications: true,
+  admin_push_forum: true,
+};
+const PREF_COLUMNS = Object.keys(DEFAULT_PREFS).join(", ");
+
+type Variant = "productor" | "admin";
+
+const COPY: Record<Variant, { intro: string; iosUrl: string; pushTitle: string; pushHint: string }> = {
+  productor: {
+    intro: "Elegí cómo querés enterarte de respuestas a tus consultas, novedades y actividad del foro.",
+    iosUrl: "kipperseguros.com/productor",
+    pushTitle: "Notificaciones del portal",
+    pushHint: "Respuestas a tus consultas, novedades, Academy y avisos del equipo Kipper.",
+  },
+  admin: {
+    intro: "Elegí qué avisos del equipo te llegan al celular o la compu, y qué mails del foro recibís.",
+    iosUrl: "kipperseguros.com/admin",
+    pushTitle: "Notificaciones de administración",
+    pushHint: "Se activan por dispositivo: hacelo en cada celular o computadora donde uses Kipper Admin.",
+  },
+};
+
+const ADMIN_PUSH: Array<{ key: keyof Prefs; label: string; hint: string }> = [
+  { key: "admin_push_cases", label: "Consultas", hint: "Consultas nuevas y cada mensaje que escribe un productor." },
+  { key: "admin_push_applications", label: "Solicitudes PAS", hint: "Cuando alguien pide sumarse como productor." },
+  { key: "admin_push_forum", label: "Foro", hint: "Publicaciones y comentarios nuevos en el foro." },
+];
 
 function useEmailPrefs(userId: string | undefined) {
   const qc = useQueryClient();
@@ -18,11 +54,11 @@ function useEmailPrefs(userId: string | undefined) {
     queryFn: async (): Promise<Prefs> => {
       const { data, error } = await supabase
         .from("notification_preferences")
-        .select("forum_new_post_email, forum_reply_email")
+        .select(PREF_COLUMNS)
         .eq("user_id", userId!)
         .maybeSingle();
       if (error) throw error;
-      return data ?? DEFAULT_PREFS;
+      return { ...DEFAULT_PREFS, ...((data as Partial<Prefs> | null) ?? {}) };
     },
   });
   const save = useMutation({
@@ -37,7 +73,8 @@ function useEmailPrefs(userId: string | undefined) {
   return { prefs: query.data ?? DEFAULT_PREFS, loading: query.isLoading, save };
 }
 
-export function NotificationSettings() {
+export function NotificationSettings({ variant = "productor" }: { variant?: Variant }) {
+  const copy = COPY[variant];
   const { user } = useAuth();
   const push = usePushNotifications();
   const { prefs, loading, save } = useEmailPrefs(user?.id);
@@ -66,7 +103,7 @@ export function NotificationSettings() {
           <Bell size={18} className="text-primary" aria-hidden /> Notificaciones
         </h2>
         <p className="text-sm text-muted-foreground">
-          Elegí cómo querés enterarte de respuestas a tus consultas, novedades y actividad del foro.
+          {copy.intro}
         </p>
       </div>
 
@@ -89,13 +126,13 @@ export function NotificationSettings() {
             <p className="font-medium">Para recibir notificaciones en iPhone:</p>
             <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
               <li>
-                Abrí kipperseguros.com/productor en <strong>Safari</strong>.
+                Abrí {copy.iosUrl} en <strong>Safari</strong>.
               </li>
               <li className="flex flex-wrap items-center gap-1">
                 Tocá <Share size={14} aria-label="Compartir" /> <strong>Compartir</strong> y después
                 <SquarePlus size={14} aria-hidden /> <strong>Agregar a inicio</strong>.
               </li>
-              <li>Abrí la app Kipper desde tu pantalla de inicio y volvé a esta sección para activarlas.</li>
+              <li>Abrí la app desde tu pantalla de inicio y volvé a esta sección para activarlas.</li>
             </ol>
           </div>
         ) : push.support === "unsupported" ? (
@@ -105,10 +142,8 @@ export function NotificationSettings() {
         ) : (
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
             <div>
-              <p className="text-sm font-medium">Notificaciones del portal</p>
-              <p className="text-xs text-muted-foreground">
-                Respuestas a tus consultas, novedades, Academy y avisos del equipo Kipper.
-              </p>
+              <p className="text-sm font-medium">{copy.pushTitle}</p>
+              <p className="text-xs text-muted-foreground">{copy.pushHint}</p>
             </div>
             <Button
               variant={push.enabled ? "outline" : "default"}
@@ -129,6 +164,31 @@ export function NotificationSettings() {
           </div>
         )}
       </section>
+
+      {variant === "admin" && (
+        <section className="space-y-3" aria-labelledby="notif-admin-push">
+          <h3 id="notif-admin-push" className="text-sm font-semibold flex items-center gap-2">
+            <Bell size={16} aria-hidden /> Qué avisos push recibir
+          </h3>
+          {ADMIN_PUSH.map((item) => (
+            <label
+              key={item.key}
+              className="flex items-center justify-between gap-4 rounded-xl border border-border p-4 cursor-pointer"
+            >
+              <span>
+                <span className="block text-sm font-medium">{item.label}</span>
+                <span className="block text-xs text-muted-foreground">{item.hint}</span>
+              </span>
+              <Switch
+                checked={prefs[item.key]}
+                disabled={loading || save.isPending}
+                onCheckedChange={(v) => setPref(item.key, v)}
+                aria-label={`Avisos push de ${item.label.toLowerCase()}`}
+              />
+            </label>
+          ))}
+        </section>
+      )}
 
       <section className="space-y-3" aria-labelledby="notif-email">
         <h3 id="notif-email" className="text-sm font-semibold flex items-center gap-2">

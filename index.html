@@ -56,13 +56,16 @@
         ) {
           document.documentElement.classList.add("kipper-no-assistant");
         }
-        // Installable app (PWA) only for the producer portal, not for the public site.
-        if (p.indexOf("/productor") === 0 || p.indexOf("/admin") === 0 || p === "/login") {
+        // Installable apps (PWA) only for the portals, not for the public site:
+        // "Kipper Admin" under /admin, "Kipper PAS" for producers.
+        var isAdminApp = p.indexOf("/admin") === 0;
+        if (isAdminApp || p.indexOf("/productor") === 0 || p === "/login") {
           var link = document.createElement("link");
           link.rel = "manifest";
-          link.href = "/manifest.webmanifest";
+          link.href = isAdminApp ? "/manifest-admin.webmanifest" : "/manifest.webmanifest";
           document.head.appendChild(link);
         }
+        window.__kipperAppTitle = isAdminApp ? "Kipper Admin" : "Kipper PAS";
       })();
     </script>
     <meta name="theme-color" content="#601410" />
@@ -70,6 +73,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Kipper PAS" />
+    <script>
+      // iOS names the home screen icon from this tag when "Agregar a inicio" is used.
+      if (window.__kipperAppTitle) {
+        document.querySelector('meta[name="apple-mobile-web-app-title"]').setAttribute("content", window.__kipperAppTitle);
+      }
+    </script>
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     <!-- Google tag (gtag.js) -->

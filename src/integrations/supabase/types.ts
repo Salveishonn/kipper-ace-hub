@@ -29,18 +29,27 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          admin_push_applications: boolean
+          admin_push_cases: boolean
+          admin_push_forum: boolean
           forum_new_post_email: boolean
           forum_reply_email: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_push_applications?: boolean
+          admin_push_cases?: boolean
+          admin_push_forum?: boolean
           forum_new_post_email?: boolean
           forum_reply_email?: boolean
           updated_at?: string
           user_id?: string
         }
         Update: {
+          admin_push_applications?: boolean
+          admin_push_cases?: boolean
+          admin_push_forum?: boolean
           forum_new_post_email?: boolean
           forum_reply_email?: boolean
           updated_at?: string
